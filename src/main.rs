@@ -10,9 +10,10 @@ use serenity::{
     framework::{
         StandardFramework,
         standard::macros::group,
+        standard::macros::hook
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready},
+    model::{event::ResumedEvent, gateway::Ready, channel::Message},
     prelude::*,
 };
 use log::{error, info};
@@ -45,7 +46,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, mock, mockl)]
+#[commands(ping, mock, mockl, inv, invl, upp, uppl, low, lowl)]
 struct General;
 
 #[tokio::main]
@@ -66,11 +67,19 @@ async fn main() {
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
 
+    #[hook]
+    async fn unrecognized_command_hook(_: &Context, msg: &Message, unrecognized_command_name: &str) {
+        println!("A user named {:?} tried to execute an unknown command: {}",
+            msg.author.name, unrecognized_command_name
+        );
+    }
+
     let framework = StandardFramework::new()
-    .configure(|c| c
-        .owners(owners)
-        .prefix(&creds.default_prefix))
-    .group(&GENERAL_GROUP);
+        .configure(|c| c
+            .owners(owners)
+            .prefix(&creds.default_prefix))
+            .unrecognised_command(unrecognized_command_hook)
+        .group(&GENERAL_GROUP);
     
     let mut client = Client::new(&token)
         .framework(framework)
