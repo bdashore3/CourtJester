@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 #[command]
 #[sub_commands(set, remove)]
+#[required_permissions(Administrator)]
 async fn command(_: &Context, _: &Message) -> CommandResult {
     Ok(())
 }
