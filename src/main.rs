@@ -11,11 +11,13 @@ use serenity::{
         StandardFramework,
         standard::macros::group,
         standard::macros::hook,
-        standard::CommandError
+        standard::CommandError,
+        standard::DispatchError
     },
     http::Http,
     model::{event::ResumedEvent, gateway::Ready, channel::Message},
-    prelude::*,
+    model::prelude::Permissions,
+    prelude::*
 };
 
 use commands::{
@@ -125,11 +127,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    #[hook]
+    async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
+        match error {
+            DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
+                let _ = msg.channel_id.say(ctx, "You can't execute this command!");
+            },
+            _ => println!("Unhandled dispatch error"),
+        }        
+    }
+
     let framework = StandardFramework::new()
         .configure(|c| c
             .owners(owners)
             .prefix(&creds.default_prefix))
             .unrecognised_command(unrecognized_command_hook)
+            .on_dispatch_error(dispatch_error)
             .after(after)
         
         .group(&GENERAL_GROUP)
