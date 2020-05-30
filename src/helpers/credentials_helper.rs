@@ -5,7 +5,8 @@ use std::io::BufReader;
 #[derive(Serialize, Deserialize)]
 pub struct Credentials {
     pub bot_token: String,
-    pub default_prefix: String
+    pub default_prefix: String,
+    pub db_connection: String
 }
 
 pub fn read_creds(path: String) -> Result<Credentials, Box<dyn std::error::Error + 'static>> {
