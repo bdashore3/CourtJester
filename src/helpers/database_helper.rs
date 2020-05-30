@@ -1,7 +1,12 @@
+use std::env;
 use sqlx::postgres::PgPool;
+use crate::helpers::credentials_helper;
 
 pub async fn obtain_pool() -> Result<PgPool, Box<dyn std::error::Error>> {
-    let connection_string = "postgres://postgres:24bd2001@localhost:5432/CourtJester";
+    let args: Vec<String> = env::args().collect();
+    let creds = credentials_helper::read_creds(args[1].to_string()).unwrap();
+
+    let connection_string = &creds.db_connection;
 
     let pool = PgPool::builder()
         .max_size(10)
