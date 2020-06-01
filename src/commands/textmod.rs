@@ -7,6 +7,8 @@ use serenity::framework::standard::{
 
 use crate::helpers::*;
 
+/// Outputs a spongebob mock string
+/// Usage: `mock <message>`
 #[command]
 pub async fn mock(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let mock_string = textmod_helper::get_mock_string(args.rest());
@@ -17,7 +19,6 @@ pub async fn mock(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
-
     let input_message = msg.channel_id.messages(&ctx.http, |retriever| {
         retriever.before(msg.id).limit(1)
     })
@@ -30,6 +31,8 @@ pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+/// Inverts the characters in a string
+/// Usage: `inv <message>`
 #[command]
 async fn inv(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let inv_string = textmod_helper::get_inverted_string(args.rest());
@@ -53,6 +56,8 @@ async fn invl(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+/// Converts the provided string to uppercase letters
+/// Usage: `upp <message>`
 #[command]
 async fn upp(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     msg.channel_id.say(&ctx.http, args.rest().to_uppercase()).await?;
@@ -72,6 +77,8 @@ async fn uppl(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+/// Converts the provided string to lowercase
+/// Usage: `low <message>`
 #[command]
 async fn low (ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     msg.channel_id.say(&ctx.http, args.rest().to_lowercase()).await?;
@@ -91,6 +98,8 @@ async fn lowl(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+/// Puts a random amount of spaces between each character of the message
+/// Usage: `space <message>`
 #[command]
 async fn space(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(args.rest(), false)).await?;
@@ -110,6 +119,8 @@ async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+/// Similar to space, but puts a larger amount of space between each character
+/// Usage: `biggspace <message>`
 #[command]
 async fn biggspace(ctx: &Context, msg: &Message, args: Args) -> CommandResult { 
     msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(args.rest(), true)).await?;
