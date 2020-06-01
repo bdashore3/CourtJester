@@ -7,16 +7,27 @@ use std::{
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
-    framework::{
+    framework::standard::{
         StandardFramework,
-        standard::macros::group,
-        standard::macros::hook,
-        standard::CommandError,
-        standard::DispatchError
+        CommandResult,
+        CommandGroup,
+        CommandError,
+        DispatchError,
+        HelpOptions,
+        help_commands,
+        Args,
+        macros:: {
+            group,
+            help,
+            hook
+        }
     },
     http::Http,
     model::{event::ResumedEvent, gateway::Ready, channel::Message},
-    model::prelude::Permissions,
+    model::prelude:: {
+        Permissions,
+        UserId,
+    },
     prelude::*
 };
 
@@ -31,6 +42,7 @@ use commands::{
 use sqlx::PgPool;
 
 use helpers::database_helper::*;
+use crate::TEXT_GROUP as text_group; 
 
 mod commands;
 mod helpers;
@@ -61,26 +73,34 @@ impl TypeMapKey for ConnectionPool {
 }
 
 #[group]
+#[help_available(false)]
 #[commands(ping)]
 struct General;
 
-#[group]
+#[group("Text Modification")]
+#[description = "Commands than modify text. \n
+Append l in the command to use the last message \n
+Example: `mockl` mocks the last message"]
 #[commands(mock, inv, upp, low, space, biggspace)]
 struct Text;
 
 #[group]
+#[help_available(false)]
 #[commands(mockl, invl, uppl, lowl, spacel, biggspacel)]
 struct TextLast;
 
-#[group]
+#[group("Ciphers")]
+#[description = "Commands that encode/decode messages"]
 #[commands(b64encode, b64decode)]
 struct Ciphers;
 
-#[group]
+#[group("Jars")]
+#[description = "Commands that send certain messages to channels"]
 #[commands(nice, bruh, quote)]
 struct TextChannelSend;
 
-#[group]
+#[group("Custom Command config")]
+#[description = "Admin only command that sets custom commands"]
 #[commands(command)]
 struct CustomCommands;
 
@@ -137,6 +157,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }        
     }
 
+    #[help]
+    #[individual_command_tip = "Hi there! \n
+    This is the help for all the bot's commands! Just pass the command name as an argument! \n"]
+    #[lacking_permissions = "Hide"]
+    async fn send_help(
+        ctx: &Context,
+        msg: &Message,
+        args: Args,
+        help_options: &'static HelpOptions,
+        groups: &[&'static CommandGroup],
+        owners: HashSet<UserId>
+    ) -> CommandResult {
+        help_commands::with_embeds(ctx, msg, args, help_options, groups, owners).await
+    }
+
     let framework = StandardFramework::new()
         .configure(|c| c
             .owners(owners)
@@ -150,7 +185,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&TEXTLAST_GROUP)
         .group(&CIPHERS_GROUP)
         .group(&TEXTCHANNELSEND_GROUP)
-        .group(&CUSTOMCOMMANDS_GROUP);
+        .group(&CUSTOMCOMMANDS_GROUP)
+        .help(&SEND_HELP);
 
     let mut client = Client::new(&token)
         .framework(framework)

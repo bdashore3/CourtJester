@@ -6,6 +6,8 @@ use serenity::framework::standard::{
     Args
 };
 
+/// Encodes a message in base64
+/// Usage `b64encode <message>`
 #[command]
 async fn b64encode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let b64_string = base64::encode(args.rest());
@@ -14,6 +16,8 @@ async fn b64encode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
+/// Decodes a message in base64
+/// Usage `b64encode <message>`
 #[command]
 async fn b64decode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let b64_bytes = base64::decode(args.rest()).unwrap();

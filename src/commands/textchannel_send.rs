@@ -11,6 +11,8 @@ use sqlx;
 use crate::ConnectionPool;
 use crate::helpers::*;
 
+/// Sends `nice` to a specified channel. Provide a channel as the first argument to set it
+/// Usage: `nice <message>` or `nice <channel>`
 #[command]
 async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
@@ -58,6 +60,8 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
+/// Sends `bruh` to a specified channel. Provide a channel as the first argument to set it
+/// Usage: `bruh <message>` or `bruh <channel>`
 #[command]
 async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
@@ -106,6 +110,8 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
+/// Quotes yourself or a specified user
+/// Usage: `quote <user mention> <content>` or `quote <content>`
 #[command]
 async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();

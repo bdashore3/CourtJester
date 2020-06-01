@@ -10,6 +10,9 @@ use sqlx;
 use crate::ConnectionPool;
 use uuid::Uuid;
 
+/// Custom commands for your server that output a message
+/// Usage to set: `command set <name> <content to be said>`
+/// Usage to remove: `command remove <name>`
 #[command]
 #[sub_commands(set, remove)]
 #[required_permissions(Administrator)]
