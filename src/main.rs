@@ -23,10 +23,11 @@ use serenity::{
         }
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready, channel::Message},
+    model::{event::ResumedEvent, gateway::Ready},
     model::prelude:: {
         Permissions,
         UserId,
+        Message
     },
     prelude::*
 };
@@ -42,7 +43,6 @@ use commands::{
 use sqlx::PgPool;
 
 use helpers::database_helper::*;
-use crate::TEXT_GROUP as text_group; 
 
 mod commands;
 mod helpers;
@@ -136,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap();
         
         if let Some(x) = command {
-            let _ = msg.channel_id.say(ctx, format!("{}", x.content.unwrap())).await;
+            let _ = msg.channel_id.say(&ctx, format!("{}", x.content.unwrap())).await;
         }
     }
 
@@ -151,7 +151,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
         match error {
             DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
-                let _ = msg.channel_id.say(ctx, "You can't execute this command!");
+                let _ = msg.channel_id.say(&ctx, "You can't execute this command!");
+            },
+            DispatchError::NotEnoughArguments { min, given } => {
+                let _ = msg.channel_id.say(&ctx, format!("Args required: {}. Args given: {}", min, given)).await;
             },
             _ => println!("Unhandled dispatch error"),
         }        
@@ -159,7 +162,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[help]
     #[individual_command_tip = "Hi there! \n
-    This is the help for all the bot's commands! Just pass the command name as an argument! \n"]
+    This is the help for all the bot's commands! Just pass the command/category name as an argument! \n"]
     #[lacking_permissions = "Hide"]
     async fn send_help(
         ctx: &Context,

@@ -20,7 +20,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let test_id = args.single::<String>().unwrap_or_default();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
+        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
 
             let data = ctx.data.read().await;
 
@@ -37,14 +37,14 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 textmod_helper::create_channel_row(ctx, guild_id.0 as i64, channel_id as i64, None, None).await?;
             }
         
-            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
     }
 
     if !args.is_empty() {
-        msg.channel_id.say(ctx, "Please execute this command without any arguments").await?;
+        msg.channel_id.say(&ctx, "Please execute this command without any arguments").await?;
         return Ok(())
     }
 
@@ -55,7 +55,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    ChannelId(channel_num as u64).say(ctx, format!("Nice - {}", msg.author)).await?;
+    ChannelId(channel_num as u64).say(&ctx, format!("Nice - {}", msg.author)).await?;
 
     Ok(())
 }
@@ -69,7 +69,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let test_id = args.single::<String>().unwrap_or_default();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
+        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
 
             let data = ctx.data.read().await;
 
@@ -83,17 +83,17 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 sqlx::query!("UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;
             } else {
-                textmod_helper::create_channel_row(ctx, guild_id.0 as i64, None, channel_id as i64, None).await?;
+                textmod_helper::create_channel_row(&ctx, guild_id.0 as i64, None, channel_id as i64, None).await?;
             }
         
-            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
     }
 
     if !args.is_empty() {
-        msg.channel_id.say(ctx, "Please execute this command without any arguments").await?;
+        msg.channel_id.say(&ctx, "Please execute this command without any arguments").await?;
         return Ok(())
     }
 
@@ -104,8 +104,8 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    msg.channel_id.say(ctx, "***BRUH MOMENT***").await?;
-    ChannelId(channel_num as u64).say(ctx, format!("A bruh moment has been declared by {}", msg.author)).await?;
+    msg.channel_id.say(&ctx, "***BRUH MOMENT***").await?;
+    ChannelId(channel_num as u64).say(&ctx, format!("A bruh moment has been declared by {}", msg.author)).await?;
 
     Ok(())
 }
@@ -120,7 +120,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let test_id = args.single::<String>().unwrap_or_default();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
+        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
 
             let data = ctx.data.read().await;
 
@@ -137,7 +137,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 textmod_helper::create_channel_row(ctx, guild_id.0 as i64, None, channel_id as i64, None).await?;
             }
         
-            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
@@ -148,7 +148,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if args.is_empty() || test_id == "" {
-        msg.channel_id.say(ctx, "Please provide the quote (with author if you are quoting someone else)").await?;
+        msg.channel_id.say(&ctx, "Please provide the quote (with author if you are quoting someone else)").await?;
         return Ok(())
     }
 
@@ -160,10 +160,10 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if self_quote {
-        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.author)).await?;
+        ChannelId(channel_num as u64).say(&ctx, format!("\"{}\" \n - {}", args.rest(), msg.author)).await?;
     }
     else {
-        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.mentions[0])).await?;
+        ChannelId(channel_num as u64).say(&ctx, format!("\"{}\" \n - {}", args.rest(), msg.mentions[0])).await?;
     }
 
     Ok(())
