@@ -10,9 +10,10 @@ use crate::helpers::*;
 /// Outputs a spongebob mock string
 /// Usage: `mock <message>`
 #[command]
+#[min_args(1)]
 pub async fn mock(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let mock_string = textmod_helper::get_mock_string(args.rest());
-    msg.channel_id.say(&ctx.http, mock_string).await?;
+    msg.channel_id.say(&ctx, mock_string).await?;
 
     Ok(())
 }
@@ -26,7 +27,7 @@ pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
     
     let mock_string = textmod_helper::get_mock_string(&input_message[0].content);
 
-    msg.channel_id.say(&ctx.http, mock_string).await?;
+    msg.channel_id.say(&ctx, mock_string).await?;
 
     Ok(())
 }
@@ -34,9 +35,10 @@ pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
 /// Inverts the characters in a string
 /// Usage: `inv <message>`
 #[command]
+#[min_args(1)]
 async fn inv(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let inv_string = textmod_helper::get_inverted_string(args.rest());
-    msg.channel_id.say(&ctx.http, inv_string).await?;
+    msg.channel_id.say(&ctx, inv_string).await?;
 
     Ok(())
 }
@@ -51,7 +53,7 @@ async fn invl(ctx: &Context, msg: &Message) -> CommandResult {
     
     let inv_string = textmod_helper::get_inverted_string(&input_message[0].content);
 
-    msg.channel_id.say(&ctx.http, inv_string).await?;
+    msg.channel_id.say(&ctx, inv_string).await?;
 
     Ok(())
 }
@@ -59,8 +61,9 @@ async fn invl(ctx: &Context, msg: &Message) -> CommandResult {
 /// Converts the provided string to uppercase letters
 /// Usage: `upp <message>`
 #[command]
+#[min_args(1)]
 async fn upp(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    msg.channel_id.say(&ctx.http, args.rest().to_uppercase()).await?;
+    msg.channel_id.say(&ctx, args.rest().to_uppercase()).await?;
 
     Ok(())
 }
@@ -72,7 +75,7 @@ async fn uppl(ctx: &Context, msg: &Message) -> CommandResult {
     })
     .await?;
 
-    msg.channel_id.say(&ctx.http, input_message[0].content.to_uppercase()).await?;
+    msg.channel_id.say(&ctx, input_message[0].content.to_uppercase()).await?;
 
     Ok(())
 }
@@ -80,8 +83,9 @@ async fn uppl(ctx: &Context, msg: &Message) -> CommandResult {
 /// Converts the provided string to lowercase
 /// Usage: `low <message>`
 #[command]
+#[min_args(1)]
 async fn low (ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    msg.channel_id.say(&ctx.http, args.rest().to_lowercase()).await?;
+    msg.channel_id.say(&ctx, args.rest().to_lowercase()).await?;
 
     Ok(())
 }
@@ -93,7 +97,7 @@ async fn lowl(ctx: &Context, msg: &Message) -> CommandResult {
     })
     .await?;
 
-    msg.channel_id.say(&ctx.http, input_message[0].content.to_lowercase()).await?;
+    msg.channel_id.say(&ctx, input_message[0].content.to_lowercase()).await?;
 
     Ok(())
 }
@@ -101,8 +105,9 @@ async fn lowl(ctx: &Context, msg: &Message) -> CommandResult {
 /// Puts a random amount of spaces between each character of the message
 /// Usage: `space <message>`
 #[command]
+#[min_args(1)]
 async fn space(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(args.rest(), false)).await?;
+    msg.channel_id.say(&ctx, textmod_helper::get_spaced_string(args.rest(), false)).await?;
 
     Ok(())
 }
@@ -114,7 +119,7 @@ async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
     })
     .await?;
 
-    msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(&input_message[0].content, false)).await?;
+    msg.channel_id.say(&ctx, textmod_helper::get_spaced_string(&input_message[0].content, false)).await?;
 
     Ok(())
 }
@@ -122,8 +127,9 @@ async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
 /// Similar to space, but puts a larger amount of space between each character
 /// Usage: `biggspace <message>`
 #[command]
+#[min_args(1)]
 async fn biggspace(ctx: &Context, msg: &Message, args: Args) -> CommandResult { 
-    msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(args.rest(), true)).await?;
+    msg.channel_id.say(&ctx, textmod_helper::get_spaced_string(args.rest(), true)).await?;
 
     Ok(()) 
 }
@@ -135,7 +141,7 @@ async fn biggspacel(ctx: &Context, msg: &Message) -> CommandResult {
     })
     .await?;
 
-    msg.channel_id.say(&ctx.http, textmod_helper::get_spaced_string(&input_message[0].content, true)).await?;
+    msg.channel_id.say(&ctx, textmod_helper::get_spaced_string(&input_message[0].content, true)).await?;
 
     Ok(())
 }
