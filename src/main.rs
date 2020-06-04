@@ -23,12 +23,13 @@ use serenity::{
         }
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready},
+    model::{event::ResumedEvent, gateway::Ready, id::GuildId},
     model::prelude:: {
         Permissions,
         UserId,
         Message
     },
+    
     prelude::*
 };
 
@@ -41,8 +42,12 @@ use commands::{
 };
 
 use sqlx::PgPool;
+use dashmap::DashMap;
 
-use helpers::database_helper::*;
+use helpers:: {
+    database_helper,
+    prefix_cache
+};
 
 mod commands;
 mod helpers;
@@ -70,6 +75,12 @@ struct ConnectionPool;
 
 impl TypeMapKey for ConnectionPool {
     type Value = PgPool;
+}
+
+struct PrefixMap;
+
+impl TypeMapKey for PrefixMap { 
+    type Value = Arc<DashMap<i64, String>>;
 }
 
 #[group]
@@ -160,6 +171,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }        
     }
 
+    #[hook]
+    async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
+        let prefix;
+
+        if let Some(id) = msg.guild_id {
+            let data = ctx.data.read().await;
+            let prefixes = data.get::<PrefixMap>().unwrap();
+            let guild_id = msg.guild_id.unwrap().0 as i64;
+
+            prefix = match prefixes.get(&guild_id) {
+                Some(prefix) => prefix.to_string(),
+                None => "~".to_string(),
+            };
+        }
+        else {
+            prefix = "~".to_string();
+        }
+        Some(prefix)
+    }
+
     #[help]
     #[individual_command_tip = "Hi there! \n
     This is the help for all the bot's commands! Just pass the command/category name as an argument! \n"]
@@ -177,11 +208,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let framework = StandardFramework::new()
         .configure(|c| c
+            .dynamic_prefix(dynamic_prefix)
             .owners(owners)
-            .prefix(&creds.default_prefix))
-            .unrecognised_command(unrecognized_command_hook)
-            .on_dispatch_error(dispatch_error)
-            .after(after)
+        )
+
+        .on_dispatch_error(dispatch_error)
+        .unrecognised_command(unrecognized_command_hook)
+        .after(after)
         
         .group(&GENERAL_GROUP)
         .group(&TEXT_GROUP)
@@ -200,8 +233,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let mut data = client.data.write().await;
 
-        let pool = obtain_pool().await?;
+        let pool = database_helper::obtain_pool().await?;
         data.insert::<ConnectionPool>(pool.clone());
+
+        let prefixes = prefix_cache::fetch_prefixes(pool).await?;
+        data.insert::<PrefixMap>(Arc::new(prefixes));
 
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
     }

@@ -1,7 +1,7 @@
-use serenity::prelude::*;
 use serenity::model::prelude::*;
 
 use sqlx;
+use sqlx::PgPool;
 use rand::prelude::*;
 use crate::ConnectionPool;
 
@@ -62,11 +62,8 @@ pub fn get_spaced_string(input: &str, biggspace: bool) -> String {
         }).collect::<String>()
 }
 
-pub async fn create_channel_row(ctx: &Context, guild_id: i64, 
+pub async fn create_channel_row(pool: &PgPool, guild_id: i64, 
     nice_id: impl Into<Option<i64>>, bruh_id: impl Into<Option<i64>>, quote_id: impl Into<Option<i64>>) -> Result<(), Box<dyn std::error::Error>> {
-    let data = ctx.data.read().await;
-
-    let pool = data.get::<ConnectionPool>().unwrap();
 
     sqlx::query!("INSERT INTO text_channels VALUES($1, $2, $3, $4)", guild_id, nice_id.into().unwrap_or(0), bruh_id.into().unwrap_or(0), quote_id.into().unwrap_or(0))
         .execute(pool).await?;
@@ -74,12 +71,9 @@ pub async fn create_channel_row(ctx: &Context, guild_id: i64,
     Ok(())
 }
 
-pub async fn get_channel(ctx: &Context, guild_id: GuildId, channel_type: &str) -> Result<i64, Box<dyn std::error::Error>>{
+pub async fn get_channel(pool: &PgPool, guild_id: GuildId, channel_type: &str) -> Result<i64, Box<dyn std::error::Error>>{
 
     let mut result: i64 = 0;
-    let data = ctx.data.read().await;
-
-    let pool = data.get::<ConnectionPool>().unwrap();
 
     let data = sqlx::query!("SELECT * FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
         .fetch_optional(pool)
