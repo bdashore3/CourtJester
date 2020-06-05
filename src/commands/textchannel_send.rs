@@ -24,7 +24,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let pool = data.get::<ConnectionPool>().unwrap();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, &msg, Permissions::MANAGE_MESSAGES).await {
 
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
                 .fetch_one(pool)
@@ -37,25 +37,25 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 textmod_helper::create_channel_row(pool, guild_id.0 as i64, channel_id as i64, None, None).await?;
             }
         
-            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
     }
 
     if !args.is_empty() {
-        msg.channel_id.say(&ctx, "Please execute this command without any arguments").await?;
+        msg.channel_id.say(ctx, "Please execute this command without any arguments").await?;
         return Ok(())
     }
 
     let channel_num = textmod_helper::get_channel(pool, guild_id, "nice").await?;
 
     if channel_num == 0 {
-        msg.channel_id.say(&ctx, "The Nice channel isn't set! Please specify a channel!").await?;
+        msg.channel_id.say(ctx, "The Nice channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
-    ChannelId(channel_num as u64).say(&ctx, format!("Nice - {}", msg.author)).await?;
+    ChannelId(channel_num as u64).say(ctx, format!("Nice - {}", msg.author)).await?;
 
     Ok(())
 }
@@ -73,7 +73,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let pool = data.get::<ConnectionPool>().unwrap();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
 
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
                 .fetch_one(pool)
@@ -86,26 +86,26 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 textmod_helper::create_channel_row(pool, guild_id.0 as i64, None, channel_id as i64, None).await?;
             }
         
-            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
     }
 
     if !args.is_empty() {
-        msg.channel_id.say(&ctx, "Please execute this command without any arguments").await?;
+        msg.channel_id.say(ctx, "Please execute this command without any arguments").await?;
         return Ok(())
     }
 
     let channel_num = textmod_helper::get_channel(pool, guild_id, "bruh").await?;
 
     if channel_num == 0 {
-        msg.channel_id.say(&ctx, "The Bruh channel isn't set! Please specify a channel!").await?;
+        msg.channel_id.say(ctx, "The Bruh channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
-    msg.channel_id.say(&ctx, "***BRUH MOMENT***").await?;
-    ChannelId(channel_num as u64).say(&ctx, format!("A bruh moment has been declared by {}", msg.author)).await?;
+    msg.channel_id.say(ctx, "***BRUH MOMENT***").await?;
+    ChannelId(channel_num as u64).say(ctx, format!("A bruh moment has been declared by {}", msg.author)).await?;
 
     Ok(())
 }
@@ -124,7 +124,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let pool = data.get::<ConnectionPool>().unwrap();
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(&ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
 
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
             .fetch_one(pool)
@@ -137,7 +137,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 textmod_helper::create_channel_row(pool, guild_id.0 as i64, None, channel_id as i64, None).await?;
             }
         
-            msg.channel_id.say(&ctx, "Channel sucessfully set!").await?;
+            msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
         }
 
         return Ok(())
@@ -148,22 +148,22 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if args.is_empty() || test_id == "" {
-        msg.channel_id.say(&ctx, "Please provide the quote (with author if you are quoting someone else)").await?;
+        msg.channel_id.say(ctx, "Please provide the quote (with author if you are quoting someone else)").await?;
         return Ok(())
     }
 
     let channel_num = textmod_helper::get_channel(pool, guild_id, "quote").await?;
 
     if channel_num == 0 {
-        msg.channel_id.say(&ctx, "The Quote channel isn't set! Please specify a channel!").await?;
+        msg.channel_id.say(ctx, "The Quote channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
     if self_quote {
-        ChannelId(channel_num as u64).say(&ctx, format!("\"{}\" \n - {}", args.rest(), msg.author)).await?;
+        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.author)).await?;
     }
     else {
-        ChannelId(channel_num as u64).say(&ctx, format!("\"{}\" \n - {}", args.rest(), msg.mentions[0])).await?;
+        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.mentions[0])).await?;
     }
 
     Ok(())

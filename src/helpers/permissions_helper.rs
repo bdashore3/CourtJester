@@ -11,7 +11,7 @@ pub async fn check_permission(ctx: &Context, msg: &Message, permission: Permissi
         return true
     }
 
-    let _ = msg.channel_id.say(&ctx, "You can't execute this command!").await;
+    let _ = msg.channel_id.say(ctx, "You can't execute this command!").await;
     return false;
 }
 
@@ -25,6 +25,6 @@ pub async fn check_mentioned_permission(ctx: &Context, msg: &Message, user: User
         return true;
     }
 
-    let _ = msg.channel_id.say(&ctx, "You can't execute this command!").await;
+    let _ = msg.channel_id.say(ctx, "You can't execute this command!").await;
     return false;
 }

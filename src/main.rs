@@ -38,7 +38,7 @@ use commands::{
     textmod::*,
     ciphers::*,
     textchannel_send::*,
-    custom::*
+    config::*
 };
 
 use sqlx::PgPool;
@@ -83,6 +83,12 @@ impl TypeMapKey for PrefixMap {
     type Value = Arc<DashMap<i64, String>>;
 }
 
+struct DefaultPrefix;
+
+impl TypeMapKey for DefaultPrefix {
+    type Value = Arc<String>;
+}
+
 #[group]
 #[help_available(false)]
 #[commands(ping)]
@@ -110,10 +116,10 @@ struct Ciphers;
 #[commands(nice, bruh, quote)]
 struct TextChannelSend;
 
-#[group("Custom Command config")]
-#[description = "Admin only command that sets custom commands"]
-#[commands(command)]
-struct CustomCommands;
+#[group("Bot Configuration")]
+#[description = "Admin/Moderator commands that configure the bot"]
+#[commands(prefix, command)]
+struct Config;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -147,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap();
         
         if let Some(x) = command {
-            let _ = msg.channel_id.say(&ctx, format!("{}", x.content.unwrap())).await;
+            let _ = msg.channel_id.say(ctx, format!("{}", x.content.unwrap())).await;
         }
     }
 
@@ -162,10 +168,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
         match error {
             DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
-                let _ = msg.channel_id.say(&ctx, "You can't execute this command!");
+                let _ = msg.channel_id.say(ctx, "You can't execute this command because you aren't an administrator!");
+            },
+            DispatchError::LackingPermissions(Permissions::MANAGE_MESSAGES) => {
+                let _ = msg.channel_id.say(ctx, "You can't exeucte this command because you aren't a moderator (Manage Messages permission)!");
             },
             DispatchError::NotEnoughArguments { min, given } => {
-                let _ = msg.channel_id.say(&ctx, format!("Args required: {}. Args given: {}", min, given)).await;
+                let _ = msg.channel_id.say(ctx, format!("Args required: {}. Args given: {}", min, given)).await;
             },
             _ => println!("Unhandled dispatch error"),
         }        
@@ -175,18 +184,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
         let prefix;
 
+        let data = ctx.data.read().await;
+        let default_prefix = data.get::<DefaultPrefix>().unwrap();
+
         if let Some(id) = msg.guild_id {
-            let data = ctx.data.read().await;
+
             let prefixes = data.get::<PrefixMap>().unwrap();
+
             let guild_id = msg.guild_id.unwrap().0 as i64;
 
             prefix = match prefixes.get(&guild_id) {
                 Some(prefix) => prefix.to_string(),
-                None => "~".to_string(),
+                None => default_prefix.to_string(),
             };
         }
         else {
-            prefix = "~".to_string();
+            prefix = default_prefix.to_string();
         }
         Some(prefix)
     }
@@ -221,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&TEXTLAST_GROUP)
         .group(&CIPHERS_GROUP)
         .group(&TEXTCHANNELSEND_GROUP)
-        .group(&CUSTOMCOMMANDS_GROUP)
+        .group(&CONFIG_GROUP)
         .help(&SEND_HELP);
 
     let mut client = Client::new(&token)
@@ -233,13 +246,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let mut data = client.data.write().await;
 
-        let pool = database_helper::obtain_pool().await?;
+        let pool = database_helper::obtain_pool(creds.db_connection).await?;
         data.insert::<ConnectionPool>(pool.clone());
 
-        let prefixes = prefix_cache::fetch_prefixes(pool).await?;
+        let prefixes = prefix_cache::fetch_prefixes(&pool).await?;
         data.insert::<PrefixMap>(Arc::new(prefixes));
 
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
+
+        data.insert::<DefaultPrefix>(Arc::new(creds.default_prefix));
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {
@@ -251,7 +266,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         Err(why) => panic!("Couldn't get application info: {:?}", why),
     };
-
 
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
