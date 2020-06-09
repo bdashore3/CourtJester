@@ -59,8 +59,10 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         sqlx::query!("UPDATE guild_info SET prefix = null WHERE guild_id = $1", guild_id)
             .execute(pool).await?;
     }
-    sqlx::query!("UPDATE guild_info SET prefix = $1 WHERE guild_id = $2", prefix.to_string(), guild_id)
-        .execute(pool).await?;
+    else {
+        sqlx::query!("UPDATE guild_info SET prefix = $1 WHERE guild_id = $2", prefix.to_string(), guild_id)
+            .execute(pool).await?;
+    }
 
     msg.channel_id.say(ctx, format!("My new prefix is `{}` for `{}`!", prefix, guild_name)).await?;
 
