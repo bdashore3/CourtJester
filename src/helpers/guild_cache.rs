@@ -31,7 +31,6 @@ async fn add_to_data(pool: &PgPool, prefix: String, guild_id: i64) -> Result<Gui
         .fetch_optional(pool).await?;
 
     for i in data {
-        println!("Adding: {:?}", i.name);
         command_map.insert(i.name.unwrap(), i.content.unwrap());
     }
 
