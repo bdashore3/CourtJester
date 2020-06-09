@@ -1,3 +1,6 @@
+mod commands;
+mod helpers;
+
 use std::{
     env,
     collections::HashSet,
@@ -23,7 +26,7 @@ use serenity::{
         }
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready, id::GuildId},
+    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild},
     model::prelude:: {
         Permissions,
         UserId,
@@ -46,29 +49,15 @@ use dashmap::DashMap;
 
 use helpers:: {
     database_helper,
-    prefix_cache
+    guild_cache,
+    guild_cache::GuildData
 };
 
-mod commands;
-mod helpers;
-
+// All command context data structures
 struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<Mutex<ShardManager>>;
-}
-
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn ready(&self, _: Context, ready: Ready) {
-        println!("Connected as {}", ready.user.name);
-    }
-
-    async fn resume(&self, _: Context, _: ResumedEvent) {
-        println!("Resumed");
-    }
 }
 
 struct ConnectionPool;
@@ -77,10 +66,10 @@ impl TypeMapKey for ConnectionPool {
     type Value = PgPool;
 }
 
-struct PrefixMap;
+struct GuildMap;
 
-impl TypeMapKey for PrefixMap { 
-    type Value = Arc<DashMap<i64, String>>;
+impl TypeMapKey for GuildMap { 
+    type Value = Arc<DashMap<i64, GuildData>>;
 }
 
 struct DefaultPrefix;
@@ -89,6 +78,7 @@ impl TypeMapKey for DefaultPrefix {
     type Value = Arc<String>;
 }
 
+// All command groups
 #[group]
 #[help_available(false)]
 #[commands(ping)]
@@ -118,8 +108,55 @@ struct TextChannelSend;
 
 #[group("Bot Configuration")]
 #[description = "Admin/Moderator commands that configure the bot"]
-#[commands(prefix, command)]
+#[commands(prefix, command, restore)]
 struct Config;
+
+// Event handler for when the bot starts
+struct Handler;
+
+#[async_trait]
+impl EventHandler for Handler {
+    async fn ready(&self, _: Context, ready: Ready) {
+        println!("Connected as {}", ready.user.name);
+    }
+
+    async fn resume(&self, _: Context, _: ResumedEvent) {
+        println!("Resumed");
+    }
+
+    async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
+
+        let data = ctx.data.read().await;
+        let pool = data.get::<ConnectionPool>().unwrap();
+        let guild_id = guild.id.0 as i64;
+        let guild_map = data.get::<GuildMap>().unwrap();
+
+        if is_new {
+            sqlx::query!("INSERT INTO guild_info VALUES($1, null)", guild_id)
+                .execute(pool).await.unwrap();
+            
+            let new_guild_data = GuildData {
+                prefix: String::from(""),
+                commands: DashMap::new()
+            };
+
+            guild_map.insert(guild_id, new_guild_data);
+        }
+    }
+
+    async fn guild_delete(&self, ctx: Context, incomplete: PartialGuild, _full: Option<Guild>) {
+        
+        let data = ctx.data.read().await;
+        let pool = data.get::<ConnectionPool>().unwrap();
+        let guild_id = incomplete.id.0 as i64;
+        let guild_map = data.get::<GuildMap>().unwrap();
+
+        sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id)
+            .execute(pool).await.unwrap();
+        
+        guild_map.remove(&guild_id);
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -139,24 +176,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
 
+    // If there's no command, check in the custom commands database
     #[hook]
     async fn unrecognized_command_hook(ctx: &Context, msg: &Message, command_name: &str) {
         let data = ctx.data.read().await;
 
         let pool = data.get::<ConnectionPool>().unwrap();
     
-        let guild_id = msg.guild_id.unwrap();
+        let guild_id = msg.guild_id.unwrap().0 as i64;
+        let guild_map = data.get::<GuildMap>().unwrap();
+        let guild_data = guild_map.get(&guild_id).unwrap();
 
-        let command = sqlx::query!("SELECT * FROM commands WHERE guild_id = $1 AND name = $2", guild_id.0 as i64, command_name)
-            .fetch_optional(pool)
-            .await
-            .unwrap();
-        
-        if let Some(x) = command {
-            let _ = msg.channel_id.say(ctx, format!("{}", x.content.unwrap())).await;
+        if !guild_data.commands.contains_key(command_name) {
+            return
         }
+
+        let command_content = guild_data.commands.get(command_name).unwrap();
+        let _ = msg.channel_id.say(ctx, format!("{}", *command_content)).await;
+        
     }
 
+    // After a command is executed, goto here
     #[hook]
     async fn after(_: &Context, _: &Message, cmd_name: &str, error: Result<(), CommandError>) {
         if let Err(why) = error {
@@ -164,22 +204,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // On a dispatch error, go to this function
     #[hook]
     async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
         match error {
             DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
-                let _ = msg.channel_id.say(ctx, "You can't execute this command because you aren't an administrator!");
+                let _ = msg.channel_id.say(ctx, 
+                    "You can't execute this command because you aren't an administrator!").await;
             },
             DispatchError::LackingPermissions(Permissions::MANAGE_MESSAGES) => {
-                let _ = msg.channel_id.say(ctx, "You can't exeucte this command because you aren't a moderator (Manage Messages permission)!");
+                let _ = msg.channel_id.say(ctx, 
+                    "You can't execute this command because you aren't a moderator! (Manage Messages permission)").await;
             },
             DispatchError::NotEnoughArguments { min, given } => {
                 let _ = msg.channel_id.say(ctx, format!("Args required: {}. Args given: {}", min, given)).await;
             },
-            _ => println!("Unhandled dispatch error"),
+            DispatchError::OnlyForOwners => {
+                let _ = msg.channel_id.say(ctx, "This is a bot dev only command!").await;
+            }
+            _ => println!("Unhandled dispatch error: {:?}", error),
         }        
     }
 
+    /*
+     * The heart of custom prefixes
+     * If the guild has a prefix in the Dashmap, use that prefix
+     * Otherwise, use the default prefix from credentials_helper
+     */
     #[hook]
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
         let prefix;
@@ -189,13 +240,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if let Some(id) = msg.guild_id {
 
-            let prefixes = data.get::<PrefixMap>().unwrap();
-
+            let guild_map = data.get::<GuildMap>().unwrap();
             let guild_id = msg.guild_id.unwrap().0 as i64;
+            let guild_data = guild_map.get(&guild_id).unwrap();
 
-            prefix = match prefixes.get(&guild_id) {
-                Some(prefix) => prefix.to_string(),
-                None => default_prefix.to_string(),
+            prefix = match guild_data.prefix.as_str() {
+                "" => default_prefix.to_string(),
+                _ => guild_data.prefix.to_string()
             };
         }
         else {
@@ -204,10 +255,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(prefix)
     }
 
+    // Heart of the help command system
     #[help]
     #[individual_command_tip = "Hi there! \n
     This is the help for all the bot's commands! Just pass the command/category name as an argument! \n"]
     #[lacking_permissions = "Hide"]
+    #[lacking_ownership = "Hide"]
     async fn send_help(
         ctx: &Context,
         msg: &Message,
@@ -219,6 +272,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         help_commands::with_embeds(ctx, msg, args, help_options, groups, owners).await
     }
 
+    // Link everything together!
     let framework = StandardFramework::new()
         .configure(|c| c
             .dynamic_prefix(dynamic_prefix)
@@ -244,13 +298,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Err creating client");
 
     {
+        // Insert all structures into ctx data
         let mut data = client.data.write().await;
 
         let pool = database_helper::obtain_pool(creds.db_connection).await?;
         data.insert::<ConnectionPool>(pool.clone());
 
-        let prefixes = prefix_cache::fetch_prefixes(&pool).await?;
-        data.insert::<PrefixMap>(Arc::new(prefixes));
+        let guild_data = guild_cache::fetch_guild_data(&pool).await?;
+
+        data.insert::<GuildMap>(Arc::new(guild_data));
 
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
 
@@ -267,6 +323,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(why) => panic!("Couldn't get application info: {:?}", why),
     };
 
+    // Start up the bot! If there's an error, let the user know
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
     }
