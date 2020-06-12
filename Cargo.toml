@@ -1,0 +1,18 @@
+[package]
+name = "courtjester_twilight"
+version = "0.1.0"
+authors = ["kingbri <bdashore3@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio  = { version = "0.2", features = ["macros"] }
+twilight = { git = "https://github.com/twilight-rs/twilight" }
+futures = "0.3.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.7.3"
+base64 = "0.12.1"
+sqlx = { version = "0.3", default-features = false, features = [ "runtime-tokio", "macros", "postgres", "uuid" ] }
+uuid = { version = "0.8", features = ["v4"] }
