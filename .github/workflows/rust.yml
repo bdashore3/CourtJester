@@ -1,0 +1,40 @@
+name: Rust
+
+on:
+  push:
+    branches: [ twilight ]
+  pull_request:
+    branches: [ twilight ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build  --release --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Remove old binary
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: rm -rf ~/recieved/courtjester_twilight
+    - name: Push new binary
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        source: target/release/courtjester_twilight
+        target: ~/recieved
+        strip_components: 2
