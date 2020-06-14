@@ -1,19 +1,39 @@
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io::BufReader;
+use crate::{
+    structures::CommandResult,
+    structures::Context,
+    helpers::command_utils,
+    helpers::string_renderer
+};
+use twilight::model::channel::{GuildChannel, message::Message};
+use rand::prelude::*;
 
-#[derive(Serialize, Deserialize)]
-pub struct Credentials {
-    pub bot_token: String,
-    pub default_prefix: String,
-    pub db_connection: String
-}
+pub async fn mock(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
+    let mut input = "".to_string();
 
-pub fn read_creds(path: String) -> Result<Credentials, Box<dyn std::error::Error + 'static>> {
-    let file = fs::File::open(path)?;
-    let reader = BufReader::new(file);
+    if last {
+        let wrapped_channel = ctx.cache.guild_channel(msg.channel_id).await?.unwrap();
 
-    let info: Credentials = serde_json::from_reader(reader).unwrap();
+        if let GuildChannel::Text(ref channel) = *wrapped_channel {
+            println!("called!");
+            let last_message = channel.last_message_id.unwrap();
+            input = last_message.0.to_string();
+        }
+    } else {
+        input = string_renderer::join_string(&msg.content);
+    }
 
-    Ok(info)
+    let mut mock_string = String::with_capacity(input.len());
+
+    for x in input.chars() {
+        if random() {
+            mock_string.push(x.to_uppercase().collect::<Vec<_>>()[0]);
+        }
+        else {
+            mock_string.push(x.to_lowercase().collect::<Vec<_>>()[0]);
+        }
+    }
+
+    command_utils::send_message(ctx.http, msg.channel_id, &mock_string).await?;
+
+    Ok(())
 }
