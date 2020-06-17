@@ -7,7 +7,8 @@ use crate::structures::{
 };
 use crate::commands::{
     textmod::*,
-    textchannel_send::*
+    textchannel_send::*,
+    ciphers::*
 };
 
 pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
@@ -21,6 +22,8 @@ pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
         "inv" => inv(ctx, msg, false).await?,
         "nice" => nice(ctx, msg).await?,
         "bruh" => bruh(ctx, msg).await?,
+        "b64encode" => encode_b64(ctx, msg).await?,
+        "b64decode" => decode_b64(ctx, msg).await?,
         _ => println!("No such command!"),
     };
 
