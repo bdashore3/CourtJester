@@ -11,3 +11,7 @@ pub fn join_string(message_string: &str) -> String {
     words.remove(0);
     words.join(" ")
 }
+
+pub fn get_command_length(message_string: &str) -> usize {
+    get_split_string(message_string).len()
+}

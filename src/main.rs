@@ -67,6 +67,10 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
             println!("Connected on shard {}", id);
         }
         (_, Event::MessageCreate(msg)) => {
+            if msg.author.bot {
+                return Ok(())
+            }
+            
             let default_prefix = ctx.data.get("default_prefix").unwrap();
 
             if &msg.0.content[..1] == default_prefix.as_str() {

@@ -6,7 +6,8 @@ use crate::structures::{
     Context,
 };
 use crate::commands::{
-    textmod::*
+    textmod::*,
+    textchannel_send::*
 };
 
 pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
@@ -18,6 +19,8 @@ pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
         "upp" => upp(ctx, msg, false).await?,
         "low" => low(ctx, msg, false).await?,
         "inv" => inv(ctx, msg, false).await?,
+        "nice" => nice(ctx, msg).await?,
+        "bruh" => bruh(ctx, msg).await?,
         _ => println!("No such command!"),
     };
 
