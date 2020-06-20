@@ -7,7 +7,7 @@ use crate::{
 use twilight::model::channel::{GuildChannel, message::Message};
 use rand::prelude::*;
 
-pub async fn mock(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
+pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
     let mut input = "".to_string();
 
     if last {
@@ -33,12 +33,12 @@ pub async fn mock(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult 
         }
     }
 
-    send_message(ctx.http, msg.channel_id, &mock_string).await?;
+    send_message(ctx.http, msg.channel_id, mock_string).await?;
 
     Ok(())
 }
 
-pub async fn inv(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
+pub async fn inv(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
     let input = string_renderer::join_string(&msg.content);
     let mut inv_string = String::with_capacity(input.len());
 
@@ -49,30 +49,33 @@ pub async fn inv(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
         else if x.is_lowercase() {
             inv_string.push(x.to_uppercase().collect::<Vec<_>>()[0]);
         }
+        else {
+            inv_string.push(x)
+        }
     }
 
-    send_message(ctx.http, msg.channel_id, &inv_string).await?;
+    send_message(ctx.http, msg.channel_id, inv_string).await?;
 
     Ok(())
 }
 
-pub async fn upp(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
+pub async fn upp(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
     let upp_string = string_renderer::join_string(&msg.content).to_uppercase();
 
-    send_message(ctx.http, msg.channel_id, &upp_string).await?;
+    send_message(ctx.http, msg.channel_id, upp_string).await?;
 
     Ok(())
 }
 
-pub async fn low(ctx: &Context<'_>, msg: Message, last: bool) -> CommandResult {
+pub async fn low(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
     let low_string = string_renderer::join_string(&msg.content).to_lowercase();
 
-    send_message(ctx.http, msg.channel_id, &low_string).await?;
+    send_message(ctx.http, msg.channel_id, low_string).await?;
 
     Ok(())
 }
 
-pub async fn space(ctx: &Context<'_>, msg: Message, last: bool, biggspace: bool) -> CommandResult {
+pub async fn space(ctx: &Context<'_>, msg: &Message, last: bool, biggspace: bool) -> CommandResult {
     let input = string_renderer::join_string(&msg.content);
     let pass_string: String = input.chars().filter(|c| !c.is_whitespace()).collect();
 
@@ -96,7 +99,7 @@ pub async fn space(ctx: &Context<'_>, msg: Message, last: bool, biggspace: bool)
             }
         }).collect::<String>();
     
-    send_message(ctx.http, msg.channel_id, &output).await?;
+    send_message(ctx.http, msg.channel_id, output).await?;
 
     Ok(())
 }

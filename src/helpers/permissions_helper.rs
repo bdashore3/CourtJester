@@ -5,20 +5,12 @@ use crate::{
 
 use twilight::model::{
     channel::message::Message,
-    guild::Permissions
+    guild::Permissions, id::{UserId, GuildId}
 };
 
 pub async fn check_permission(ctx: &Context<'_>, msg: &Message, permission: Permissions) -> bool {
-    let member = ctx.cache.member(msg.guild_id.unwrap(), msg.author.id).await.unwrap().unwrap();
 
-    let mut permissions = Permissions::empty();
-
-    for role_id in &member.roles {
-        let role = ctx.cache.role(*role_id).await.unwrap().unwrap();
-
-        permissions |= role.permissions;
-    }
-
+    let permissions = compile_permissions(ctx, msg.guild_id.unwrap(), msg.author.id).await.unwrap();
     if permissions.contains(permission) {
         return true
     }
@@ -33,4 +25,24 @@ pub async fn check_permission(ctx: &Context<'_>, msg: &Message, permission: Perm
     };
 
     false
+}
+
+pub async fn compile_permissions(ctx: &Context<'_>, guild_id: GuildId, user_id: UserId) -> Result<Permissions, Box<dyn std::error::Error>> {
+    let member = ctx.cache.member(guild_id, user_id).await.unwrap().unwrap();
+
+    let guild = ctx.cache.guild(guild_id).await?.unwrap();
+
+    let mut permissions = Permissions::empty();
+
+    if user_id == guild.owner_id {
+        permissions = Permissions::all();
+    } else {
+        for role_id in &member.roles {
+            let role = ctx.cache.role(*role_id).await?.unwrap();
+    
+            permissions |= role.permissions;
+        }
+    }
+
+    Ok(permissions)
 }

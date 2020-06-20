@@ -1,9 +1,14 @@
 fn get_split_string(message_string: &str) -> Vec<&str> {
-    message_string[1..].split_whitespace().collect::<Vec<&str>>()
+    message_string.split_whitespace().collect::<Vec<&str>>()
 }
 
 pub fn get_message_word(message_string: &str, index: usize) -> &str {
     get_split_string(message_string)[index]
+}
+
+pub fn get_command(message_string: &str, prefix_length: usize) -> &str {
+    let command = get_split_string(message_string)[0];
+    &command[prefix_length..]
 }
 
 pub fn join_string(message_string: &str) -> String {

@@ -10,7 +10,7 @@ use twilight::{
     builders::embed::EmbedBuilder
 };
 
-pub async fn encode_b64(ctx: &Context<'_>, msg: Message) -> CommandResult {
+pub async fn encode_b64(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if string_renderer::get_command_length(&msg.content) < 2 {
         send_message(ctx.http, msg.channel_id, "Please provide a message to encode!").await?;
         return Ok(())
@@ -26,7 +26,7 @@ pub async fn encode_b64(ctx: &Context<'_>, msg: Message) -> CommandResult {
     Ok(())
 }
 
-pub async fn decode_b64(ctx: &Context<'_>, msg: Message) -> CommandResult {
+pub async fn decode_b64(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if string_renderer::get_command_length(&msg.content) < 2 {
         send_message(ctx.http, msg.channel_id, "Please provide a message to decode!").await?;
         return Ok(())

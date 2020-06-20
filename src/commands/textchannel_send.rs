@@ -17,7 +17,7 @@ use twilight::{
 use sqlx;
 use sqlx::PgPool;
 
-pub async fn nice(ctx: &Context<'_>, msg: Message) -> CommandResult {
+pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
     
@@ -33,7 +33,7 @@ pub async fn nice(ctx: &Context<'_>, msg: Message) -> CommandResult {
     }
 
     if channel_tuple.1 {
-        if permissions_helper::check_permission(ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
                 .fetch_one(ctx.pool)
@@ -73,7 +73,7 @@ pub async fn nice(ctx: &Context<'_>, msg: Message) -> CommandResult {
     Ok(())
 }
 
-pub async fn bruh(ctx: &Context<'_>, msg: Message) -> CommandResult {
+pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
     
@@ -89,7 +89,7 @@ pub async fn bruh(ctx: &Context<'_>, msg: Message) -> CommandResult {
     }
 
     if channel_tuple.1 {
-        if permissions_helper::check_permission(ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
                 .fetch_one(ctx.pool)

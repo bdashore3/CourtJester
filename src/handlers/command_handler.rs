@@ -3,16 +3,17 @@ use crate::helpers::string_renderer;
 use crate::helpers::command_utils;
 use crate::structures::{
     CommandResult,
-    Context,
+    Context
 };
 use crate::commands::{
     textmod::*,
     textchannel_send::*,
-    ciphers::*
+    ciphers::*,
+    config::*
 };
 
-pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
-    let command = string_renderer::get_message_word(&msg.content, 0);
+pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize) -> CommandResult {
+    let command = string_renderer::get_command(&msg.content, prefix_len);
     match command {
         "ping" => command_utils::send_message(ctx.http, msg.channel_id, "Pong!").await?,
         "mock" => mock(ctx, msg, false).await?,
@@ -24,6 +25,7 @@ pub async fn handle_command(msg: Message, ctx: &Context<'_>) -> CommandResult {
         "bruh" => bruh(ctx, msg).await?,
         "b64encode" => encode_b64(ctx, msg).await?,
         "b64decode" => decode_b64(ctx, msg).await?,
+        "prefix" => handle_prefix(ctx, msg).await?,
         _ => println!("No such command!"),
     };
 

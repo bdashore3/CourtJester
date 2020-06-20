@@ -3,8 +3,8 @@ use twilight::{
     model::{channel::embed::Embed, id::{GuildId, ChannelId, MessageId}}
 };
 
-pub async fn send_message(http: &Client, channel_id: ChannelId, content: &str) -> Result<(), Box<dyn std::error::Error>> {
-    http.create_message(channel_id).content(format!("{}", content))?.await?;
+pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
+    http.create_message(channel_id).content(message.into())?.await?;
 
     Ok(())
 }
@@ -24,7 +24,7 @@ pub fn get_raw_id(given_id: &str, mention_type: &str) -> Result<u64, std::num::P
             }
         },
         "user" => {
-            if &given_id[..3] == "<@!" {
+            if &given_id[..3] == "<@!" && &given_id[..given_id.len() - 1] == ">" {
                 match given_id[3 .. given_id.len() - 1].parse::<u64>() {
                     Ok(i) => i,
                     Err(e) => return Err(e)
