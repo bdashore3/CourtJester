@@ -34,6 +34,8 @@ use crate::commands::config::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    pretty_env_logger::init();
+
     let args: Vec<String> = env::args().collect();
     let mut data: HashMap<String, String> = HashMap::new();
     let creds = credentials_helper::read_creds(args[1].to_string()).unwrap();
