@@ -56,3 +56,59 @@ pub async fn get_prefix(pool: &PgPool, guild_id: i64, default_prefix: String) ->
 
     Ok(cur_prefix)
 }
+
+
+pub async fn dispatch_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+    if string_renderer::get_command_length(&msg.content) < 2 {
+        return Ok(())
+    }
+
+    let subcommand = string_renderer::get_message_word(&msg.content, 1);
+
+    match subcommand {
+        "set" => {
+            if !permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
+                return Ok(())
+            }
+            set_custom_command(ctx, msg).await?;
+        },
+        "remove" => {
+            if !permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
+                return Ok(())
+            }
+            remove_custom_command(ctx, msg).await?;
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+pub async fn set_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+    let command_name = string_renderer::get_message_word(&msg.content, 2);
+    let command_message = string_renderer::join_string(&msg.content, 2);
+
+    sqlx::query!("INSERT INTO commands(guild_id, name, content) 
+            VALUES($1, $2, $3) 
+            ON CONFLICT (guild_id, name) 
+            DO UPDATE
+            SET content = EXCLUDED.content", 
+            msg.guild_id.unwrap().0 as i64, command_name, command_message)
+        .execute(ctx.pool).await?;
+
+    send_message(ctx.http, msg.channel_id, format!("Command `{}` sucessfully set!", command_name)).await?;
+
+    Ok(())
+}
+
+pub async fn remove_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+    let command_name = string_renderer::get_message_word(&msg.content, 2);
+
+    sqlx::query!("DELETE FROM commands WHERE guild_id = $1 AND name = $2", msg.guild_id.unwrap().0 as i64, command_name)
+        .execute(ctx.pool)
+        .await?;
+
+    send_message(ctx.http, msg.channel_id, format!("Command `{}` sucessfully deleted!", command_name)).await?;
+
+    Ok(())
+} 

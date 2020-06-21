@@ -160,7 +160,7 @@ async fn get_send_channel(pool: &PgPool, guild_id: GuildId, channel_type: &str) 
 
     let mut result: i64 = 0;
 
-    let data = sqlx::query!("SELECT * FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
+    let data = sqlx::query!("SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
         .fetch_optional(pool)
         .await?;
     

@@ -16,7 +16,7 @@ pub async fn encode_b64(ctx: &Context<'_>, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let b64_string = base64::encode(string_renderer::join_string(&msg.content));
+    let b64_string = base64::encode(string_renderer::join_string(&msg.content, 1));
 
     let mut eb = EmbedBuilder::new();
     eb = eb.title("Base64 Engine");
@@ -32,7 +32,7 @@ pub async fn decode_b64(ctx: &Context<'_>, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let b64_bytes = match base64::decode(string_renderer::join_string(&msg.content)) {
+     let b64_bytes = match base64::decode(string_renderer::join_string(&msg.content, 1)) {
         Ok(bytes) => bytes,
         Err(_) => {
             send_message(ctx.http, msg.channel_id, "Please provide a base64 string!").await?;

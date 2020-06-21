@@ -11,9 +11,10 @@ pub fn get_command(message_string: &str, prefix_length: usize) -> &str {
     &command[prefix_length..]
 }
 
-pub fn join_string(message_string: &str) -> String {
+pub fn join_string(message_string: &str, end_index: usize) -> String {
     let mut words = get_split_string(message_string);
     words.remove(0);
+    words.drain(0.. end_index);
     words.join(" ")
 }
 

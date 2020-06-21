@@ -4,13 +4,18 @@ mod structures;
 mod commands;
 
 use twilight::{
-    gateway::{Cluster, ClusterConfig, Event},
+    gateway::{
+        Cluster, 
+        ClusterConfig, 
+        Event, 
+        cluster::config::ShardScheme
+    },
     http::Client as HttpClient,
     cache::{
         twilight_cache_inmemory::config::{InMemoryConfigBuilder, EventType},
         InMemoryCache
     }, 
-    model::id::GuildId
+    model::{gateway::GatewayIntents, id::GuildId}
 };
 use futures::StreamExt;
 use std::{env, error::Error};
@@ -33,25 +38,41 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut data: HashMap<String, String> = HashMap::new();
     let creds = credentials_helper::read_creds(args[1].to_string()).unwrap();
 
-    let http = HttpClient::new(&creds.bot_token);
-
-    let cache_config = InMemoryConfigBuilder::new()
-        .event_types(
-        EventType::MESSAGE_CREATE
-            | EventType::GUILD_CREATE
-        )
-        .build();
-    let cache = InMemoryCache::from(cache_config);
-
     let pool = database_helper::obtain_pool(creds.db_connection).await?;
     data.insert("default_prefix".to_string(), creds.default_prefix);
 
     let guild_set: HashSet<GuildId> = HashSet::new();
     let guild_rwlock = RwLock::new(guild_set);
 
-    let cluster_config = ClusterConfig::builder(&creds.bot_token).build();
-    let cluster = Cluster::new(cluster_config);
-    cluster.up().await?;
+    let scheme = ShardScheme::Auto;
+
+    let config = ClusterConfig::builder(&creds.bot_token)
+        .shard_scheme(scheme)
+        .intents(Some(
+            GatewayIntents::GUILDS
+                | GatewayIntents::GUILD_MESSAGES
+                | GatewayIntents::GUILD_MEMBERS
+                | GatewayIntents::GUILD_PRESENCES,
+        ))
+        .build();
+
+    // Start up the cluster
+    let cluster = Cluster::new(config).await?;
+
+    let cluster_spawn = cluster.clone();
+
+    tokio::spawn(async move {
+        cluster_spawn.up().await;
+    });
+
+    let http = HttpClient::new(&creds.bot_token);
+    let cache_config = InMemoryConfigBuilder::new()
+        .event_types(
+            EventType::MESSAGE_CREATE
+                | EventType::GUILD_CREATE,
+        )
+        .build();
+    let cache = InMemoryCache::from(cache_config);
 
     let mut events = cluster.events().await;
 
@@ -74,8 +95,7 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
         (id, Event::Ready(info)) => {
             let mut guild_set = ctx.guild_set.write().await;
             guild_set.extend(info.guilds.keys());
-            println!("Guild Set on ready: {:?}", guild_set.clone());
-            println!("Connected on shard {}", id);
+            println!("Connected to Discord on shard {}", id);
         },
         (_, Event::MessageCreate(msg)) => {
             if msg.author.bot {
@@ -94,7 +114,6 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
         },
         (_, Event::GuildCreate(guild)) => {
             let guild_set = ctx.guild_set.read().await;
-            println!("guild set on call: {:?}", guild_set.clone());
             if !guild_set.contains(&guild.id) {
                 sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild.id.0 as i64)
                     .execute(ctx.pool).await.unwrap();

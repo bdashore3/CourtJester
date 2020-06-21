@@ -19,7 +19,7 @@ pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult
             input = last_message.0.to_string();
         }
     } else {
-        input = string_renderer::join_string(&msg.content);
+        input = string_renderer::join_string(&msg.content, 1);
     }
 
     let mut mock_string = String::with_capacity(input.len());
@@ -39,7 +39,7 @@ pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult
 }
 
 pub async fn inv(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let input = string_renderer::join_string(&msg.content);
+    let input = string_renderer::join_string(&msg.content, 1);
     let mut inv_string = String::with_capacity(input.len());
 
     for x in input.chars() {
@@ -60,7 +60,7 @@ pub async fn inv(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn upp(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let upp_string = string_renderer::join_string(&msg.content).to_uppercase();
+    let upp_string = string_renderer::join_string(&msg.content, 1).to_uppercase();
 
     send_message(ctx.http, msg.channel_id, upp_string).await?;
 
@@ -68,7 +68,7 @@ pub async fn upp(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn low(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let low_string = string_renderer::join_string(&msg.content).to_lowercase();
+    let low_string = string_renderer::join_string(&msg.content, 1).to_lowercase();
 
     send_message(ctx.http, msg.channel_id, low_string).await?;
 
@@ -76,7 +76,7 @@ pub async fn low(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn space(ctx: &Context<'_>, msg: &Message, last: bool, biggspace: bool) -> CommandResult {
-    let input = string_renderer::join_string(&msg.content);
+    let input = string_renderer::join_string(&msg.content, 1);
     let pass_string: String = input.chars().filter(|c| !c.is_whitespace()).collect();
 
     let output = pass_string.split("").map(|x|
