@@ -82,7 +82,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     while let Some(event) = events.next().await {
         cache.update(&event.1).await.expect("Error in caching data!");
-
         match handle_event(event, &ctx).await {
             Ok(_) => (),
             Err(why) => println!("{}", why),

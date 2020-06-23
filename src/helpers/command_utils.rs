@@ -1,7 +1,11 @@
 use twilight::{
     http::Client,
-    model::{channel::embed::Embed, id::{GuildId, ChannelId, MessageId}}
+    model::{
+        channel::{Message, embed::Embed}, 
+        id::{GuildId, ChannelId, MessageId}
+    }, 
 };
+use crate::structures::Context;
 
 pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
     http.create_message(channel_id).content(message.into())?.await?;
@@ -45,4 +49,15 @@ pub fn get_raw_id(given_id: &str, mention_type: &str) -> Result<u64, std::num::P
 
 pub fn get_message_url(guild_id: GuildId, channel_id: ChannelId, message_id: MessageId) -> String {
     format!("https://discordapp.com/channels/{}/{}/{}", guild_id.0, channel_id.0, message_id.0)
+}
+
+pub async fn get_last_message(ctx: &Context<'_>, channel_id: ChannelId, message_id: MessageId) -> Result<Message, Box<dyn std::error::Error>> {
+    let mut messages = ctx.http
+            .channel_messages(channel_id)
+            .before(message_id)
+            .limit(2)?
+            .await?;
+    let last_message = messages.remove(0);
+
+    Ok(last_message)
 }

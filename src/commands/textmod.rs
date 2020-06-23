@@ -4,23 +4,25 @@ use crate::{
     helpers::command_utils::*,
     helpers::string_renderer
 };
-use twilight::model::channel::{GuildChannel, message::Message};
+use twilight::model::{
+    id::{MessageId, ChannelId}, 
+    channel::message::Message
+};
 use rand::prelude::*;
 
-pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let mut input = "".to_string();
-
+pub async fn get_input_string(ctx: &Context<'_>, content: &str, 
+        channel_id: ChannelId, message_id: MessageId, last: bool) -> Result<String, Box<dyn std::error::Error>> {
     if last {
-        let wrapped_channel = ctx.cache.guild_channel(msg.channel_id).await?.unwrap();
-
-        if let GuildChannel::Text(ref channel) = *wrapped_channel {
-            println!("called!");
-            let last_message = channel.last_message_id.unwrap();
-            input = last_message.0.to_string();
-        }
+        let last_message = get_last_message(ctx, channel_id, message_id).await?;
+        return Ok(last_message.content)
     } else {
-        input = string_renderer::join_string(&msg.content, 1);
+        let input = string_renderer::join_string(content, 1);
+        return Ok(input)
     }
+}
+
+pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
+    let input = get_input_string(ctx, &msg.content, msg.channel_id, msg.id, last).await?;
 
     let mut mock_string = String::with_capacity(input.len());
 
@@ -39,7 +41,7 @@ pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult
 }
 
 pub async fn inv(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let input = string_renderer::join_string(&msg.content, 1);
+    let input = get_input_string(ctx, &msg.content, msg.channel_id, msg.id, last).await?;
     let mut inv_string = String::with_capacity(input.len());
 
     for x in input.chars() {
@@ -60,7 +62,7 @@ pub async fn inv(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn upp(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let upp_string = string_renderer::join_string(&msg.content, 1).to_uppercase();
+    let upp_string = get_input_string(ctx, &msg.content, msg.channel_id, msg.id, last).await?.to_uppercase();
 
     send_message(ctx.http, msg.channel_id, upp_string).await?;
 
@@ -68,7 +70,7 @@ pub async fn upp(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn low(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult {
-    let low_string = string_renderer::join_string(&msg.content, 1).to_lowercase();
+    let low_string = get_input_string(ctx, &msg.content, msg.channel_id, msg.id, last).await?.to_lowercase();
 
     send_message(ctx.http, msg.channel_id, low_string).await?;
 
@@ -76,13 +78,13 @@ pub async fn low(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult 
 }
 
 pub async fn space(ctx: &Context<'_>, msg: &Message, last: bool, biggspace: bool) -> CommandResult {
-    let input = string_renderer::join_string(&msg.content, 1);
+    let input = get_input_string(ctx, &msg.content, msg.channel_id, msg.id, last).await?;
     let pass_string: String = input.chars().filter(|c| !c.is_whitespace()).collect();
 
     let output = pass_string.split("").map(|x|
         if rand::random() {
             if biggspace {
-                format!("{}        ", x)
+                format!("{}            ", x)
             }
 
             else {
