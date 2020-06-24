@@ -30,6 +30,7 @@ pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize)
         "biggspacel" => space(ctx, msg, true, true).await?,
         "nice" => nice(ctx, msg).await?,
         "bruh" => bruh(ctx, msg).await?,
+        "quote" => quote(ctx, msg).await?,
         "b64encode" => encode_b64(ctx, msg).await?,
         "b64decode" => decode_b64(ctx, msg).await?,
         "prefix" => handle_prefix(ctx, msg).await?,

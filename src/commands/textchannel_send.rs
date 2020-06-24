@@ -10,7 +10,7 @@ use twilight::{
     model::{
         channel::message::Message,
         guild::Permissions, 
-        id::{ChannelId, GuildId},
+        id::{ChannelId, GuildId, UserId},
     },
     builders::embed::EmbedBuilder
 };
@@ -123,7 +123,79 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     
     let mut eb = EmbedBuilder::new();
     eb = eb.title("Ladies and Gentlemen!");
+    eb = eb.color(0x22dee4);
     eb = eb.description(content);
+    eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
+
+    send_embed(ctx.http, send_id, eb.build()).await?;
+
+    Ok(())
+}
+
+pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+    let mut channel_tuple: (i64, bool) = (0, false);
+    let guild_id = msg.guild_id.unwrap();
+    
+    if string_renderer::get_command_length(&msg.content) == 2 {
+        let channel_str = string_renderer::get_message_word(&msg.content, 1);
+        channel_tuple = match check_channel(ctx, channel_str).await {
+            Ok(tuple) => tuple,
+            Err(_) => {
+                send_message(ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
+                return Ok(())
+            }
+        };
+    }
+
+    if channel_tuple.1 {
+        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
+            
+            let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
+                .fetch_one(ctx.pool)
+                .await?;
+                
+            if check.exists.unwrap() {
+                sqlx::query!("UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2", channel_tuple.0, guild_id.0 as i64)
+                    .execute(ctx.pool).await?;
+            } else {
+                create_channel_row(ctx.pool, guild_id.0 as i64, None, channel_tuple.0, None).await?;
+            }
+
+            send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
+        }
+
+        return Ok(())
+    }
+                
+
+    let channel_num = get_send_channel(ctx.pool, guild_id, "quote").await?;
+
+    if channel_num == 0 {
+        send_message(ctx.http, msg.channel_id, "The Quotes channel isn't set! Please specify a channel!").await?;
+        return Ok(())
+    }
+
+
+    let message_url = get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
+    let send_id = ChannelId::from(channel_num as u64);
+
+    let mut eb = EmbedBuilder::new();
+    eb = eb.color(0xfabe21);
+
+
+    if msg.mentions.values().len() < 1 {
+        let author_avatar = get_avatar_url(msg.author.id, msg.author.avatar.as_ref().unwrap());
+        eb = eb.author().name(&msg.author.name).icon_url(author_avatar).commit();
+        eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 0));
+    }
+    else {
+        let given_id = string_renderer::get_message_word(&msg.content, 1);
+        let quote_user = msg.mentions.get(&UserId::from(get_raw_id(given_id, "user").unwrap())).unwrap();
+        let quote_user_avatar = get_avatar_url(quote_user.id, quote_user.avatar.as_ref().unwrap());
+        eb = eb.author().name(&quote_user.name).icon_url(quote_user_avatar).commit();
+        eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 1));
+    }
+
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
     send_embed(ctx.http, send_id, eb.build()).await?;
