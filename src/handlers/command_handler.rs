@@ -1,10 +1,7 @@
 use twilight::model::channel::message::Message;
 use crate::helpers::string_renderer;
 use crate::helpers::command_utils::*;
-use crate::structures::{
-    CommandResult,
-    Context
-};
+use crate::structures::Context;
 use crate::commands::{
     textmod::*,
     textchannel_send::*,
@@ -12,11 +9,10 @@ use crate::commands::{
     config::*
 };
 
-pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize) -> CommandResult {
+pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize) -> Result<(), Box<dyn std::error::Error>> {
     let command = string_renderer::get_command(&msg.content, prefix_len);
     match command {
         "ping" => send_message(ctx.http, msg.channel_id, "Pong!").await?,
-        "mock" => mock(ctx, msg, false).await?,
         "mockl" => mock(ctx, msg, true).await?,
         "upp" => upp(ctx, msg, false).await?,
         "uppl" => upp(ctx, msg, true).await?,
@@ -35,6 +31,7 @@ pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize)
         "b64decode" => decode_b64(ctx, msg).await?,
         "prefix" => handle_prefix(ctx, msg).await?,
         "command" => dispatch_custom_command(ctx, msg).await?,
+        "starbot" => starbot(ctx, msg).await?,
         _ => {
             let data = sqlx::query!(
                     "SELECT content FROM commands WHERE guild_id = $1 AND name = $2", 

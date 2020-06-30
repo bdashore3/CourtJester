@@ -17,6 +17,12 @@ use twilight::{
 use sqlx;
 use sqlx::PgPool;
 
+struct TextChannels {
+    nice_id: Option<i64>,
+    bruh_id: Option<i64>,
+    quote_id: Option<i64>
+}
+
 pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
@@ -35,17 +41,7 @@ pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-                .fetch_one(ctx.pool)
-                .await?;
-                
-            if check.exists.unwrap() {
-                sqlx::query!("UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2", channel_tuple.0, guild_id.0 as i64)
-                    .execute(ctx.pool).await?;
-            } else {
-                create_channel_row(ctx.pool, guild_id.0 as i64, channel_tuple.0, None, None).await?;
-            }
-
+            insert_or_update(ctx.pool, guild_id, "nice", channel_tuple.0).await?;
             send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
 
@@ -53,24 +49,21 @@ pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     }
                 
 
-    let channel_num = get_send_channel(ctx.pool, guild_id, "nice").await?;
+    let channel_data = get_channels(ctx.pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channel_data.nice_id.is_none() {
         send_message(ctx.http, msg.channel_id, "The Nice channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
     let message_url = get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
-    let send_id = ChannelId::from(channel_num as u64);
-    let content = format!("Nice - {}", msg.author.name);
+    let send_id = ChannelId::from(channel_data.nice_id.unwrap() as u64);
 
     let mut eb = EmbedBuilder::new();
-    eb = eb.title(content);
+    eb = eb.title(format!("Nice - {}", msg.author.name));
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
-    send_embed(ctx.http, send_id, eb.build()).await?;
-
-    Ok(())
+    Ok(send_embed(ctx.http, send_id, eb.build()).await?)
 }
 
 pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
@@ -91,16 +84,7 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-                .fetch_one(ctx.pool)
-                .await?;
-                
-            if check.exists.unwrap() {
-                sqlx::query!("UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2", channel_tuple.0, guild_id.0 as i64)
-                    .execute(ctx.pool).await?;
-            } else {
-                create_channel_row(ctx.pool, guild_id.0 as i64, None, channel_tuple.0, None).await?;
-            }
+            insert_or_update(ctx.pool, guild_id, "bruh", channel_tuple.0).await?;
 
             send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
@@ -109,22 +93,21 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     }
                 
 
-    let channel_num = get_send_channel(ctx.pool, guild_id, "bruh").await?;
+    let channel_data = get_channels(ctx.pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channel_data.bruh_id.is_none() {
         send_message(ctx.http, msg.channel_id, "The Bruh channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
     let message_url = get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
-    let send_id = ChannelId::from(channel_num as u64);
-    let content = format!("A bruh moment has been declared by <@!{}>", msg.author.id);
+    let send_id = ChannelId::from(channel_data.bruh_id.unwrap() as u64);
     send_message(ctx.http, msg.channel_id, "***BRUH MOMENT***").await?;
     
     let mut eb = EmbedBuilder::new();
     eb = eb.title("Ladies and Gentlemen!");
     eb = eb.color(0x22dee4);
-    eb = eb.description(content);
+    eb = eb.description(format!("A bruh moment has been declared by <@!{}>", msg.author.id));
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
     send_embed(ctx.http, send_id, eb.build()).await?;
@@ -135,6 +118,14 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
 pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
+
+    let starbot_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
+        .fetch_one(ctx.pool).await?;
+    
+    if starbot_data.starbot_threshold.is_some() {
+        send_message(ctx.http, msg.channel_id, "You can't use the quote command because starbot is enabled in this server!").await?;
+        return Ok(())
+    }
     
     if string_renderer::get_command_length(&msg.content) == 2 {
         let channel_str = string_renderer::get_message_word(&msg.content, 1);
@@ -150,16 +141,7 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-                .fetch_one(ctx.pool)
-                .await?;
-                
-            if check.exists.unwrap() {
-                sqlx::query!("UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2", channel_tuple.0, guild_id.0 as i64)
-                    .execute(ctx.pool).await?;
-            } else {
-                create_channel_row(ctx.pool, guild_id.0 as i64, None, channel_tuple.0, None).await?;
-            }
+            insert_or_update(ctx.pool, msg.guild_id.unwrap(), "quote", channel_tuple.0).await?;
 
             send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
@@ -168,30 +150,46 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     }
                 
 
-    let channel_num = get_send_channel(ctx.pool, guild_id, "quote").await?;
+    let channel_data = get_channels(ctx.pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channel_data.quote_id.is_none() {
         send_message(ctx.http, msg.channel_id, "The Quotes channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
 
     let message_url = get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
-    let send_id = ChannelId::from(channel_num as u64);
+    let send_id = ChannelId::from(channel_data.quote_id.unwrap() as u64);
 
     let mut eb = EmbedBuilder::new();
     eb = eb.color(0xfabe21);
 
 
     if msg.mentions.values().len() < 1 {
-        let author_avatar = get_avatar_url(msg.author.id, msg.author.avatar.as_ref().unwrap());
+        let author_avatar = match msg.author.avatar.as_ref() {
+            Some(avatar_id) => {
+                get_avatar_url(msg.author.id, avatar_id)
+            }
+            None => {
+                get_default_avatar_url(&msg.author.discriminator)
+            }
+        };
+
         eb = eb.author().name(&msg.author.name).icon_url(author_avatar).commit();
         eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 0));
     }
     else {
         let given_id = string_renderer::get_message_word(&msg.content, 1);
         let quote_user = msg.mentions.get(&UserId::from(get_raw_id(given_id, "user").unwrap())).unwrap();
-        let quote_user_avatar = get_avatar_url(quote_user.id, quote_user.avatar.as_ref().unwrap());
+        let quote_user_avatar = match quote_user.avatar.as_ref() {
+            Some(avatar_id) => {
+                get_avatar_url(quote_user.id, avatar_id)
+            }
+            None => {
+                get_default_avatar_url(&quote_user.discriminator)
+            }
+        };
+
         eb = eb.author().name(&quote_user.name).icon_url(quote_user_avatar).commit();
         eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 1));
     }
@@ -203,12 +201,39 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     Ok(())
 }
 
-async fn create_channel_row(pool: &PgPool, guild_id: i64, 
-    nice_id: impl Into<Option<i64>>, bruh_id: impl Into<Option<i64>>, 
-    quote_id: impl Into<Option<i64>>) -> Result<(), Box<dyn std::error::Error>> {
+async fn get_channels(pool: &PgPool, guild_id: GuildId) -> Result<TextChannels, Box<dyn std::error::Error>>{
 
-    sqlx::query!("INSERT INTO text_channels VALUES($1, $2, $3, $4)", guild_id, nice_id.into().unwrap_or(0), bruh_id.into().unwrap_or(0), quote_id.into().unwrap_or(0))
-        .execute(pool).await?;
+    let data = sqlx::query_as!(TextChannels, "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
+        .fetch_one(pool).await?;
+
+    Ok(data)
+}
+
+async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, channel_id: i64) -> Result<(), Box<dyn std::error::Error>> {
+    match channel_type {
+        "nice" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, $2, null, null)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET nice_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        "bruh" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, null, $2, null)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET bruh_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        "quote" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, null, null, $2)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET quote_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        _ => {}
+    }
 
     Ok(())
 }
@@ -226,24 +251,4 @@ pub async fn check_channel(ctx: &Context<'_>, channel_str: &str) -> Result<(i64,
     };
     
     Ok(output)
-}
-
-async fn get_send_channel(pool: &PgPool, guild_id: GuildId, channel_type: &str) -> Result<i64, Box<dyn std::error::Error>>{
-
-    let mut result: i64 = 0;
-
-    let data = sqlx::query!("SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
-        .fetch_optional(pool)
-        .await?;
-    
-    if let Some(data) = data {
-        result = match channel_type {
-            "nice" => data.nice_id,
-            "bruh" => data.bruh_id,
-            "quote" => data.quote_id,
-            _ => 0 
-        };
-    }
-
-    Ok(result)
 }

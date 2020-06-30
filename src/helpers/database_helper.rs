@@ -11,3 +11,4 @@ pub async fn obtain_pool(db_connection: String) -> Result<PgPool, Box<dyn Error 
     
     Ok(pool)
 }
+

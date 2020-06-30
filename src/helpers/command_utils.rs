@@ -1,7 +1,7 @@
 use twilight::{
     http::Client,
     model::{
-        channel::{Message, embed::Embed}, 
+        channel::{Message, embed::Embed, ReactionType}, 
         id::{GuildId, ChannelId, MessageId, UserId}
     }, 
 };
@@ -16,7 +16,7 @@ pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl In
 
 pub async fn send_embed(http: &Client, channel_id: ChannelId, content: Embed) -> Result<(), Box<dyn std::error::Error>> {
     http.create_message(channel_id).embed(content)?.await?;
-    
+
     Ok(())
 }
 
@@ -56,6 +56,10 @@ pub fn get_avatar_url(user_id: UserId, avatar_hash: impl Display) -> String {
     format!("https://cdn.discordapp.com/avatars/{}/a_{}.webp?size=256", user_id.0, avatar_hash)
 }
 
+pub fn get_default_avatar_url(discriminator: &str) -> String {
+    format!("https://cdn.discordapp.com/embed/avatars/{}.png", discriminator.parse::<i32>().unwrap() % 5)
+}
+
 pub async fn get_last_message(ctx: &Context<'_>, channel_id: ChannelId, message_id: MessageId) -> Result<Message, Box<dyn std::error::Error>> {
     let mut messages = ctx.http
             .channel_messages(channel_id)
@@ -65,4 +69,13 @@ pub async fn get_last_message(ctx: &Context<'_>, channel_id: ChannelId, message_
     let last_message = messages.remove(0);
 
     Ok(last_message)
+}
+
+pub fn get_reaction_emoji(reaction_type: &ReactionType) -> &str {
+    if let ReactionType::Unicode { name } = reaction_type {
+        name
+    }
+    else {
+        ""
+    }
 }

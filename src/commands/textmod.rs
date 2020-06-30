@@ -36,7 +36,7 @@ pub async fn mock(ctx: &Context<'_>, msg: &Message, last: bool) -> CommandResult
     }
 
     send_message(ctx.http, msg.channel_id, mock_string).await?;
-
+    
     Ok(())
 }
 

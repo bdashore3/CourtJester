@@ -2,6 +2,7 @@ mod handlers;
 mod helpers;
 mod structures;
 mod commands;
+mod reactions;
 
 use twilight::{
     gateway::{
@@ -23,7 +24,10 @@ use helpers::{
     database_helper,
     credentials_helper
 };
-use handlers::command_handler;
+use handlers::{
+    command_handler,
+    reaction_handler
+};
 use structures::Context;
 use std::collections::{
     HashSet,
@@ -54,7 +58,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             GatewayIntents::GUILDS
                 | GatewayIntents::GUILD_MESSAGES
                 | GatewayIntents::GUILD_MEMBERS
-                | GatewayIntents::GUILD_PRESENCES,
+                | GatewayIntents::GUILD_PRESENCES
+                | GatewayIntents::GUILD_MESSAGE_REACTIONS,
         ))
         .build();
 
@@ -127,6 +132,18 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
             let mut guild_set = ctx.guild_set.write().await;
 
             guild_set.remove(&guild.id);
+        },
+        (_, Event::ReactionAdd(reaction)) => {
+            match reaction_handler::dispatch_reaction(ctx, &reaction.0, false).await {
+                Ok(()) => {},
+                Err(error) => println!("Reaction Error!: {}", error)
+            };
+        },
+        (_, Event::ReactionRemove(reaction)) => {
+            match reaction_handler::dispatch_reaction(ctx, &reaction.0, true).await {
+                Ok(()) => {},
+                Err(error) => println!("Reaction Error: {}", error)
+            };
         }
         _ => {}
     }

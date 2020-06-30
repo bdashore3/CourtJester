@@ -3,10 +3,11 @@ use crate::{
     structures::Context,
     helpers::command_utils::*,
     helpers::string_renderer,
-    helpers::permissions_helper
+    helpers::permissions_helper,
+    commands::textchannel_send::*
 };
 use twilight::{
-    model::{guild::Permissions, channel::Message}
+    model::{guild::Permissions, channel::{ReactionType, Message}, gateway::payload::{ReactionAdd, MessageCreate}}, standby::Standby
 };
 use sqlx;
 use sqlx::PgPool;
@@ -111,4 +112,32 @@ pub async fn remove_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandR
     send_message(ctx.http, msg.channel_id, format!("Command `{}` sucessfully deleted!", command_name)).await?;
 
     Ok(())
-} 
+}
+
+pub async fn starbot(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+    let subcommand = string_renderer::get_message_word(&msg.content, 1);
+    match subcommand {
+        "threshold" => {
+            let new_threshold = string_renderer::get_message_word(&msg.content, 2).parse::<i32>();
+            sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", new_threshold.unwrap(), msg.guild_id.unwrap().0 as i64)
+                .execute(ctx.pool).await?;
+            
+            send_message(ctx.http, msg.channel_id, "New threshold sucessfully set!").await?;
+        },
+        "channel" => {
+            let new_channel_string = string_renderer::get_message_word(&msg.content, 2);
+            let new_channel = get_raw_id(new_channel_string, "channel");
+
+            sqlx::query!("INSERT INTO text_channels VALUES($1, $2, null, null)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET quote_id = $2",
+                        msg.guild_id.unwrap().0 as i64, new_channel.unwrap() as i64)
+                        .execute(ctx.pool).await?;
+            
+            send_message(ctx.http, msg.channel_id, "New starbot channel sucessfully set!").await?;
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
