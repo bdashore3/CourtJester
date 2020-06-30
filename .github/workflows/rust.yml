@@ -18,12 +18,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build  --release --verbose
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
     - name: Run tests
       run: cargo test --verbose
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
     - name: Remove old binary
       uses: appleboy/ssh-action@master
       with:
