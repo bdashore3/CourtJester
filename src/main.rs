@@ -16,7 +16,8 @@ use twilight::{
         twilight_cache_inmemory::config::{InMemoryConfigBuilder, EventType},
         InMemoryCache
     }, 
-    model::{gateway::GatewayIntents, id::GuildId}
+    model::{gateway::GatewayIntents, id::GuildId},
+    standby::Standby,
 };
 use futures::StreamExt;
 use std::{env, error::Error};
@@ -29,10 +30,10 @@ use handlers::{
     reaction_handler
 };
 use structures::Context;
-use std::collections::{
+use std::{sync::Arc, collections::{
     HashSet,
     HashMap
-};
+}};
 use tokio::sync::RwLock;
 use crate::commands::config::*;
 
@@ -48,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     data.insert("default_prefix".to_string(), creds.default_prefix);
 
     let guild_set: HashSet<GuildId> = HashSet::new();
-    let guild_rwlock = RwLock::new(guild_set);
+    let guild_rwlock = Arc::new(RwLock::new(guild_set));
 
     let scheme = ShardScheme::Auto;
 
@@ -80,23 +81,22 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         )
         .build();
     let cache = InMemoryCache::from(cache_config);
+    let standby = Standby::new();
 
     let mut events = cluster.events().await;
 
-    let ctx = Context::new(&http, &pool, &data, &guild_rwlock, &cache);
+    let ctx = Context::new(http, Arc::new(pool), data, guild_rwlock, Arc::new(cache), standby);
 
     while let Some(event) = events.next().await {
-        cache.update(&event.1).await.expect("Error in caching data!");
-        match handle_event(event, &ctx).await {
-            Ok(_) => (),
-            Err(why) => println!("{}", why),
-        };
+        ctx.cache.as_ref().update(&event.1).await.expect("Error in caching data!");
+        ctx.standby.process(&event.1);
+        tokio::spawn(handle_event(event, ctx.clone()));
     }
 
     Ok(())
 }
 
-async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn handle_event(event: (u64, Event), ctx: Context) -> Result<(), Box<dyn Error + Send + Sync>> {
     match event {
         (id, Event::Ready(info)) => {
             let mut guild_set = ctx.guild_set.write().await;
@@ -112,7 +112,7 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
             let prefix = get_prefix(&ctx.pool, msg.guild_id.unwrap().0 as i64, default_prefix).await.unwrap();
 
             if &msg.0.content[..prefix.len()] == prefix.as_str() {
-                match command_handler::handle_command(&msg.0, ctx, prefix.len()).await {
+                match command_handler::handle_command(&msg.0, &ctx, prefix.len()).await {
                     Ok(()) => {},
                     Err(error) => println!("Command Error!: {}", error)
                 };
@@ -122,25 +122,25 @@ async fn handle_event(event: (u64, Event), ctx: &Context<'_>) -> Result<(), Box<
             let guild_set = ctx.guild_set.read().await;
             if !guild_set.contains(&guild.id) {
                 sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild.id.0 as i64)
-                    .execute(ctx.pool).await.unwrap();
+                    .execute(ctx.pool.as_ref()).await.unwrap();
             }
         },
         (_, Event::GuildDelete(guild)) => {
             sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild.id.0 as i64)
-                .execute(ctx.pool).await.unwrap();
+                .execute(ctx.pool.as_ref()).await.unwrap();
             
             let mut guild_set = ctx.guild_set.write().await;
 
             guild_set.remove(&guild.id);
         },
         (_, Event::ReactionAdd(reaction)) => {
-            match reaction_handler::dispatch_reaction(ctx, &reaction.0, false).await {
+            match reaction_handler::dispatch_reaction(&ctx, &reaction.0, false).await {
                 Ok(()) => {},
                 Err(error) => println!("Reaction Error!: {}", error)
             };
         },
         (_, Event::ReactionRemove(reaction)) => {
-            match reaction_handler::dispatch_reaction(ctx, &reaction.0, true).await {
+            match reaction_handler::dispatch_reaction(&ctx, &reaction.0, true).await {
                 Ok(()) => {},
                 Err(error) => println!("Reaction Error: {}", error)
             };

@@ -7,7 +7,7 @@ use twilight::model::{
     guild::Permissions, id::{UserId, GuildId}
 };
 
-pub async fn check_permission(ctx: &Context<'_>, msg: &Message, permission: Permissions) -> bool {
+pub async fn check_permission(ctx: &Context, msg: &Message, permission: Permissions) -> bool {
 
     let permissions = compile_permissions(ctx, msg.guild_id.unwrap(), msg.author.id).await.unwrap();
     if permissions.contains(permission) {
@@ -16,20 +16,20 @@ pub async fn check_permission(ctx: &Context<'_>, msg: &Message, permission: Perm
 
     match permission {
         Permissions::ADMINISTRATOR => {
-            let _ = send_message(ctx.http, msg.channel_id, "You can't execute this command because you're not an administrator!").await;
+            let _ = send_message(&ctx.http, msg.channel_id, "You can't execute this command because you're not an administrator!").await;
         }
         Permissions::MANAGE_MESSAGES => {
-            let _ = send_message(ctx.http, msg.channel_id, "You can't execute this command because you're not a moderator!").await;
+            let _ = send_message(&ctx.http, msg.channel_id, "You can't execute this command because you're not a moderator!").await;
         },
         _ => {
-            let _ = send_message(ctx.http, msg.channel_id, "You can't execute this command!").await;
+            let _ = send_message(&ctx.http, msg.channel_id, "You can't execute this command!").await;
         }
     };
 
     false
 }
 
-pub async fn compile_permissions(ctx: &Context<'_>, guild_id: GuildId, user_id: UserId) -> Result<Permissions, Box<dyn std::error::Error>> {
+pub async fn compile_permissions(ctx: &Context, guild_id: GuildId, user_id: UserId) -> Result<Permissions, Box<dyn std::error::Error>> {
     let member = ctx.cache.member(guild_id, user_id).await.unwrap().unwrap();
     let guild = ctx.cache.guild(guild_id).await?.unwrap();
     let mut permissions = Permissions::empty();

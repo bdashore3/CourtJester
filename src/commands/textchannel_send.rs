@@ -23,7 +23,7 @@ struct TextChannels {
     quote_id: Option<i64>
 }
 
-pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn nice(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
     
@@ -32,7 +32,7 @@ pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
         channel_tuple = match check_channel(ctx, channel_str).await {
             Ok(tuple) => tuple,
             Err(_) => {
-                send_message(ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
+                send_message(&ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
                 return Ok(())
             }
         };
@@ -41,18 +41,18 @@ pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            insert_or_update(ctx.pool, guild_id, "nice", channel_tuple.0).await?;
-            send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
+            insert_or_update(ctx.pool.as_ref(), guild_id, "nice", channel_tuple.0).await?;
+            send_message(&ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
 
         return Ok(())
     }
                 
 
-    let channel_data = get_channels(ctx.pool, guild_id).await?;
+    let channel_data = get_channels(ctx.pool.as_ref(), guild_id).await?;
 
     if channel_data.nice_id.is_none() {
-        send_message(ctx.http, msg.channel_id, "The Nice channel isn't set! Please specify a channel!").await?;
+        send_message(&ctx.http, msg.channel_id, "The Nice channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
@@ -63,10 +63,10 @@ pub async fn nice(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     eb = eb.title(format!("Nice - {}", msg.author.name));
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
-    Ok(send_embed(ctx.http, send_id, eb.build()).await?)
+    Ok(send_embed(&ctx.http, send_id, eb.build()).await?)
 }
 
-pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn bruh(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
     
@@ -75,7 +75,7 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
         channel_tuple = match check_channel(ctx, channel_str).await {
             Ok(tuple) => tuple,
             Err(_) => {
-                send_message(ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
+                send_message(&ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
                 return Ok(())
             }
         };
@@ -84,25 +84,25 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            insert_or_update(ctx.pool, guild_id, "bruh", channel_tuple.0).await?;
+            insert_or_update(ctx.pool.as_ref(), guild_id, "bruh", channel_tuple.0).await?;
 
-            send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
+            send_message(&ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
 
         return Ok(())
     }
                 
 
-    let channel_data = get_channels(ctx.pool, guild_id).await?;
+    let channel_data = get_channels(ctx.pool.as_ref(), guild_id).await?;
 
     if channel_data.bruh_id.is_none() {
-        send_message(ctx.http, msg.channel_id, "The Bruh channel isn't set! Please specify a channel!").await?;
+        send_message(&ctx.http, msg.channel_id, "The Bruh channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
     let message_url = get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
     let send_id = ChannelId::from(channel_data.bruh_id.unwrap() as u64);
-    send_message(ctx.http, msg.channel_id, "***BRUH MOMENT***").await?;
+    send_message(&ctx.http, msg.channel_id, "***BRUH MOMENT***").await?;
     
     let mut eb = EmbedBuilder::new();
     eb = eb.title("Ladies and Gentlemen!");
@@ -110,20 +110,20 @@ pub async fn bruh(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     eb = eb.description(format!("A bruh moment has been declared by <@!{}>", msg.author.id));
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
-    send_embed(ctx.http, send_id, eb.build()).await?;
+    send_embed(&ctx.http, send_id, eb.build()).await?;
 
     Ok(())
 }
 
-pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn quote(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let mut channel_tuple: (i64, bool) = (0, false);
     let guild_id = msg.guild_id.unwrap();
 
     let starbot_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
-        .fetch_one(ctx.pool).await?;
+        .fetch_one(ctx.pool.as_ref()).await?;
     
     if starbot_data.starbot_threshold.is_some() {
-        send_message(ctx.http, msg.channel_id, "You can't use the quote command because starbot is enabled in this server!").await?;
+        send_message(&ctx.http, msg.channel_id, "You can't use the quote command because starbot is enabled in this server!").await?;
         return Ok(())
     }
     
@@ -132,7 +132,7 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
         channel_tuple = match check_channel(ctx, channel_str).await {
             Ok(tuple) => tuple,
             Err(_) => {
-                send_message(ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
+                send_message(&ctx.http, msg.channel_id, "Please execute this command without arguments!").await?;
                 return Ok(())
             }
         };
@@ -141,19 +141,19 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     if channel_tuple.1 {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
             
-            insert_or_update(ctx.pool, msg.guild_id.unwrap(), "quote", channel_tuple.0).await?;
+            insert_or_update(ctx.pool.as_ref(), msg.guild_id.unwrap(), "quote", channel_tuple.0).await?;
 
-            send_message(ctx.http, msg.channel_id, "Channel successfully set!").await?;
+            send_message(&ctx.http, msg.channel_id, "Channel successfully set!").await?;
         }
 
         return Ok(())
     }
                 
 
-    let channel_data = get_channels(ctx.pool, guild_id).await?;
+    let channel_data = get_channels(ctx.pool.as_ref(), guild_id).await?;
 
     if channel_data.quote_id.is_none() {
-        send_message(ctx.http, msg.channel_id, "The Quotes channel isn't set! Please specify a channel!").await?;
+        send_message(&ctx.http, msg.channel_id, "The Quotes channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
@@ -196,7 +196,7 @@ pub async fn quote(ctx: &Context<'_>, msg: &Message) -> CommandResult {
 
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
 
-    send_embed(ctx.http, send_id, eb.build()).await?;
+    send_embed(&ctx.http, send_id, eb.build()).await?;
 
     Ok(())
 }
@@ -238,7 +238,7 @@ async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, 
     Ok(())
 }
 
-pub async fn check_channel(ctx: &Context<'_>, channel_str: &str) -> Result<(i64, bool), std::num::ParseIntError> {
+pub async fn check_channel(ctx: &Context, channel_str: &str) -> Result<(i64, bool), std::num::ParseIntError> {
     let channel_num = match get_raw_id(channel_str, "channel") {
         Ok(i) => i,
         Err(e) => return Err(e)

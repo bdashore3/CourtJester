@@ -1,36 +1,41 @@
 use twilight::http::Client as HttpClient;
 use twilight::{model::id::GuildId, cache::InMemoryCache};
-use std::collections::{
+use twilight::standby::Standby;
+use std::{sync::Arc, collections::{
     HashMap,
     HashSet,
-};
+}, error::Error};
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
-pub type CommandResult = ::std::result::Result<(), Box<dyn std::error::Error>>;
+pub(crate) type CommandResult<T> = Result<T, Box<dyn Error>>;
 
-pub struct Context<'a> {
-    pub http: &'a HttpClient,
-    pub pool: &'a PgPool,
-    pub data: &'a HashMap<String, String>,
-    pub guild_set: &'a RwLock<HashSet<GuildId>>,
-    pub cache: &'a InMemoryCache
+#[derive(Clone)]
+pub struct Context {
+    pub http: HttpClient,
+    pub pool: Arc<PgPool>,
+    pub data: HashMap<String, String>,
+    pub guild_set: Arc<RwLock<HashSet<GuildId>>>,
+    pub cache: Arc<InMemoryCache>,
+    pub standby: Standby
 }
 
-impl <'a> Context<'a> {
+impl Context {
     pub fn new(
-        http: &'a HttpClient,
-        pool: &'a PgPool,
-        data: &'a HashMap<String, String>,
-        guild_set: &'a RwLock<HashSet<GuildId>>,
-        cache: &'a InMemoryCache
+        http: HttpClient,
+        pool: Arc<PgPool>,
+        data: HashMap<String, String>,
+        guild_set: Arc<RwLock<HashSet<GuildId>>>,
+        cache: Arc<InMemoryCache>,
+        standby: Standby
     ) -> Self {
         Context {
             http,
             pool,
             data,
             guild_set,
-            cache
+            cache,
+            standby
         }
     }
 }

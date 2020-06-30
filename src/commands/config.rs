@@ -8,13 +8,13 @@ use crate::{
 use twilight::{
     model::{
         guild::Permissions, 
-        channel::Message
-    }, 
+        channel::{ReactionType, Message}, gateway::payload::ReactionAdd
+    }
 };
 use sqlx;
 use sqlx::PgPool;
 
-pub async fn handle_prefix(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn handle_prefix(ctx: &Context, msg: &Message) -> CommandResult<()> {
     if !permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
         return Ok(())
     }
@@ -23,8 +23,8 @@ pub async fn handle_prefix(ctx: &Context<'_>, msg: &Message) -> CommandResult {
     let default_prefix = ctx.data.get("default_prefix").unwrap();
 
     if string_renderer::get_command_length(&msg.content) < 2 {
-        let cur_prefix = get_prefix(&ctx.pool, msg.guild_id.unwrap().0 as i64, default_prefix.to_string()).await?;
-        send_message(ctx.http, msg.channel_id, 
+        let cur_prefix = get_prefix(ctx.pool.as_ref(), msg.guild_id.unwrap().0 as i64, default_prefix.to_string()).await?;
+        send_message(&ctx.http, msg.channel_id, 
             format!("My prefix for `{}` is `{}`", guild.name, cur_prefix)).await?;
 
         return Ok(())
@@ -34,14 +34,14 @@ pub async fn handle_prefix(ctx: &Context<'_>, msg: &Message) -> CommandResult {
 
     if new_prefix == default_prefix {
         sqlx::query!("UPDATE guild_info SET prefix = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
-            .execute(ctx.pool).await?;
+            .execute(ctx.pool.as_ref()).await?;
     }
     else {
         sqlx::query!("UPDATE guild_info SET prefix = $1 WHERE guild_id = $2", new_prefix, msg.guild_id.unwrap().0 as i64)
-            .execute(ctx.pool).await?;
+            .execute(ctx.pool.as_ref()).await?;
     }
 
-    send_message(ctx.http, msg.channel_id, format!("My new prefix for `{}` is `{}`", guild.name, new_prefix)).await?;
+    send_message(&ctx.http, msg.channel_id, format!("My new prefix for `{}` is `{}`", guild.name, new_prefix)).await?;
 
     Ok(())
 }
@@ -61,7 +61,7 @@ pub async fn get_prefix(pool: &PgPool, guild_id: i64, default_prefix: String) ->
 }
 
 
-pub async fn dispatch_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn dispatch_custom_command(ctx: &Context, msg: &Message) -> CommandResult<()> {
     if string_renderer::get_command_length(&msg.content) < 2 {
         return Ok(())
     }
@@ -87,7 +87,7 @@ pub async fn dispatch_custom_command(ctx: &Context<'_>, msg: &Message) -> Comman
     Ok(())
 }
 
-pub async fn set_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn set_custom_command(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let command_name = string_renderer::get_message_word(&msg.content, 2);
     let command_message = string_renderer::join_string(&msg.content, 2);
 
@@ -97,34 +97,34 @@ pub async fn set_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResu
             DO UPDATE
             SET content = EXCLUDED.content", 
             msg.guild_id.unwrap().0 as i64, command_name, command_message)
-        .execute(ctx.pool).await?;
+        .execute(ctx.pool.as_ref()).await?;
 
-    send_message(ctx.http, msg.channel_id, format!("Command `{}` sucessfully set!", command_name)).await?;
+    send_message(&ctx.http, msg.channel_id, format!("Command `{}` sucessfully set!", command_name)).await?;
 
     Ok(())
 }
 
-pub async fn remove_custom_command(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn remove_custom_command(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let command_name = string_renderer::get_message_word(&msg.content, 2);
 
     sqlx::query!("DELETE FROM commands WHERE guild_id = $1 AND name = $2", msg.guild_id.unwrap().0 as i64, command_name)
-        .execute(ctx.pool)
+        .execute(ctx.pool.as_ref())
         .await?;
 
-    send_message(ctx.http, msg.channel_id, format!("Command `{}` sucessfully deleted!", command_name)).await?;
+    send_message(&ctx.http, msg.channel_id, format!("Command `{}` sucessfully deleted!", command_name)).await?;
 
     Ok(())
 }
 
-pub async fn starbot(ctx: &Context<'_>, msg: &Message) -> CommandResult {
+pub async fn starbot(ctx: &Context, msg: &Message) -> CommandResult<()> {
     let subcommand = string_renderer::get_message_word(&msg.content, 1);
     match subcommand {
         "threshold" => {
             let new_threshold = string_renderer::get_message_word(&msg.content, 2).parse::<i32>();
             sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", new_threshold.unwrap(), msg.guild_id.unwrap().0 as i64)
-                .execute(ctx.pool).await?;
+                .execute(ctx.pool.as_ref()).await?;
             
-            send_message(ctx.http, msg.channel_id, "New threshold sucessfully set!").await?;
+            send_message(&ctx.http, msg.channel_id, "New threshold sucessfully set!").await?;
         },
         "channel" => {
             let new_channel_string = string_renderer::get_message_word(&msg.content, 2);
@@ -134,9 +134,9 @@ pub async fn starbot(ctx: &Context<'_>, msg: &Message) -> CommandResult {
                         ON CONFLICT (guild_id)
                         DO UPDATE SET quote_id = $2",
                         msg.guild_id.unwrap().0 as i64, new_channel.unwrap() as i64)
-                        .execute(ctx.pool).await?;
+                        .execute(ctx.pool.as_ref()).await?;
             
-            send_message(ctx.http, msg.channel_id, "New starbot channel sucessfully set!").await?;
+            send_message(&ctx.http, msg.channel_id, "New starbot channel sucessfully set!").await?;
         }
         _ => {}
     }

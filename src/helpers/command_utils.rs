@@ -6,7 +6,7 @@ use twilight::{
     }, 
 };
 use crate::structures::Context;
-use std::fmt::Display;
+use std::{sync::Arc, fmt::Display};
 
 pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
     http.create_message(channel_id).content(message.into())?.await?;
@@ -60,7 +60,7 @@ pub fn get_default_avatar_url(discriminator: &str) -> String {
     format!("https://cdn.discordapp.com/embed/avatars/{}.png", discriminator.parse::<i32>().unwrap() % 5)
 }
 
-pub async fn get_last_message(ctx: &Context<'_>, channel_id: ChannelId, message_id: MessageId) -> Result<Message, Box<dyn std::error::Error>> {
+pub async fn get_last_message(ctx: &Context, channel_id: ChannelId, message_id: MessageId) -> Result<Message, Box<dyn std::error::Error>> {
     let mut messages = ctx.http
             .channel_messages(channel_id)
             .before(message_id)

@@ -1,7 +1,7 @@
 use twilight::model::channel::message::Message;
 use crate::helpers::string_renderer;
 use crate::helpers::command_utils::*;
-use crate::structures::Context;
+use crate::structures::{CommandResult, Context};
 use crate::commands::{
     textmod::*,
     textchannel_send::*,
@@ -9,10 +9,10 @@ use crate::commands::{
     config::*
 };
 
-pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_command(msg: &Message, ctx: &Context, prefix_len: usize) -> CommandResult<()> {
     let command = string_renderer::get_command(&msg.content, prefix_len);
     match command {
-        "ping" => send_message(ctx.http, msg.channel_id, "Pong!").await?,
+        "ping" => send_message(&ctx.http, msg.channel_id, "Pong!").await?,
         "mockl" => mock(ctx, msg, true).await?,
         "upp" => upp(ctx, msg, false).await?,
         "uppl" => upp(ctx, msg, true).await?,
@@ -36,13 +36,13 @@ pub async fn handle_command(msg: &Message, ctx: &Context<'_>, prefix_len: usize)
             let data = sqlx::query!(
                     "SELECT content FROM commands WHERE guild_id = $1 AND name = $2", 
                     msg.guild_id.unwrap().0 as i64, command)
-                .fetch_optional(ctx.pool)
+                .fetch_optional(ctx.pool.as_ref())
                 .await?;
 
             if let Some(data) = data {
                 let content = data.content.unwrap()
                     .replace("{user}", &format!("<@!{}>", msg.author.id.0));
-                send_message(ctx.http, msg.channel_id, content).await?;
+                send_message(&ctx.http, msg.channel_id, content).await?;
             }
         },
     };
