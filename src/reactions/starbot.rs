@@ -11,7 +11,7 @@ use twilight::{
 
 struct StarbotConfig {
     starbot_threshold: Option<i32>,
-    quote_id: i64
+    quote_id: Option<i64>
 }
 
 pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) -> CommandResult<()> {
@@ -28,7 +28,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
                                     INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id")
         .fetch_one(ctx.pool.as_ref()).await?;
     
-    if config_data.starbot_threshold.is_none() || config_data.quote_id == 0 {
+    if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {
         send_message(&ctx.http, reaction.channel_id, 
             "Starbot isn't enabled for this guild! Please set a threshold and channel to send messages in!").await?;
         
@@ -36,7 +36,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     }
 
     if stars == config_data.starbot_threshold.unwrap() as u64 && !remove {
-        let send_channel = ChannelId::from(config_data.quote_id as u64);
+        let send_channel = ChannelId::from(config_data.quote_id.unwrap() as u64);
         let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
 
         let user = reaction_message.author;
@@ -54,7 +54,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         .fetch_optional(ctx.pool.as_ref()).await?;
 
         if let Some(data) = message_data {
-            let quote_channel = ChannelId::from(config_data.quote_id as u64);
+            let quote_channel = ChannelId::from(config_data.quote_id.unwrap() as u64);
             let sent_messaage = MessageId::from(data.sent_message_id as u64);
             ctx.http.delete_message(quote_channel, sent_messaage).await?;
 
@@ -73,7 +73,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             let eb = get_starbot_embed(reaction, reaction_message.author, reaction_message.content);
 
             ctx.http.update_message(
-                    ChannelId::from(config_data.quote_id as u64), MessageId::from(data.sent_message_id as u64))
+                    ChannelId::from(config_data.quote_id.unwrap() as u64), MessageId::from(data.sent_message_id as u64))
                 .content(first_message)?.embed(eb.build())?.await?;
         }
     }

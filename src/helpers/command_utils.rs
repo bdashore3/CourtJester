@@ -6,7 +6,7 @@ use twilight::{
     }, 
 };
 use crate::structures::Context;
-use std::{sync::Arc, fmt::Display};
+use std::fmt::Display;
 
 pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
     http.create_message(channel_id).content(message.into())?.await?;
@@ -21,11 +21,15 @@ pub async fn send_embed(http: &Client, channel_id: ChannelId, content: Embed) ->
 }
 
 pub fn get_raw_id(given_id: &str, mention_type: &str) -> Result<u64, std::num::ParseIntError> {
+    if !given_id.contains("<") {
+        return Ok(0)
+    }
+
     let output = match mention_type {
         "channel" => {
             match given_id[2 .. given_id.len() - 1].parse::<u64>() {
                 Ok(i) => i,
-                Err(e) => return Err(e) 
+                Err(e) => return Err(e)
             }
         },
         "user" => {

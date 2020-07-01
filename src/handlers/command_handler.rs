@@ -6,7 +6,8 @@ use crate::commands::{
     textmod::*,
     textchannel_send::*,
     ciphers::*,
-    config::*
+    config::*,
+    starbot::*
 };
 
 pub async fn handle_command(msg: &Message, ctx: &Context, prefix_len: usize) -> CommandResult<()> {
