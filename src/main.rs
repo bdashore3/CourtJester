@@ -108,6 +108,10 @@ async fn handle_event(event: (u64, Event), ctx: Context) -> Result<(), Box<dyn E
                 return Ok(())
             }
 
+            if msg.0.content.len() == 0 {
+                return Ok(())
+            }
+
             let default_prefix = ctx.data.get("default_prefix").unwrap().to_string();
             let prefix = get_prefix(&ctx.pool, msg.guild_id.unwrap().0 as i64, default_prefix).await.unwrap();
 

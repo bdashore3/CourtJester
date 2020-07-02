@@ -1,12 +1,12 @@
 use twilight::{
     http::Client,
     model::{
-        channel::{Message, embed::Embed, ReactionType}, 
+        channel::{Message, embed::Embed, ReactionType, GuildChannel}, 
         id::{GuildId, ChannelId, MessageId, UserId}
     }, 
 };
 use crate::structures::Context;
-use std::fmt::Display;
+use std::{sync::Arc, fmt::Display};
 
 pub async fn send_message(http: &Client, channel_id: ChannelId, message: impl Into<String>) -> Result<(), Box<dyn std::error::Error>> {
     http.create_message(channel_id).content(message.into())?.await?;
@@ -82,4 +82,14 @@ pub fn get_reaction_emoji(reaction_type: &ReactionType) -> &str {
     else {
         ""
     }
+}
+
+pub fn nsfw_check(wrapped_channel: Arc<GuildChannel>) -> bool {
+    let mut is_nsfw = false;
+
+    if let GuildChannel::Text(ref channel) = *wrapped_channel {
+        is_nsfw = channel.nsfw;
+    }
+
+    is_nsfw
 }
