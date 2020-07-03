@@ -16,20 +16,8 @@ TABLESPACE pg_default;
 ALTER TABLE public.starbot
     OWNER to postgres;
 
-DROP TABLE public.guild_info;
-
-CREATE TABLE public.guild_info
-(
-    guild_id bigint NOT NULL,
-    prefix text COLLATE pg_catalog."default",
-    starbot_threshold integer,
-    CONSTRAINT guild_info_pkey PRIMARY KEY (guild_id)
-)
-
-TABLESPACE pg_default;
-
 ALTER TABLE public.guild_info
-    OWNER to postgres;
+    ADD COLUMN starbot_threshold integer;
 
 DROP TABLE public.text_channels;
 
