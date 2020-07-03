@@ -1,5 +1,5 @@
 [package]
-name = "courtjester_twilight"
+name = "courtjester"
 version = "0.1.0"
 authors = ["kingbri <bdashore3@gmail.com>"]
 edition = "2018"

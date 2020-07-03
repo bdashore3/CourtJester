@@ -1,4 +1,4 @@
-name: Rust
+name: Push and Restart bot
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        script: rm -rf ~/recieved/courtjester_twilight
+        script: rm -rf ~/CourtJester/courtjester
     - name: Push new binary
       uses: appleboy/scp-action@master
       with:
@@ -35,6 +35,14 @@ jobs:
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
         port: ${{ secrets.PORT }}
-        source: target/release/courtjester_twilight
-        target: ~/recieved
+        source: target/release/courtjester
+        target: ~/CourtJester
         strip_components: 2
+    - name: Restart CourtJester
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: sudo systemctl restart courtjester.service
