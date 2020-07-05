@@ -21,7 +21,7 @@ pub async fn send_embed(http: &Client, channel_id: ChannelId, content: Embed) ->
 }
 
 pub fn get_raw_id(given_id: &str, mention_type: &str) -> Result<u64, std::num::ParseIntError> {
-    if !given_id.contains("<") {
+    if !given_id.contains('<') {
         return Ok(0)
     }
 

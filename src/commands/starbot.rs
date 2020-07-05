@@ -9,10 +9,9 @@ use twilight::{
     model::{
         guild::Permissions, 
         channel::{ReactionType, Message}, 
-        gateway::payload::{MessageCreate, ReactionAdd}
-    }
+        gateway::payload::{MessageCreate, ReactionAdd}, id::ChannelId
+    }, builders::embed::EmbedBuilder
 };
-use sqlx;
 
 pub async fn starbot(ctx: &Context, msg: &Message) -> CommandResult<()> {
     if !permissions_helper::check_permission(ctx, msg, Permissions::ADMINISTRATOR).await {
@@ -155,7 +154,6 @@ async fn starbot_wizard_channel(ctx: &Context, msg: &Message) -> CommandResult<(
     "You already have a channel set up for quotes! \nIf you want to change it, run `starbot channel`").await?;
         
         send_message(&ctx.http, msg.channel_id, "Enjoy your new starbot!").await?;
-        return Ok(())
     } else {
         send_message(&ctx.http, msg.channel_id, "Now please mention the channel you want messages sent to!").await?;
 
@@ -185,4 +183,23 @@ async fn starbot_wizard_channel(ctx: &Context, msg: &Message) -> CommandResult<(
             }
         }
     }
+
+    Ok(())
+}
+
+pub async fn starbot_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("wizard: Easy way to setup the starboard \n\n");
+    content.push_str("threshold: Sets the threshold for a message to appear \n\n");
+    content.push_str("channel: Sets the channel where starboard embeds are sent \n\n");
+    content.push_str("Deactivate: Deactivates the starboard and re-enables quoting");
+    
+    let mut eb = EmbedBuilder::new();
+
+    eb = eb.title("Starboard Help");
+    eb = eb.description("Description: admin commands for starboarding in a discord server");
+    eb = eb.add_field("Commands", content).commit();
+    eb = eb.footer("Enabling the starboard will disable the quote command!").commit();
+
+    let _ = send_embed(&ctx.http, channel_id, eb.build()).await;
 }

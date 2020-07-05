@@ -6,7 +6,7 @@ use crate::{
 };
 
 use twilight::{
-    model::channel::message::Message,
+    model::{id::ChannelId, channel::message::Message},
     builders::embed::EmbedBuilder
 };
 
@@ -48,4 +48,18 @@ pub async fn decode_b64(ctx: &Context, msg: &Message) -> CommandResult<()> {
 
     send_embed(&ctx.http, msg.channel_id, eb.build()).await?;
     Ok(())
+}
+
+pub async fn cipher_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("b64encode <message>: Encodes a message in base64 \n\n");
+    content.push_str("b64decode <b64 string>: Decodes a base64 message");
+    
+    let mut eb = EmbedBuilder::new();
+
+    eb = eb.title("Cipher Help");
+    eb = eb.description("Help for Encoding/Decoding messages");
+    eb = eb.add_field("Commands", content).commit();
+
+    let _ = send_embed(&ctx.http, channel_id, eb.build()).await;
 }

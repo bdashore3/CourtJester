@@ -8,10 +8,10 @@ use crate::{
 use twilight::{
     model::{
         guild::Permissions, 
-        channel::Message
-    }
+        channel::Message, id::ChannelId
+    }, 
+    builders::embed::EmbedBuilder
 };
-use sqlx;
 use sqlx::PgPool;
 
 pub async fn handle_prefix(ctx: &Context, msg: &Message) -> CommandResult<()> {
@@ -60,6 +60,19 @@ pub async fn get_prefix(pool: &PgPool, guild_id: i64, default_prefix: String) ->
     Ok(cur_prefix)
 }
 
+pub async fn prefix_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("prefix: Gets the server's current prefix \n\n");
+    content.push_str("prefix <character>: Sets the server's prefix (Can be one or multiple characters)");
+    
+    let mut eb = EmbedBuilder::new();
+
+    eb = eb.title("Custom Prefix Help");
+    eb = eb.description("Description: Commands for custom bot prefixes");
+    eb = eb.add_field("Commands", content).commit();
+
+    let _ = send_embed(&ctx.http, channel_id, eb.build()).await;
+}
 
 pub async fn dispatch_custom_command(ctx: &Context, msg: &Message) -> CommandResult<()> {
     if string_renderer::get_command_length(&msg.content) < 2 {
@@ -80,7 +93,8 @@ pub async fn dispatch_custom_command(ctx: &Context, msg: &Message) -> CommandRes
                 return Ok(())
             }
             remove_custom_command(ctx, msg).await?;
-        }
+        },
+        "list" => list_custom_commands(ctx, msg).await?,
         _ => {}
     }
 
@@ -114,4 +128,37 @@ pub async fn remove_custom_command(ctx: &Context, msg: &Message) -> CommandResul
     send_message(&ctx.http, msg.channel_id, format!("Command `{}` sucessfully deleted!", command_name)).await?;
 
     Ok(())
+}
+
+pub async fn list_custom_commands(ctx: &Context, msg: &Message) -> CommandResult<()> {
+    let mut command_map: Vec<String> = Vec::new();
+
+    let command_data = sqlx::query!("SELECT name, content FROM commands WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+        .fetch_all(ctx.pool.as_ref()).await?;
+    
+    for i in command_data {
+        command_map.push(i.name);
+    }
+
+    let mut eb = EmbedBuilder::new();
+    eb = eb.title("Custom command list");
+    eb = eb.description(format!("```{} \n```", command_map.join(" \n")));
+    send_embed(&ctx.http, msg.channel_id, eb.build()).await?;
+
+    Ok(())
+}
+
+pub async fn command_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("set <name> <content>: Sets a new custom command, {user} is replaced with a mention \n\n");
+    content.push_str("remove <name>: Removes an existing custom command \n\n");
+    content.push_str("list: Lists all custom commands in the server");
+    
+    let mut eb = EmbedBuilder::new();
+
+    eb = eb.title("Custom Command Help");
+    eb = eb.description("Description: Custom command configuration (For administrators only!)");
+    eb = eb.add_field("Commands", content).commit();
+
+    let _ = send_embed(&ctx.http, channel_id, eb.build()).await;
 }

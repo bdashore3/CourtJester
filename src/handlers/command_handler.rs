@@ -7,13 +7,15 @@ use crate::commands::{
     textchannel_send::*,
     ciphers::*,
     config::*,
-    starbot::*
+    starbot::*,
+    help::*
 };
 
 pub async fn handle_command(msg: &Message, ctx: &Context, prefix_len: usize) -> CommandResult<()> {
     let command = string_renderer::get_command(&msg.content, prefix_len);
     match command {
         "ping" => send_message(&ctx.http, msg.channel_id, "Pong!").await?,
+        "help" => send_help(ctx, msg).await?,
         "mockl" => mock(ctx, msg, true).await?,
         "upp" => upp(ctx, msg, false).await?,
         "uppl" => upp(ctx, msg, true).await?,

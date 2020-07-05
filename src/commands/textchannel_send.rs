@@ -14,7 +14,6 @@ use twilight::{
     },
     builders::embed::EmbedBuilder
 };
-use sqlx;
 use sqlx::PgPool;
 
 struct TextChannels {
@@ -176,7 +175,7 @@ pub async fn quote(ctx: &Context, msg: &Message) -> CommandResult<()> {
         };
 
         eb = eb.author().name(&msg.author.name).icon_url(author_avatar).commit();
-        eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 0));
+        eb = eb.description(string_renderer::join_string(&msg.content, 0));
     }
     else {
         let given_id = string_renderer::get_message_word(&msg.content, 1);
@@ -191,7 +190,7 @@ pub async fn quote(ctx: &Context, msg: &Message) -> CommandResult<()> {
         };
 
         eb = eb.author().name(&quote_user.name).icon_url(quote_user_avatar).commit();
-        eb = eb.description(string_renderer::join_string(&format!("{}", &msg.content), 1));
+        eb = eb.description(string_renderer::join_string(&msg.content, 1));
     }
 
     eb = eb.add_field("Source", format!("[Jump!]({})", message_url)).commit();
@@ -251,4 +250,20 @@ pub async fn check_channel(ctx: &Context, channel_str: &str) -> Result<(i64, boo
     };
     
     Ok(output)
+}
+
+pub async fn sender_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("nice: Sends nice to a defined channel \n\n");
+    content.push_str("bruh: Sends a bruh moment to a defined channel \n\n");
+    content.push_str("quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n");
+    
+    let mut eb = EmbedBuilder::new();
+
+    eb = eb.title("Textchannel Sender Help");
+    eb = eb.description("Help for commands that send messages to specified channels");
+    eb = eb.add_field("Commands", content).commit();
+    eb = eb.footer("Adding a channel mention will set the sender channel (Moderator only)").commit();
+
+    let _ = send_embed(&ctx.http, channel_id, eb.build()).await;
 }
