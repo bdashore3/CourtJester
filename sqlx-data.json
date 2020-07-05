@@ -91,6 +91,26 @@
       "columns": []
     }
   },
+  "81eb441af2ce8052a2fa80289312807d9a90ef9cd1d70355b71ac43ae3c00b75": {
+    "query": "SELECT name, content FROM commands WHERE guild_id = $1",
+    "describe": {
+      "params": [
+        "Int8"
+      ],
+      "columns": [
+        {
+          "name": "name",
+          "type_info": "Text",
+          "not_null": true
+        },
+        {
+          "name": "content",
+          "type_info": "Text",
+          "not_null": false
+        }
+      ]
+    }
+  },
   "8b2b87c104e2630fd09d64003805c5428a5fddb2fbe92a5097932e0ca4f0d0c6": {
     "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                    ON CONFLICT (guild_id)\n                                    DO UPDATE SET quote_id = $2",
     "describe": {
