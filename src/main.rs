@@ -1,6 +1,7 @@
 mod commands;
 mod helpers;
 mod structures;
+mod reactions;
 
 use std::{
     env,
@@ -20,12 +21,11 @@ use serenity::{
         }
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild},
+    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild, channel::Reaction},
     model::prelude:: {
         Permissions,
         Message
     },
-    
     prelude::*
 };
 
@@ -40,6 +40,7 @@ use commands::{
 
 use structures::*;
 use helpers::database_helper;
+use reactions::reaction_handler;
 
 // All command groups
 #[group]
@@ -113,10 +114,20 @@ impl EventHandler for Handler {
         sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id)
             .execute(pool).await.unwrap();        
     }
+
+    async fn reaction_add(&self, ctx: Context, reaction: Reaction) {
+        let _ = reaction_handler::dispatch_reaction(&ctx, &reaction, false).await;
+    }
+
+    async fn reaction_remove(&self, ctx: Context, reaction: Reaction) {
+        let _ = reaction_handler::dispatch_reaction(&ctx, &reaction, true).await;
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    pretty_env_logger::init();
+    
     let args: Vec<String> = env::args().collect();
     let creds = helpers::credentials_helper::read_creds(args[1].to_string()).unwrap();
     let token = &creds.bot_token;
