@@ -1,5 +1,6 @@
 mod commands;
 mod helpers;
+mod structures;
 
 use std::{
     env,
@@ -9,19 +10,12 @@ use std::{
 
 use serenity::{
     async_trait,
-    client::bridge::gateway::ShardManager,
     framework::standard::{
         StandardFramework,
-        CommandResult,
-        CommandGroup,
         CommandError,
         DispatchError,
-        HelpOptions,
-        help_commands,
-        Args,
         macros:: {
             group,
-            help,
             hook
         }
     },
@@ -29,7 +23,6 @@ use serenity::{
     model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild},
     model::prelude:: {
         Permissions,
-        UserId,
         Message
     },
     
@@ -41,42 +34,12 @@ use commands::{
     textmod::*,
     ciphers::*,
     textchannel_send::*,
-    config::*
+    config::*,
+    support::*
 };
 
-use sqlx::PgPool;
-use dashmap::DashMap;
-
-use helpers:: {
-    database_helper,
-    guild_cache,
-    guild_cache::GuildData
-};
-
-// All command context data structures
-struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
-}
-
-struct ConnectionPool;
-
-impl TypeMapKey for ConnectionPool {
-    type Value = PgPool;
-}
-
-struct GuildMap;
-
-impl TypeMapKey for GuildMap { 
-    type Value = Arc<DashMap<i64, GuildData>>;
-}
-
-struct DefaultPrefix;
-
-impl TypeMapKey for DefaultPrefix {
-    type Value = Arc<String>;
-}
+use structures::*;
+use helpers::database_helper;
 
 // All command groups
 #[group]
@@ -108,8 +71,13 @@ struct TextChannelSend;
 
 #[group("Bot Configuration")]
 #[description = "Admin/Moderator commands that configure the bot"]
-#[commands(prefix, command, restore)]
+#[commands(prefix, command)]
 struct Config;
+
+#[group("Support")]
+#[description = "Support commands for the bot"]
+#[commands(help)]
+struct Support;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -129,18 +97,10 @@ impl EventHandler for Handler {
         let data = ctx.data.read().await;
         let pool = data.get::<ConnectionPool>().unwrap();
         let guild_id = guild.id.0 as i64;
-        let guild_map = data.get::<GuildMap>().unwrap();
 
         if is_new {
-            sqlx::query!("INSERT INTO guild_info VALUES($1, null)", guild_id)
+            sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild_id)
                 .execute(pool).await.unwrap();
-            
-            let new_guild_data = GuildData {
-                prefix: String::from(""),
-                commands: DashMap::new()
-            };
-
-            guild_map.insert(guild_id, new_guild_data);
         }
     }
 
@@ -149,12 +109,9 @@ impl EventHandler for Handler {
         let data = ctx.data.read().await;
         let pool = data.get::<ConnectionPool>().unwrap();
         let guild_id = incomplete.id.0 as i64;
-        let guild_map = data.get::<GuildMap>().unwrap();
 
         sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id)
-            .execute(pool).await.unwrap();
-        
-        guild_map.remove(&guild_id);
+            .execute(pool).await.unwrap();        
     }
 }
 
@@ -180,20 +137,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[hook]
     async fn unrecognized_command_hook(ctx: &Context, msg: &Message, command_name: &str) {
         let data = ctx.data.read().await;
-
         let pool = data.get::<ConnectionPool>().unwrap();
-    
         let guild_id = msg.guild_id.unwrap().0 as i64;
-        let guild_map = data.get::<GuildMap>().unwrap();
-        let guild_data = guild_map.get(&guild_id).unwrap();
 
-        if !guild_data.commands.contains_key(command_name) {
-            return
+        let cmd_data = sqlx::query!(
+                "SELECT content FROM commands WHERE guild_id = $1 AND name = $2",
+                guild_id, command_name)
+            .fetch_optional(pool).await.unwrap();
+
+        if let Some(cmd_data) = cmd_data {
+            let content = cmd_data.content.unwrap()
+                .replace("{user}", &msg.author.mention());
+            let _ = msg.channel_id.say(ctx, content).await;
         }
-
-        let command_content = guild_data.commands.get(command_name).unwrap();
-        let _ = msg.channel_id.say(ctx, format!("{}", *command_content)).await;
-        
     }
 
     // After a command is executed, goto here
@@ -233,43 +189,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
      */
     #[hook]
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
-        let prefix;
-
         let data = ctx.data.read().await;
+        let pool = data.get::<ConnectionPool>().unwrap();
         let default_prefix = data.get::<DefaultPrefix>().unwrap();
+        let guild_id = msg.guild_id.unwrap();
 
-        if let Some(id) = msg.guild_id {
+        let cur_prefix = commands::config::get_prefix(pool, guild_id, default_prefix.to_string()).await.unwrap();
 
-            let guild_map = data.get::<GuildMap>().unwrap();
-            let guild_id = msg.guild_id.unwrap().0 as i64;
-            let guild_data = guild_map.get(&guild_id).unwrap();
-
-            prefix = match guild_data.prefix.as_str() {
-                "" => default_prefix.to_string(),
-                _ => guild_data.prefix.to_string()
-            };
-        }
-        else {
-            prefix = default_prefix.to_string();
-        }
-        Some(prefix)
-    }
-
-    // Heart of the help command system
-    #[help]
-    #[individual_command_tip = "Hi there! \n
-    This is the help for all the bot's commands! Just pass the command/category name as an argument! \n"]
-    #[lacking_permissions = "Hide"]
-    #[lacking_ownership = "Hide"]
-    async fn send_help(
-        ctx: &Context,
-        msg: &Message,
-        args: Args,
-        help_options: &'static HelpOptions,
-        groups: &[&'static CommandGroup],
-        owners: HashSet<UserId>
-    ) -> CommandResult {
-        help_commands::with_embeds(ctx, msg, args, help_options, groups, owners).await
+        Some(cur_prefix)
     }
 
     // Link everything together!
@@ -289,7 +216,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&CIPHERS_GROUP)
         .group(&TEXTCHANNELSEND_GROUP)
         .group(&CONFIG_GROUP)
-        .help(&SEND_HELP);
+        .group(&SUPPORT_GROUP);
 
     let mut client = Client::new(&token)
         .framework(framework)
@@ -303,10 +230,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let pool = database_helper::obtain_pool(creds.db_connection).await?;
         data.insert::<ConnectionPool>(pool.clone());
-
-        let guild_data = guild_cache::fetch_guild_data(&pool).await?;
-
-        data.insert::<GuildMap>(Arc::new(guild_data));
 
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
 

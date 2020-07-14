@@ -14,8 +14,7 @@ rand = "0.7.3"
 base64 = "0.12.1"
 sqlx = { version = "0.3", default-features = false, features = [ "runtime-tokio", "macros", "postgres", "uuid" ] }
 uuid = { version = "0.8", features = ["v4"] }
-dashmap = "3.11.4"
 
 [dependencies.serenity]
-git = "https://github.com/Lakelezz/serenity/"
-branch = "await"
+git = "https://github.com/acdenissk/serenity/"
+branch = "await_next"

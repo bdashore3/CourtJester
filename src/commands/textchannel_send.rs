@@ -7,9 +7,22 @@ use serenity::framework::standard::{
 };
 use serenity::utils::*;
 
-use sqlx;
+use sqlx::PgPool;
 use crate::ConnectionPool;
 use crate::helpers::*;
+
+struct TextChannels {
+    nice_id: Option<i64>,
+    bruh_id: Option<i64>,
+    quote_id: Option<i64>
+}
+
+async fn get_channels(pool: &PgPool, guild_id: GuildId) -> Result<TextChannels, Box<dyn std::error::Error + Send + Sync>> {
+    let data = sqlx::query_as!(TextChannels, "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
+        .fetch_one(pool).await?;
+
+    Ok(data)
+}
 
 /// Sends `nice` to a specified channel. Provide a channel as the first argument to set it
 /// Usage: `nice <message>` or `nice <channel>`
@@ -25,7 +38,6 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     if let Some(channel_id) = parse_channel(&test_id) {
         if permissions_helper::check_permission(ctx, &msg, Permissions::MANAGE_MESSAGES).await {
-
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
                 .fetch_one(pool)
                 .await?;
@@ -34,7 +46,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 sqlx::query!("UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;
             } else {
-                textmod_helper::create_channel_row(pool, guild_id.0 as i64, channel_id as i64, None, None).await?;
+                insert_or_update(pool, guild_id, "nice", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -48,14 +60,20 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channel_num = textmod_helper::get_channel(pool, guild_id, "nice").await?;
+    let channel_num = get_channels(pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channel_num.nice_id.is_none() {
         msg.channel_id.say(ctx, "The Nice channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
-    ChannelId(channel_num as u64).say(ctx, format!("Nice - {}", msg.author)).await?;
+    let message_url = command_utils::get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
+    ChannelId(channel_num.nice_id.unwrap() as u64).send_message(ctx, |m| {
+        m.embed( |e| {
+            e.title(format!("Nice - {}", msg.author.name));
+            e.field("Source", format!("[Jump!]({})", message_url), false)
+        })
+    }).await?;
 
     Ok(())
 }
@@ -83,7 +101,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 sqlx::query!("UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;
             } else {
-                textmod_helper::create_channel_row(pool, guild_id.0 as i64, None, channel_id as i64, None).await?;
+                insert_or_update(pool, guild_id, "bruh", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -97,15 +115,23 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channel_num = textmod_helper::get_channel(pool, guild_id, "bruh").await?;
+    let channel_nums = get_channels(pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channel_nums.bruh_id.is_none() {
         msg.channel_id.say(ctx, "The Bruh channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
+    let message_url = command_utils::get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
+
     msg.channel_id.say(ctx, "***BRUH MOMENT***").await?;
-    ChannelId(channel_num as u64).say(ctx, format!("A bruh moment has been declared by {}", msg.author)).await?;
+    ChannelId(channel_nums.bruh_id.unwrap() as u64).send_message(ctx, |m| {
+        m.embed( |e| {
+            e.title(format!("Ladies and Gentlemen!"));
+            e.description(format!("A bruh moment has been declared by {}", msg.author.mention()));
+            e.field("Source", format!("[Jump!]({})", message_url), false)
+        })
+    }).await?;
 
     Ok(())
 }
@@ -117,7 +143,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let mut self_quote = true;
 
-    let test_id = args.single::<String>().unwrap_or_default();
+    let test_id = args.parse::<String>().unwrap_or_default();
 
     let data = ctx.data.read().await;
 
@@ -134,7 +160,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 sqlx::query!("UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;
             } else {
-                textmod_helper::create_channel_row(pool, guild_id.0 as i64, None, channel_id as i64, None).await?;
+                insert_or_update(pool, guild_id, "quote", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -152,18 +178,85 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channel_num = textmod_helper::get_channel(pool, guild_id, "quote").await?;
+    let channels = get_channels(pool, guild_id).await?;
 
-    if channel_num == 0 {
+    if channels.quote_id.is_none() {
         msg.channel_id.say(ctx, "The Quote channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
 
-    if self_quote {
-        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.author)).await?;
-    }
-    else {
-        ChannelId(channel_num as u64).say(ctx, format!("\"{}\" \n - {}", args.rest(), msg.mentions[0])).await?;
+    let message_url = command_utils::get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
+
+    let avatar_option = 
+        if self_quote {
+            msg.author.avatar_url()
+        }
+        else {
+            msg.mentions[0].avatar_url()
+        };
+
+    let avatar_id = match avatar_option {
+        Some(avatar_id) => avatar_id,
+        None => {
+            if self_quote {
+                msg.author.default_avatar_url()
+            }
+            else {
+                msg.mentions[0].default_avatar_url()
+            }
+        }
+    };
+
+    ChannelId(channels.quote_id.unwrap() as u64).send_message(ctx, |m| {
+        m.embed( |e| {
+            if self_quote {
+                e.author(|a| {
+                    a.name(&msg.author.name);
+                    a.icon_url(&avatar_id);
+                    a
+                });
+                e.description(args.rest());
+            }
+            else {
+                e.author(|a| {
+                    a.name(&msg.mentions[0].name);
+                    a.icon_url(&avatar_id);
+                    a
+                });
+                args.advance();
+                e.description(args.rest());
+            }
+            e.field("Source", format!("[Jump!]({})", message_url), false)
+        })
+    }).await?;
+
+    Ok(())
+}
+
+async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, channel_id: i64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    match channel_type {
+        "nice" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, $2, null, null)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET nice_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        "bruh" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, null, $2, null)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET bruh_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        "quote" => {
+            sqlx::query!("INSERT INTO text_channels VALUES($1, null, null, $2)
+                        ON CONFLICT (guild_id)
+                        DO UPDATE SET quote_id = $2",
+                        guild_id.0 as i64, channel_id)
+                        .execute(pool).await?;
+        },
+        _ => {}
     }
 
     Ok(())
