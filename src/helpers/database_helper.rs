@@ -1,6 +1,4 @@
-use std::env;
 use sqlx::postgres::PgPool;
-use crate::helpers::credentials_helper;
 
 pub async fn obtain_pool(db_connection: String) -> Result<PgPool, Box<dyn std::error::Error>> {
 
