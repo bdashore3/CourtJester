@@ -22,7 +22,7 @@ async fn b64encode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 async fn b64decode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let b64_bytes = match base64::decode(args.rest()) {
         Ok(bytes) => bytes,
-        Err(error) => {
+        Err(_error) => {
             msg.channel_id.say(ctx, "Please provide a base64 string!").await?;
             return Ok(())
         }

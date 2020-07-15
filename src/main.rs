@@ -35,7 +35,8 @@ use commands::{
     ciphers::*,
     textchannel_send::*,
     config::*,
-    support::*
+    support::*,
+    starboard::*
 };
 
 use structures::*;
@@ -79,6 +80,11 @@ struct Config;
 #[description = "Support commands for the bot"]
 #[commands(help)]
 struct Support;
+
+#[group("Starboard")]
+#[description = "Starboard admin commands"]
+#[commands(starboard)]
+struct Starboard;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -227,7 +233,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&CIPHERS_GROUP)
         .group(&TEXTCHANNELSEND_GROUP)
         .group(&CONFIG_GROUP)
-        .group(&SUPPORT_GROUP);
+        .group(&SUPPORT_GROUP)
+        .group(&STARBOARD_GROUP);
 
     let mut client = Client::new(&token)
         .framework(framework)

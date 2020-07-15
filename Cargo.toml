@@ -17,6 +17,8 @@ uuid = { version = "0.8", features = ["v4"] }
 [dependencies.serenity]
 git = "https://github.com/acdenissk/serenity/"
 branch = "await_next"
+default-features = true
+features = ["collector"]
 
 [dependencies.sqlx]
 #version = "0.3"

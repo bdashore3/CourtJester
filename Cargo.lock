@@ -1424,7 +1424,7 @@ dependencies = [
 [[package]]
 name = "sqlx"
 version = "0.4.0-pre"
-source = "git+https://github.com/launchbadge/sqlx/#1247daec83017abfd5c17f898c7f25ba3330af9d"
+source = "git+https://github.com/launchbadge/sqlx/#92cddc76c886285f95f18bfcb41e12626b4d236f"
 dependencies = [
  "sqlx-core 0.4.0-pre (git+https://github.com/launchbadge/sqlx/)",
  "sqlx-macros 0.4.0-pre (git+https://github.com/launchbadge/sqlx/)",
@@ -1433,7 +1433,7 @@ dependencies = [
 [[package]]
 name = "sqlx-core"
 version = "0.4.0-pre"
-source = "git+https://github.com/launchbadge/sqlx/#1247daec83017abfd5c17f898c7f25ba3330af9d"
+source = "git+https://github.com/launchbadge/sqlx/#92cddc76c886285f95f18bfcb41e12626b4d236f"
 dependencies = [
  "atoi 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.12.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1477,7 +1477,7 @@ dependencies = [
 [[package]]
 name = "sqlx-macros"
 version = "0.4.0-pre"
-source = "git+https://github.com/launchbadge/sqlx/#1247daec83017abfd5c17f898c7f25ba3330af9d"
+source = "git+https://github.com/launchbadge/sqlx/#92cddc76c886285f95f18bfcb41e12626b4d236f"
 dependencies = [
  "dotenv 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "either 1.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1498,7 +1498,7 @@ dependencies = [
 [[package]]
 name = "sqlx-rt"
 version = "0.1.0-pre"
-source = "git+https://github.com/launchbadge/sqlx/#1247daec83017abfd5c17f898c7f25ba3330af9d"
+source = "git+https://github.com/launchbadge/sqlx/#92cddc76c886285f95f18bfcb41e12626b4d236f"
 dependencies = [
  "native-tls 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "once_cell 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
