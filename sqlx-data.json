@@ -38,6 +38,39 @@
       "nullable": []
     }
   },
+  "2c19ba846721bcd2127ada83effd3e5042875f249011935acf6e19e6d2396983": {
+    "query": "UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "361ffca1bedf40600d7f5dea8ca1316e0f491fb0b6e229ca620d7a521eba9fe3": {
+    "query": "SELECT quote_id FROM text_channels WHERE guild_id = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "quote_id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        true
+      ]
+    }
+  },
   "3e1e878bce843945fc4070efd586d7c6ab97e46cde092fba1775813bf6eb521c": {
     "query": "DELETE FROM commands WHERE guild_id = $1 AND name = $2",
     "describe": {
@@ -84,6 +117,26 @@
       ]
     }
   },
+  "6b70d19acda0185fd00f1fa48b12e469da3124873cbd3f9925d6a429b061023e": {
+    "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "exists",
+          "type_info": "Bool"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
   "6ea93b3021f82b5f4c999054c9e6e1b722158ef2a68d63d92053c30b8adca1f5": {
     "query": "SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)",
     "describe": {
@@ -102,6 +155,19 @@
       "nullable": [
         null
       ]
+    }
+  },
+  "7d06d315cae11c3f98e1add5a30ad65631104ed7f2c20e5821ee1dff35c05ed2": {
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                ON CONFLICT (guild_id)\n                DO UPDATE SET quote_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
     }
   },
   "7f35d77a17d502bc2fede4148aec943830be3f66ac412dcc2eadedb7195023c1": {
@@ -306,6 +372,31 @@
       "nullable": []
     }
   },
+  "c7cc9ab54001965812d47d563ead948325c3666bb7767d19532e37c1cfd74249": {
+    "query": "UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "d5f33f958b1ebbf39a0564aa7fa8615bfb87468514cf077b0c1797fcaed8823e": {
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                ON CONFLICT (guild_id)\n                                DO UPDATE SET quote_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "dd50565e235d2fe44ed32987f7f5032f17c5cb64b0fe0c12d57c1ba3b611eb32": {
     "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET quote_id = $2",
     "describe": {
@@ -313,6 +404,18 @@
       "parameters": {
         "Left": [
           "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "f51fbc686d8ec6d489024f4af30d209bf5622542da7b6ebdffa1d256e3bd1909": {
+    "query": "UPDATE text_channels SET quote_id = null WHERE guild_id = $1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
           "Int8"
         ]
       },

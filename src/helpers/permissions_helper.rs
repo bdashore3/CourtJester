@@ -28,7 +28,7 @@ pub async fn check_permission(ctx: &Context, msg: &Message, permission: Permissi
     return false;
 }
 
-pub async fn check_mentioned_permission(ctx: &Context, msg: &Message, user: UserId, permission: Permissions) -> bool {
+pub async fn _check_mentioned_permission(ctx: &Context, msg: &Message, user: UserId, permission: Permissions) -> bool {
 
     let channel = msg.channel(ctx).await.unwrap().guild().unwrap();
 

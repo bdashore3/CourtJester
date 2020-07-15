@@ -1,7 +1,12 @@
 use serenity::{
-    model::{id::{MessageId, ChannelId}, channel::{ReactionType, Reaction, Attachment}, prelude::User}, 
+    model::{
+        id::ChannelId, 
+        channel::{ReactionType, Reaction, Attachment}, 
+        prelude::User
+    },
     client::Context, 
-    framework::standard::CommandResult, builder::CreateEmbed
+    framework::standard::CommandResult, 
+    builder::CreateEmbed
 };
 use crate::{helpers::command_utils, structures::ConnectionPool};
 
@@ -17,7 +22,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     let reaction_channel = reaction.channel(ctx).await?;
     let reactions = reaction_message.reactions;
     let stars = match reactions.into_iter()
-        .find(|x| reaction.emoji == ReactionType::Unicode("\u{2b50}".to_string())) {
+        .find(|_x| reaction.emoji == ReactionType::Unicode("\u{2b50}".to_string())) {
             Some(reaction) => reaction.count,
             None => 0
         };
@@ -56,10 +61,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         return Ok(())
     }
 
-    println!("{}", stars);
-
     if stars == config_data.starbot_threshold.unwrap() as u64 && !remove {
-        println!("Equal!");
         let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
         let starboard_embed = get_starboard_embed(reaction, &reaction_message.author, reaction_message.content, reaction_message.attachments);
         let sent_message = star_channel_id.send_message(ctx, |m| {
@@ -75,13 +77,11 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             .execute(pool).await?;
     }
     else if (stars as i32) < config_data.starbot_threshold.unwrap() && remove {
-        println!("Less than!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;
         
         if let Some(data) = message_data {
-            println!("There's data!");
             ctx.http.delete_message(star_channel_id.0 as u64, data.sent_message_id as u64).await?;
 
             sqlx::query!("DELETE FROM starbot WHERE guild_id = $1 and reaction_message_id = $2",
@@ -90,18 +90,15 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         }
     }
     else if stars > config_data.starbot_threshold.unwrap() as u64 || remove {
-        println!("Greater than!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;
 
         if let Some(data) = message_data {
-            println!("{}", data.sent_message_id);
             let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
             let eb = get_starboard_embed(reaction, &reaction_message.author, reaction_message.content, reaction_message.attachments);
 
             let mut sent_message = ctx.http.get_message(star_channel_id.0 as u64, data.sent_message_id as u64).await?;
-            println!("{:?}", sent_message);
             sent_message.edit(ctx, |m| {
                 m.content(first_message);
                 m.embed(|e| {
