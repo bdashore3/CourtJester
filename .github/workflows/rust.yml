@@ -1,0 +1,22 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ serenity-old ]
+  pull_request:
+    branches: [ serenity-old ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build  --release --verbose
+    - name: Run tests
+      run: cargo test --verbose
