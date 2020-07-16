@@ -145,3 +145,26 @@ async fn biggspacel(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+
+pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("mock <message>: Spongebob mocks a string \n\n");
+    content.push_str("inv <message>: Inverts capitalization of each letter in the message \n\n");
+    content.push_str("upp <message>: Every letter becomes uppercase \n\n");
+    content.push_str("low <message>: Every letter becomes lowercase \n\n");
+    content.push_str("space <message>: Spaces out each letter in the message (whitespace omitted) \n\n");
+    content.push_str("biggspace <message>: Same as space, but W I D E R");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Text Modification Help");
+            e.description("Description: Commands that modify text");
+            e.field("Commands", content, false);
+            e.footer(|f| {
+                f.text("Putting an l in front of any command will use the last message");
+                f
+            });
+            e
+        })
+    }).await;
+}
