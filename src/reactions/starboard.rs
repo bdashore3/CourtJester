@@ -33,10 +33,12 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         .fetch_one(pool).await?;
     
     if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {
-        reaction_channel.id().send_message(ctx, |m| {
-            m.content("Starbot isn't enabled for this guild! Please set a threshold and channel to send messages in!");
-            m
-        }).await?;
+        if !remove {
+            reaction_channel.id().send_message(ctx, |m| {
+                m.content("Starboard isn't enabled for this guild! Please set a threshold and channel to send messages in!");
+                m
+            }).await?;
+        }
         
         return Ok(())
     }

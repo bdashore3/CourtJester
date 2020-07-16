@@ -66,6 +66,21 @@ pub async fn get_prefix(pool: &PgPool, guild_id: GuildId, default_prefix: String
     Ok(cur_prefix)
 }
 
+pub async fn prefix_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("prefix: Gets the server's current prefix \n\n");
+    content.push_str("prefix <character>: Sets the server's prefix (Can be one or multiple characters)");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Custom Prefix Help");
+            e.description("Description: Commands for custom bot prefixes");
+            e.field("Commands", content, false);
+            e
+        })
+    }).await;
+}
+
 /// Custom commands for your server that output a message
 /// Usage to set: `command set <name> <content to be said>`
 /// Usage to remove: `command remove <name>`
@@ -144,4 +159,20 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
     }).await?;
 
     Ok(())
+}
+
+pub async fn command_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("set <name> <content>: Sets a new custom command, {user} is replaced with a mention \n\n");
+    content.push_str("remove <name>: Removes an existing custom command \n\n");
+    content.push_str("list: Lists all custom commands in the server");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Custom Command Help");
+            e.description("Description: Custom command configuration (For administrators only!)");
+            e.field("Commands", content, false);
+            e
+        })
+    }).await;
 }

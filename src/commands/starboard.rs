@@ -1,7 +1,7 @@
 use serenity::{
     client::Context, 
     framework::standard::{CommandResult, macros::command, Args, Delimiter}, 
-    model::channel::{ReactionType, Message},
+    model::{id::ChannelId, channel::{ReactionType, Message}},
     utils::parse_channel
 };
 use sqlx::PgPool;
@@ -150,10 +150,10 @@ async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool)
 }
 
 async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -> CommandResult {
-    let channel_check = sqlx::query!("SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)", msg.guild_id.unwrap().0 as i64)
+    let channel_check = sqlx::query!("SELECT quote_id FROM text_channels WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
         .fetch_one(pool).await?;
     
-    if channel_check.exists.unwrap() {
+    if channel_check.quote_id.is_some() {
         let mut send_string = String::new();
         send_string.push_str("You already have a channel set up for quotes! \nIf you want to change it, run `starbot channel` \n");
         send_string.push_str("Enjoy your new starboard!");
@@ -187,3 +187,23 @@ async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -
     Ok(())
 }
 
+pub async fn starboard_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("wizard: Easy way to setup the starboard \n\n");
+    content.push_str("threshold: Sets the threshold for a message to appear \n\n");
+    content.push_str("channel: Sets the channel where starboard embeds are sent \n\n");
+    content.push_str("Deactivate: Deactivates the starboard and re-enables quoting");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Starboard Help");
+            e.description("Description: admin commands for starboarding in a discord server");
+            e.field("Commands", content, false);
+            e.footer(|f| {
+                f.text("Enabling the starboard will disable the quote command!");
+                f
+            });
+            e
+        })
+    }).await;
+}

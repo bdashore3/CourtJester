@@ -261,3 +261,23 @@ async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, 
 
     Ok(())
 }
+
+pub async fn sender_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("nice: Sends nice to a defined channel \n\n");
+    content.push_str("bruh: Sends a bruh moment to a defined channel \n\n");
+    content.push_str("quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Textchannel Sender Help");
+            e.description("Description: Commands that send messages to specified channels");
+            e.field("Commands", content, false);
+            e.footer(|f| {
+                f.text("Adding a channel mention will set the sender channel (Moderator only)");
+                f
+            });
+            e
+        })
+    }).await;
+}

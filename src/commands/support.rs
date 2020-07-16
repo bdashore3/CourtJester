@@ -5,6 +5,13 @@ use serenity::framework::standard::{
     macros::command,
     Args
 };
+use crate::commands::{
+    config::*,
+    starboard::*,
+    textchannel_send::*,
+    ciphers::*,
+    textmod::*
+};
 
 #[command]
 async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -15,6 +22,16 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let subcommand = args.single::<String>()?;
     
+    match subcommand.as_str() {
+        "prefix" => prefix_help(ctx, msg.channel_id).await,
+        "command" => command_help(ctx, msg.channel_id).await,
+        "starboard" => starboard_help(ctx, msg.channel_id).await,
+        "senders" => sender_help(ctx, msg.channel_id).await,
+        "ciphers" => cipher_help(ctx, msg.channel_id).await,
+        "text" => textmod_help(ctx, msg.channel_id).await,
+        _ => {}
+    }
+
     Ok(())
 }
 
