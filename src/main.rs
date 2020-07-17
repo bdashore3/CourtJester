@@ -41,7 +41,9 @@ use commands::{
 
 use structures::*;
 use helpers::database_helper;
+use helpers::voice_utils::*;
 use reactions::reaction_handler;
+use serenity_lavalink::LavalinkClient;
 
 // All command groups
 #[group]
@@ -85,6 +87,11 @@ struct Support;
 #[description = "Starboard admin commands"]
 #[commands(starboard)]
 struct Starboard;
+
+#[group("Voice")]
+#[description = "Commands used for voice chat"]
+#[commands(joinvc, leavevc)]
+struct Voice;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -140,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let http = Http::new_with_token(&token);
 
-    let (owners, _bot_id) = match http.get_current_application_info().await {
+    let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
             owners.insert(info.owner.id);
@@ -149,6 +156,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
+
+    let pool = database_helper::obtain_pool(creds.db_connection).await?;
+
+    let mut lava_client = LavalinkClient::new();
+    lava_client.password = creds.lavalink_auth;
+    lava_client.bot_id = bot_id;
+    lava_client.initialize().await?;
 
     // If there's no command, check in the custom commands database
     #[hook]
@@ -234,7 +248,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&TEXTCHANNELSEND_GROUP)
         .group(&CONFIG_GROUP)
         .group(&SUPPORT_GROUP)
-        .group(&STARBOARD_GROUP);
+        .group(&STARBOARD_GROUP)
+        .group(&VOICE_GROUP);
 
     let mut client = Client::new(&token)
         .framework(framework)
@@ -246,12 +261,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Insert all structures into ctx data
         let mut data = client.data.write().await;
 
-        let pool = database_helper::obtain_pool(creds.db_connection).await?;
         data.insert::<ConnectionPool>(pool.clone());
-
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-
         data.insert::<DefaultPrefix>(Arc::new(creds.default_prefix));
+        data.insert::<Lavalink>(lava_client);
+        data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {
