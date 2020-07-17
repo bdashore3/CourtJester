@@ -18,7 +18,11 @@ uuid = { version = "0.8", features = ["v4"] }
 git = "https://github.com/acdenissk/serenity/"
 branch = "await_next"
 default-features = true
-features = ["collector"]
+features = ["collector", "rustls_backend"]
+
+[dependencies.serenity-lavalink]
+git = "https://gitlab.com/nitsuga5124/serenity-lavalink/"
+branch = "master"
 
 [dependencies.sqlx]
 #version = "0.3"
