@@ -1,6 +1,6 @@
 use serenity::{
     client::bridge::{voice::ClientVoiceManager, gateway::ShardManager}, 
-    prelude::{Mutex, TypeMapKey}
+    prelude::{Mutex, TypeMapKey, RwLock}
 };
 use std::sync::Arc;
 use sqlx::PgPool;
@@ -34,5 +34,5 @@ impl TypeMapKey for VoiceManager {
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
-    type Value = LavalinkClient;
+    type Value = Arc<RwLock<LavalinkClient>>;
 }
