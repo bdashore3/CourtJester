@@ -36,7 +36,8 @@ use commands::{
     textchannel_send::*,
     config::*,
     support::*,
-    starboard::*
+    starboard::*,
+    music::*
 };
 
 use structures::*;
@@ -92,6 +93,11 @@ struct Starboard;
 #[description = "Commands used for voice chat"]
 #[commands(joinvc, leavevc)]
 struct Voice;
+
+#[group("Music")]
+#[description = "Commands used to play music"]
+#[commands(play, pause, resume, now_playing, queue, skip, stop)]
+struct Music;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -249,7 +255,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&CONFIG_GROUP)
         .group(&SUPPORT_GROUP)
         .group(&STARBOARD_GROUP)
-        .group(&VOICE_GROUP);
+        .group(&VOICE_GROUP)
+        .group(&MUSIC_GROUP);
 
     let mut client = Client::new(&token)
         .framework(framework)
@@ -264,7 +271,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<ConnectionPool>(pool.clone());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
         data.insert::<DefaultPrefix>(Arc::new(creds.default_prefix));
-        data.insert::<Lavalink>(lava_client);
+        data.insert::<Lavalink>(Arc::new(RwLock::new(lava_client)));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
     }
 

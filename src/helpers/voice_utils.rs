@@ -1,9 +1,13 @@
 use serenity::{
     model::channel::Message, 
     client::Context, 
-    framework::standard::{macros::command, CommandResult}
+    framework::standard::{macros::command, CommandResult, Args}
 };
-use crate::structures::{Lavalink, VoiceManager};
+use crate::{
+    helpers::command_utils,
+    structures::{Lavalink, VoiceManager}
+};
+use serenity_lavalink::nodes::Node;
 
 #[command]
 pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
@@ -27,6 +31,10 @@ pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
     let mut manager = manager_lock.lock().await;
 
     if manager.join(msg.guild_id.unwrap(), connect_to).is_some() {
+        let lava_lock = data.get::<Lavalink>().unwrap();
+        let mut lava_client = lava_lock.write().await;
+        Node::new(&mut lava_client, msg.guild_id.unwrap(), msg.channel_id);
+
         msg.channel_id.say(ctx, format!("Joined {}", connect_to)).await?;
     } else {
         msg.channel_id.say(ctx, "There was an error when joining the channel").await?;
@@ -36,24 +44,30 @@ pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-pub async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
+async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = ctx.cache.guild_channel(msg.channel_id).await.unwrap().guild_id;
-
-    let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
-    let mut manager = manager_lock.lock().await;
+    let guild = msg.guild(ctx).await.unwrap();
     
-    if manager.get(guild_id).is_some() {
-        manager.remove(guild_id);
-        {
-            let data = ctx.data.read().await;
-            let lava_client = data.get::<Lavalink>().unwrap();
-            lava_client.destroy(&msg.guild_id.unwrap()).await?;
-        }
-
-        msg.channel_id.say(ctx, "Left the voice channel!").await?;
-    } else {
+    if !command_utils::check_voice_state(guild, msg.author.id).await {
         msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+        return Ok(())
     }
+
+    let data = ctx.data.read().await;
+    let manager_lock = data.get::<VoiceManager>().unwrap();
+    let mut manager = manager_lock.lock().await;
+
+    manager.remove(guild_id);
+    {
+        let data = ctx.data.read().await;
+        let lava_lock = data.get::<Lavalink>().unwrap();
+        let mut lava_client = lava_lock.write().await;
+        let node = lava_client.nodes.get(&msg.guild_id.unwrap()).unwrap().clone();
+
+        node.destroy(&mut lava_client, &msg.guild_id.unwrap()).await?;
+    }
+
+    msg.channel_id.say(ctx, "Left the voice channel!").await?;
 
     Ok(())
 }
