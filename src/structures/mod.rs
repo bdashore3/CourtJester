@@ -1,10 +1,12 @@
 use serenity::{
     client::bridge::{voice::ClientVoiceManager, gateway::ShardManager}, 
-    prelude::{Mutex, TypeMapKey, RwLock}
+    prelude::{Mutex, TypeMapKey, RwLock}, model::id::GuildId
 };
 use std::sync::Arc;
 use sqlx::PgPool;
 use serenity_lavalink::LavalinkClient;
+use dashmap::DashMap;
+use futures::future::AbortHandle;
 
 // All command context data structures
 pub struct ShardManagerContainer;
@@ -35,4 +37,10 @@ pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
     type Value = Arc<RwLock<LavalinkClient>>;
+}
+
+pub struct VoiceTimerMap;
+
+impl TypeMapKey for VoiceTimerMap {
+    type Value = Arc<DashMap<GuildId, AbortHandle>>;
 }
