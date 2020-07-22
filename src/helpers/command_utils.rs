@@ -1,6 +1,8 @@
-use serenity::{client::{bridge::voice::ClientVoiceManager, Context}, model::{channel::{Message, ReactionType}, id::{ChannelId, GuildId, MessageId, UserId}, guild::Guild}, prelude::Mutex};
-use crate::structures::VoiceManager;
-use std::sync::Arc;
+use serenity::model::{
+    channel::ReactionType, 
+    id::{ChannelId, GuildId, MessageId, UserId}, 
+    guild::Guild
+};
 
 pub fn get_message_url(guild_id: GuildId, channel_id: ChannelId, message_id: MessageId) -> String {
     format!("https://discordapp.com/channels/{}/{}/{}", guild_id.0, channel_id.0, message_id.0)

@@ -6,6 +6,7 @@ mod reactions;
 use std::{
     env,
     collections::HashSet,
+    collections::HashMap,
     sync::Arc,
 };
 
@@ -21,7 +22,7 @@ use serenity::{
         }
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild, channel::Reaction},
+    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild, channel::Reaction, id::GuildId},
     model::prelude:: {
         Permissions,
         Message
@@ -45,6 +46,8 @@ use helpers::database_helper;
 use helpers::voice_utils::*;
 use reactions::reaction_handler;
 use serenity_lavalink::LavalinkClient;
+use futures::future::AbortHandle;
+use dashmap::DashMap;
 
 // All command groups
 #[group]
@@ -164,6 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let pool = database_helper::obtain_pool(creds.db_connection).await?;
+    let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new(); 
 
     let mut lava_client = LavalinkClient::new();
     lava_client.password = creds.lavalink_auth;
@@ -273,6 +277,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<DefaultPrefix>(Arc::new(creds.default_prefix));
         data.insert::<Lavalink>(Arc::new(RwLock::new(lava_client)));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
+        data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {

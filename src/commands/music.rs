@@ -7,14 +7,14 @@ use serenity::{
     }, 
     model::channel::{ReactionType, Message}, builder::CreateEmbed
 };
-use crate::{helpers::command_utils, structures::{Lavalink, VoiceManager}};
+use crate::{helpers::{voice_utils, command_utils}, structures::{Lavalink, VoiceManager, VoiceTimerMap}};
 use std::sync::Arc;
 use rust_clock::Clock;
 
 #[command]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
-    
+
     if !command_utils::check_voice_state(guild, msg.author.id).await {
         msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
         return Ok(())
@@ -26,10 +26,16 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     }
 
     let query = args.message().to_string();
-
     let guild_id = msg.guild_id.unwrap();
 
     let data = ctx.data.read().await;
+
+    let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+
+    if let Some(future_guard) = voice_timer_map.get(&guild_id) {
+        future_guard.value().abort();
+    }
+
     let manager_lock = data.get::<VoiceManager>().cloned().unwrap();
     let mut manager = manager_lock.lock().await;
 
@@ -83,6 +89,11 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     node.pause(&lava_client_read, &guild_id).await?;
     msg.react(ctx, ReactionType::Unicode(String::from("⏸"))).await?;
 
+    let ctx_clone = ctx.clone();
+    tokio::spawn(async move {
+        voice_utils::create_new_timer(ctx_clone, guild_id).await;
+    });
+
     Ok(())
 }
 
@@ -105,6 +116,11 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
     node.stop(&mut lava_client_read, &guild_id).await?;
     msg.react(ctx, ReactionType::Unicode(String::from("🛑"))).await?;
 
+    let ctx_clone = ctx.clone();
+    tokio::spawn(async move {
+        voice_utils::create_new_timer(ctx_clone, guild_id).await;
+    });
+
     Ok(())
 }
 
@@ -119,6 +135,12 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     let data = ctx.data.read().await;
+    let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+
+    if let Some(future_guard) = voice_timer_map.get(&guild_id) {
+        future_guard.value().abort();
+    }
+
     let lava_lock = data.get::<Lavalink>().unwrap();
     let lava_client_read = lava_lock.read().await.clone();
     let mut lava_client = lava_lock.write().await;
@@ -218,6 +240,11 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     if node.queue.is_empty() {
         let mut lava_client_read = lava_lock.read().await.clone();
         node.stop(&mut lava_client_read, &guild_id).await?;
+
+        let ctx_clone = ctx.clone();
+        tokio::spawn(async move {
+            voice_utils::create_new_timer(ctx_clone, guild_id).await;
+        });
     } else {
         node.skip();
     }
