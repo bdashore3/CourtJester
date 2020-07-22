@@ -1,13 +1,16 @@
 use serenity::{
-    model::channel::Message, 
+    model::{id::GuildId, channel::Message}, 
     client::Context, 
-    framework::standard::{macros::command, CommandResult, Args}
+    framework::standard::{macros::command, CommandResult}
 };
 use crate::{
     helpers::command_utils,
-    structures::{Lavalink, VoiceManager}
+    structures::{Lavalink, VoiceManager, VoiceTimerMap}
 };
 use serenity_lavalink::nodes::Node;
+use futures::future::{Abortable, AbortHandle};
+use std::time::Duration;
+use tokio::time::delay_for;
 
 #[command]
 pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
@@ -44,7 +47,7 @@ pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
+pub async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = ctx.cache.guild_channel(msg.channel_id).await.unwrap().guild_id;
     let guild = msg.guild(ctx).await.unwrap();
     
@@ -53,6 +56,26 @@ async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
+    match leavevc_internal(ctx, &guild_id).await {
+        Ok(_) => {
+            let data = ctx.data.read().await;
+            let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+        
+            if let Some(future_guard) = voice_timer_map.get(&guild_id) {
+                future_guard.value().abort();
+            }
+
+            msg.channel_id.say(ctx, "Left the voice channel!").await?;
+        },
+        Err(e) => {
+            msg.channel_id.say(ctx, "There was an error when trying to disconnect!").await?;
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn leavevc_internal(ctx: &Context, guild_id: &GuildId) -> CommandResult {
     let data = ctx.data.read().await;
     let manager_lock = data.get::<VoiceManager>().unwrap();
     let mut manager = manager_lock.lock().await;
@@ -62,12 +85,24 @@ async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
         let data = ctx.data.read().await;
         let lava_lock = data.get::<Lavalink>().unwrap();
         let mut lava_client = lava_lock.write().await;
-        let node = lava_client.nodes.get(&msg.guild_id.unwrap()).unwrap().clone();
+        let node = lava_client.nodes.get(guild_id).unwrap().clone();
 
-        node.destroy(&mut lava_client, &msg.guild_id.unwrap()).await?;
+        let _ = node.destroy(&mut lava_client, guild_id).await;
     }
 
-    msg.channel_id.say(ctx, "Left the voice channel!").await?;
-
     Ok(())
+} 
+
+pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
+    let data = ctx.data.read().await;
+    let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+    let (abort_handle, abort_registration) = AbortHandle::new_pair();
+    let future = Abortable::new(leavevc_internal(&ctx, &guild_id), abort_registration);
+
+    voice_timer_map.insert(guild_id, abort_handle);
+    delay_for(Duration::from_secs(600)).await;
+    match future.await {
+        Ok(_) => {},
+        Err(_e) => {}
+    };
 }
