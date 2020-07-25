@@ -1,7 +1,6 @@
 use serenity::model::{
     channel::ReactionType, 
-    id::{ChannelId, GuildId, MessageId, UserId}, 
-    guild::Guild
+    id::{ChannelId, GuildId, MessageId}
 };
 
 pub fn get_message_url(guild_id: GuildId, channel_id: ChannelId, message_id: MessageId) -> String {
@@ -15,16 +14,4 @@ pub fn get_reaction_emoji(emoji_type: &ReactionType) -> &str {
     else {
         ""
     }
-}
-
-pub async fn check_voice_state(guild: Guild, user_id: UserId) -> bool {
-    let mut vc_active = true;
-
-    if guild.voice_states.contains_key(&user_id) {
-        vc_active = true;
-    } else {
-        vc_active = false;
-    }
-
-    vc_active
 }

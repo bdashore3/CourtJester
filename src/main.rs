@@ -6,7 +6,6 @@ mod reactions;
 use std::{
     env,
     collections::HashSet,
-    collections::HashMap,
     sync::Arc,
 };
 
@@ -94,12 +93,12 @@ struct Starboard;
 
 #[group("Voice")]
 #[description = "Commands used for voice chat"]
-#[commands(joinvc, leavevc)]
+#[commands(summon, disconnect)]
 struct Voice;
 
 #[group("Music")]
 #[description = "Commands used to play music"]
-#[commands(play, pause, resume, now_playing, queue, skip, stop)]
+#[commands(play, pause, resume, now_playing, queue, skip, stop, clear)]
 struct Music;
 
 // Event handler for when the bot starts

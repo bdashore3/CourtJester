@@ -5,20 +5,33 @@ use serenity::{
         macros::command, 
         CommandResult
     }, 
-    model::channel::{ReactionType, Message}, builder::CreateEmbed
+    model::{id::GuildId, channel::{ReactionType, Message}}, builder::CreateEmbed
 };
-use crate::{helpers::{voice_utils, command_utils}, structures::{Lavalink, VoiceManager, VoiceTimerMap}};
-use std::sync::Arc;
+use crate::{
+    helpers::voice_utils, 
+    structures::{Lavalink, VoiceManager, VoiceTimerMap}
+};
+use std::{time::Duration, sync::Arc};
 use rust_clock::Clock;
+use tokio::time::delay_for;
+use serenity_lavalink::nodes::Node;
 
 #[command]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
+    let guild_id = msg.guild_id.unwrap();
 
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
-        return Ok(())
-    }
+    let voice_channel_id = guild
+        .voice_states.get(&msg.author.id)
+        .and_then(|voice_state| voice_state.channel_id);
+
+    let voice_channel = match voice_channel_id {
+        Some(channel) => channel,
+        None => {
+            msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
+            return Ok(())
+        }
+    };
 
     if args.len() < 1 {
         msg.channel_id.say(ctx, "Please enter a track URL after the command!").await?;
@@ -26,22 +39,41 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     }
 
     let query = args.message().to_string();
-    let guild_id = msg.guild_id.unwrap();
 
-    let data = ctx.data.read().await;
+    let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
 
-    let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+    {
+        let mut manager = manager_lock.lock().await;
 
-    if let Some(future_guard) = voice_timer_map.get(&guild_id) {
-        future_guard.value().abort();
+        if manager.get(&guild_id).is_none() {
+            manager.join(&guild_id, voice_channel);
+        }
     }
 
-    let manager_lock = data.get::<VoiceManager>().cloned().unwrap();
-    let mut manager = manager_lock.lock().await;
+    loop {
+        let mut manager = manager_lock.lock().await;
 
+        let handler = manager
+            .get_mut(&guild_id)
+            .ok_or("Unable to get voice handler.")?;
+
+        if handler.token.is_some() && handler.session_id.is_some() && handler.endpoint.is_some() {
+            break;
+        }
+
+        delay_for(Duration::from_millis(500)).await;
+    }
+
+    let data = ctx.data.read().await;
+    let mut manager = manager_lock.lock().await;
+    
     if let Some(handler) = manager.get_mut(guild_id) {
         let lava_lock = data.get::<Lavalink>().unwrap();
         let mut lava_client = lava_lock.write().await;
+
+        if lava_client.nodes.get(&guild_id).is_none() {
+            Node::new(&mut lava_client, guild_id, msg.channel_id);
+        }
 
         let query_info = lava_client.auto_search_tracks(&query).await?;
 
@@ -63,10 +95,13 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         }
 
         msg.channel_id.say(ctx, format!("Added to queue: {}", query_info.tracks[0].info.title)).await?;
-    } else {
-        msg.channel_id.say(ctx, "Please make sure the bot has joined the vc!").await?;
-    }
 
+        let ctx_clone = ctx.clone();
+        tokio::spawn(async move {
+            queue_checker(ctx_clone, guild_id).await;
+        });
+    }
+    
     Ok(())
 }
 
@@ -75,8 +110,8 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
@@ -84,15 +119,15 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     let lava_lock = data.get::<Lavalink>().unwrap();
     let lava_client_read = lava_lock.read().await.clone();
     let mut lava_client = lava_lock.write().await;
-    let node = lava_client.nodes.get_mut(&guild_id).unwrap();
-
-    node.pause(&lava_client_read, &guild_id).await?;
-    msg.react(ctx, ReactionType::Unicode(String::from("⏸"))).await?;
-
-    let ctx_clone = ctx.clone();
-    tokio::spawn(async move {
-        voice_utils::create_new_timer(ctx_clone, guild_id).await;
-    });
+    if let Some(node) = lava_client.nodes.get_mut(&guild_id) {
+        node.pause(&lava_client_read, &guild_id).await?;
+        msg.react(ctx, ReactionType::Unicode(String::from("⏸"))).await?;
+    
+        let ctx_clone = ctx.clone();
+        tokio::spawn(async move {
+            voice_utils::create_new_timer(ctx_clone, guild_id).await;
+        });
+    };
 
     Ok(())
 }
@@ -102,49 +137,62 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
     let data = ctx.data.read().await;
+
     let lava_lock = data.get::<Lavalink>().unwrap();
     let mut lava_client_read = lava_lock.read().await.clone();
     let mut lava_client = lava_lock.write().await;
-    let node = lava_client.nodes.get_mut(&guild_id).unwrap();
-
-    node.stop(&mut lava_client_read, &guild_id).await?;
-    msg.react(ctx, ReactionType::Unicode(String::from("🛑"))).await?;
-
-    let ctx_clone = ctx.clone();
-    tokio::spawn(async move {
-        voice_utils::create_new_timer(ctx_clone, guild_id).await;
-    });
+    match lava_client.nodes.get_mut(&guild_id) {
+        Some(node) => {
+            node.stop(&mut lava_client_read, &guild_id).await?;
+            msg.react(ctx, ReactionType::Unicode(String::from("🛑"))).await?;
+        
+            let ctx_clone = ctx.clone();
+            tokio::spawn(async move {
+                voice_utils::create_new_timer(ctx_clone, guild_id).await;
+            });   
+        },
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+        }
+    };
 
     Ok(())
 }
 
 #[command]
+#[aliases("unpause")]
 async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
     let data = ctx.data.read().await;
+    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_client_read = lava_lock.read().await.clone();
+    let mut lava_client = lava_lock.write().await;
+    let node = match lava_client.nodes.get_mut(&guild_id) {
+        Some(node) => node,
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            return Ok(())
+        }
+    };
+
     let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
 
     if let Some(future_guard) = voice_timer_map.get(&guild_id) {
         future_guard.value().abort();
     }
-
-    let lava_lock = data.get::<Lavalink>().unwrap();
-    let lava_client_read = lava_lock.read().await.clone();
-    let mut lava_client = lava_lock.write().await;
-    let node = lava_client.nodes.get_mut(&guild_id).unwrap();
 
     node.resume(&lava_client_read, &msg.guild_id.unwrap()).await?;
     msg.react(ctx, ReactionType::Unicode(String::from("▶"))).await?;
@@ -156,20 +204,26 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
 async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
     let data = ctx.data.read().await;
+
     let lava_client = data.get::<Lavalink>().unwrap().read().await;
 
-    if let Some(node) = lava_client.nodes.get(&msg.guild_id.unwrap()) {
-        let track = node.now_playing.as_ref();
-        if let Some(t) = track {
-            msg.channel_id.say(ctx, format!("Now playing: {}", t.track.info.title)).await?;
-        } else {
-            msg.channel_id.say(ctx, "There is nothing playing right now").await?;
+    match lava_client.nodes.get(&msg.guild_id.unwrap()) {
+        Some(node) => {
+            let track = node.now_playing.as_ref();
+            if let Some(t) = track {
+                msg.channel_id.say(ctx, format!("Now playing: {}", t.track.info.title)).await?;
+            } else {
+                msg.channel_id.say(ctx, "There is nothing playing right now").await?;
+            }
+        },
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
         }
     }
 
@@ -181,15 +235,25 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
     let data = ctx.data.read().await;
     let lava_client = data.get::<Lavalink>().unwrap().read().await;
-    let node = lava_client.nodes.get(&msg.guild_id.unwrap()).unwrap();
+    let node = match lava_client.nodes.get(&msg.guild_id.unwrap()) {
+        Some(node) => node,
+        None => {
+            return Ok(())
+        }
+    };
     let queue = &node.queue;
+
+    if queue.is_empty() && node.now_playing.is_none() {
+        msg.channel_id.say(ctx, "The queue is currently empty!").await?;
+        return Ok(())
+    }
 
     let mut eb = CreateEmbed::default();
     eb.title(format!("Queue for {}", guild_id.name(ctx).await.unwrap()));
@@ -222,29 +286,87 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+async fn queue_checker(ctx: Context, guild_id: GuildId) {
+    loop {
+        delay_for(Duration::from_secs(60)).await;
+        {
+            let data = ctx.data.read().await;
+            let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+
+            if voice_timer_map.get(&guild_id).is_some() {
+                return
+            }
+
+            let lava_lock = data.get::<Lavalink>().unwrap();
+            let lava_client = lava_lock.read().await;
+            let node = match lava_client.nodes.get(&guild_id) {
+                Some(node) => node,
+                None => {
+                    return
+                }
+
+            };
+            
+            if node.queue.is_empty() && node.now_playing.is_none() {
+                let ctx_clone = ctx.clone();
+                tokio::spawn(async move {
+                    voice_utils::create_new_timer(ctx_clone, guild_id).await;
+                });
+                break;
+            }
+        }
+    }
+}
+
+#[command]
+async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
+    let guild = msg.guild(ctx).await.unwrap();
+    
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
+        return Ok(())
+    }
+
+    let data = ctx.data.read().await;
+    let mut lava_client = data.get::<Lavalink>().unwrap().write().await;
+    let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap()) {
+        Some(node) => node,
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            return Ok(())
+        }
+    };
+    node.queue.clear();
+
+    msg.react(ctx, ReactionType::Unicode(String::from("💣"))).await?;
+
+    Ok(())
+}
+
 #[command]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
         return Ok(())
     }
 
     let data = ctx.data.read().await;
     let lava_lock = data.get::<Lavalink>().unwrap();
-    let mut lava_client = lava_lock.write().await.clone();
-    let node = lava_client.nodes.get_mut(&guild_id).unwrap();
-
+    let mut lava_client_read = lava_lock.read().await.clone();
+    let mut lava_client = lava_lock.write().await;
+    let node = match lava_client.nodes.get_mut(&guild_id) {
+        Some(node) => node,
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            return Ok(())
+        }
+    };
+    
     if node.queue.is_empty() {
-        let mut lava_client_read = lava_lock.read().await.clone();
         node.stop(&mut lava_client_read, &guild_id).await?;
-
-        let ctx_clone = ctx.clone();
-        tokio::spawn(async move {
-            voice_utils::create_new_timer(ctx_clone, guild_id).await;
-        });
     } else {
         node.skip();
     }
