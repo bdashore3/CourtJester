@@ -107,7 +107,7 @@ pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
     let future = Abortable::new(leavevc_internal(&ctx, &guild_id), abort_registration);
 
     voice_timer_map.insert(guild_id, abort_handle);
-    delay_for(Duration::from_secs(600)).await;
+    delay_for(Duration::from_secs(300)).await;
     match future.await {
         Ok(_) => {},
         Err(_e) => {}
