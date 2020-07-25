@@ -70,6 +70,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let message_url = command_utils::get_message_url(msg.guild_id.unwrap(), msg.channel_id, msg.id);
     ChannelId(channel_num.nice_id.unwrap() as u64).send_message(ctx, |m| {
         m.embed( |e| {
+            e.color(0x290e05);
             e.title(format!("Nice - {}", msg.author.name));
             e.field("Source", format!("[Jump!]({})", message_url), false)
         })
@@ -127,6 +128,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     msg.channel_id.say(ctx, "***BRUH MOMENT***").await?;
     ChannelId(channel_nums.bruh_id.unwrap() as u64).send_message(ctx, |m| {
         m.embed( |e| {
+            e.color(0xfc5e03);
             e.title(format!("Ladies and Gentlemen!"));
             e.description(format!("A bruh moment has been declared by {}", msg.author.mention()));
             e.field("Source", format!("[Jump!]({})", message_url), false)
@@ -149,9 +151,16 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let pool = data.get::<ConnectionPool>().unwrap();
 
+    let starbot_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
+        .fetch_one(pool).await?;
+    
+    if starbot_data.starbot_threshold.is_some() {
+        msg.channel_id.say(ctx, "You can't use the quote command because starboard is enabled in this server!").await?;
+        return Ok(())
+    }
+
     if let Some(channel_id) = parse_channel(&test_id) {
         if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
-
             let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
             .fetch_one(pool)
                 .await?;
@@ -209,6 +218,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     ChannelId(channels.quote_id.unwrap() as u64).send_message(ctx, |m| {
         m.embed( |e| {
+            e.color(0xfabe21);
             if self_quote {
                 e.author(|a| {
                     a.name(&msg.author.name);

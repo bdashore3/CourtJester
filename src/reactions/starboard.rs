@@ -34,10 +34,8 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     
     if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {
         if !remove {
-            reaction_channel.id().send_message(ctx, |m| {
-                m.content("Starboard isn't enabled for this guild! Please set a threshold and channel to send messages in!");
-                m
-            }).await?;
+            reaction_channel.id().say(ctx, 
+                "Starboard isn't enabled for this guild! Please set a threshold and channel to send messages in!").await?;
         }
         
         return Ok(())
@@ -47,19 +45,13 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     let star_channel = match ctx.cache.channel(star_channel_id).await {
         Some(star_channel) => star_channel,
         None => {
-            star_channel_id.send_message(ctx, |m| {
-                m.content("The star channel can't be found! Please set a new one!");
-                m
-            }).await?;
+            star_channel_id.say(ctx,"The star channel can't be found! Please set a new one!").await?;
             return Ok(())
         }
     };
 
     if star_channel.is_nsfw() {
-        reaction_channel.id().send_message(ctx, |m| {
-            m.content("You can't star an NSFW message in a non-nsfw starboard!");
-            m
-        }).await?;
+        reaction_channel.id().say(ctx, "You can't star an NSFW message in a non-nsfw starboard!").await?;
         return Ok(())
     }
 
