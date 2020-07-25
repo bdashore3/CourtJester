@@ -5,7 +5,11 @@ use serenity::{
         macros::command, 
         CommandResult
     }, 
-    model::{id::{ChannelId, GuildId}, channel::{ReactionType, Message}}, builder::CreateEmbed
+    model::{
+        id::{ChannelId, GuildId},
+        channel::{ReactionType, Message}
+    },
+    builder::CreateEmbed
 };
 use crate::{
     helpers::voice_utils, 

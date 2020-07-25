@@ -5,9 +5,7 @@ use serenity::framework::standard::{
     macros::command,
     Args
 };
-
-use sqlx::{self, PgPool, };
-
+use sqlx::{self, PgPool};
 use crate::{
     ConnectionPool,
     DefaultPrefix,

@@ -8,7 +8,6 @@ use std::{
     collections::HashSet,
     sync::Arc,
 };
-
 use serenity::{
     async_trait,
     framework::standard::{
@@ -28,7 +27,6 @@ use serenity::{
     },
     prelude::*
 };
-
 use commands::{
     other::*,
     textmod::*,
@@ -39,7 +37,6 @@ use commands::{
     starboard::*,
     music::*
 };
-
 use structures::*;
 use helpers::database_helper;
 use helpers::voice_utils::*;
