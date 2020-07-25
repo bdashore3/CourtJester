@@ -1,5 +1,5 @@
 use serenity::{
-    model::{id::GuildId, channel::Message}, 
+    model::{id::{ChannelId, GuildId}, channel::Message}, 
     client::Context,
     framework::standard::{macros::command, CommandResult}
 };
@@ -112,4 +112,23 @@ pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
         Ok(_) => {},
         Err(_e) => {}
     };
+}
+
+pub async fn voice_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("summon: Forces the bot to join the voice chat \nAlias: connect \n\n");
+    content.push_str("disconnect: Leaves the voice chat and clears everything \n\n");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Voice Help");
+            e.description("Description: General commands for voice chat");
+            e.field("Commands", content, false);
+            e.footer(|f| {
+                f.text("The user has to be in the voice chat on execution!");
+                f
+            });
+            e
+        })
+    }).await;
 }

@@ -98,7 +98,7 @@ struct Voice;
 
 #[group("Music")]
 #[description = "Commands used to play music"]
-#[commands(play, pause, resume, now_playing, queue, skip, stop, clear)]
+#[commands(play, pause, resume, queue, skip, stop, clear)]
 struct Music;
 
 // Event handler for when the bot starts
