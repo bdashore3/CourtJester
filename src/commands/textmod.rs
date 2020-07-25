@@ -126,6 +126,7 @@ async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
 /// Similar to space, but puts a larger amount of space between each character
 /// Usage: `biggspace <message>`
 #[command]
+#[aliases("bigspace")]
 #[min_args(1)]
 async fn biggspace(ctx: &Context, msg: &Message, args: Args) -> CommandResult { 
     msg.channel_id.say(ctx, textmod_helper::get_spaced_string(args.rest(), true)).await?;
