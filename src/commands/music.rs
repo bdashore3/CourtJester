@@ -5,7 +5,7 @@ use serenity::{
         macros::command, 
         CommandResult
     }, 
-    model::{id::GuildId, channel::{ReactionType, Message}}, builder::CreateEmbed
+    model::{id::{ChannelId, GuildId}, channel::{ReactionType, Message}}, builder::CreateEmbed
 };
 use crate::{
     helpers::voice_utils, 
@@ -201,36 +201,6 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
-    
-    if !guild.voice_states.contains_key(&msg.author.id) {
-        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
-        return Ok(())
-    }
-
-    let data = ctx.data.read().await;
-
-    let lava_client = data.get::<Lavalink>().unwrap().read().await;
-
-    match lava_client.nodes.get(&msg.guild_id.unwrap()) {
-        Some(node) => {
-            let track = node.now_playing.as_ref();
-            if let Some(t) = track {
-                msg.channel_id.say(ctx, format!("Now playing: {}", t.track.info.title)).await?;
-            } else {
-                msg.channel_id.say(ctx, "There is nothing playing right now").await?;
-            }
-        },
-        None => {
-            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
-        }
-    }
-
-    Ok(())
-}
-
-#[command]
 async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
@@ -374,4 +344,27 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     msg.channel_id.say(ctx, "Skipping the current track...").await?;
 
     Ok(())
+}
+
+pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
+    let mut content = String::new();
+    content.push_str("play <URL or search keywords> : Plays the specified track \n\n");
+    content.push_str("pause: Pauses the current track \n\n");
+    content.push_str("resume <author> <text>: Resumes the current track \nAlias: unpause \n\n");
+    content.push_str("stop: Stops the current track and empties the queue. Doesn't disconnect the bot \n\n");
+    content.push_str("skip: Skips the current track. If there are no tracks in the queue, the player is stopped \n\n");
+    content.push_str("queue: See the current queue for the guild and what's playing");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Music Help");
+            e.description("Description: Commands for playing music");
+            e.field("Commands", content, false);
+            e.footer(|f| {
+                f.text("For more information on voice commands, please check voice help");
+                f
+            });
+            e
+        })
+    }).await;
 }

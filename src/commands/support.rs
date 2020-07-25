@@ -10,8 +10,10 @@ use crate::commands::{
     starboard::*,
     textchannel_send::*,
     ciphers::*,
-    textmod::*
+    textmod::*,
+    music::*
 };
+use crate::helpers::voice_utils::*;
 
 #[command]
 async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -29,6 +31,8 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         "senders" => sender_help(ctx, msg.channel_id).await,
         "ciphers" => cipher_help(ctx, msg.channel_id).await,
         "text" => textmod_help(ctx, msg.channel_id).await,
+        "voice" => voice_help(ctx, msg.channel_id).await,
+        "music" => music_help(ctx, msg.channel_id).await,
         _ => {}
     }
 
@@ -43,6 +47,8 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
     categories.push_str("senders \n");
     categories.push_str("ciphers \n");
     categories.push_str("text \n");
+    categories.push_str("voice \n");
+    categories.push_str("music \n");
 
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
