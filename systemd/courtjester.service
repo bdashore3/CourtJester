@@ -13,7 +13,7 @@ User=courtjester
 Group=courtjester
 WorkingDirectory=/home/courtjester/CourtJester
 Environment = "SCRIPT_ARGS=src/info.json"
-ExecStart=/home/courtjester/CourtJester/target/release/courtjester $SCRIPT_ARGS
+ExecStart=/home/courtjester/CourtJester/courtjester $SCRIPT_ARGS
 
 # Limit damage in case something goes awry
 MemoryLimit=256M
