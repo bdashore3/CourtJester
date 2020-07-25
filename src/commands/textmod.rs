@@ -4,7 +4,6 @@ use serenity::framework::standard::{
     CommandResult, Args,
     macros::command,
 };
-
 use crate::helpers::*;
 
 /// Outputs a spongebob mock string
