@@ -1,19 +1,17 @@
 use serenity::{
     model::{id::GuildId, channel::Message}, 
-    client::Context, 
+    client::Context,
     framework::standard::{macros::command, CommandResult}
 };
-use crate::{
-    helpers::command_utils,
-    structures::{Lavalink, VoiceManager, VoiceTimerMap}
-};
+use crate::structures::{Lavalink, VoiceManager, VoiceTimerMap};
 use serenity_lavalink::nodes::Node;
 use futures::future::{Abortable, AbortHandle};
 use std::time::Duration;
 use tokio::time::delay_for;
 
 #[command]
-pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
+#[aliases("connect")]
+pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
 
     let channel_id = guild
@@ -33,10 +31,15 @@ pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
     let manager_lock = data.get::<VoiceManager>().cloned().unwrap();
     let mut manager = manager_lock.lock().await;
 
-    if manager.join(msg.guild_id.unwrap(), connect_to).is_some() {
+    if manager.join(guild.id, connect_to).is_some() {
         let lava_lock = data.get::<Lavalink>().unwrap();
         let mut lava_client = lava_lock.write().await;
         Node::new(&mut lava_client, msg.guild_id.unwrap(), msg.channel_id);
+
+        let ctx_clone = ctx.clone();
+        tokio::spawn(async move {
+            create_new_timer(ctx_clone, guild.id).await;
+        });
 
         msg.channel_id.say(ctx, format!("Joined {}", connect_to)).await?;
     } else {
@@ -47,18 +50,19 @@ pub async fn joinvc(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-pub async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
+async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = ctx.cache.guild_channel(msg.channel_id).await.unwrap().guild_id;
     let guild = msg.guild(ctx).await.unwrap();
     
-    if !command_utils::check_voice_state(guild, msg.author.id).await {
-        msg.channel_id.say(ctx, "Not connected to a Voice channel!").await?;
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "Please connect to a voice channel before executing this command!").await?;
         return Ok(())
     }
 
+    let data = ctx.data.read().await;
+
     match leavevc_internal(ctx, &guild_id).await {
         Ok(_) => {
-            let data = ctx.data.read().await;
             let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
         
             if let Some(future_guard) = voice_timer_map.get(&guild_id) {
@@ -67,8 +71,8 @@ pub async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
 
             msg.channel_id.say(ctx, "Left the voice channel!").await?;
         },
-        Err(e) => {
-            msg.channel_id.say(ctx, "There was an error when trying to disconnect!").await?;
+        Err(_e) => {
+            msg.channel_id.say(ctx, "The bot isn't in a voice channel!").await?;
         }
     }
 
@@ -76,18 +80,21 @@ pub async fn leavevc(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 pub async fn leavevc_internal(ctx: &Context, guild_id: &GuildId) -> CommandResult {
-    let data = ctx.data.read().await;
-    let manager_lock = data.get::<VoiceManager>().unwrap();
+    let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
     let mut manager = manager_lock.lock().await;
 
-    manager.remove(guild_id);
-    {
-        let data = ctx.data.read().await;
-        let lava_lock = data.get::<Lavalink>().unwrap();
-        let mut lava_client = lava_lock.write().await;
-        let node = lava_client.nodes.get(guild_id).unwrap().clone();
-
-        let _ = node.destroy(&mut lava_client, guild_id).await;
+    if manager.get(guild_id).is_some() {
+        manager.remove(guild_id);
+        {
+            let data = ctx.data.read().await;
+            let lava_lock = data.get::<Lavalink>().unwrap();
+            let mut lava_client = lava_lock.write().await;
+            let node = lava_client.nodes.get(guild_id).unwrap().clone();
+    
+            let _ = node.destroy(&mut lava_client, guild_id).await;
+        }
+    } else {
+        return Err("The bot isn't in a voice channel!".into());
     }
 
     Ok(())
