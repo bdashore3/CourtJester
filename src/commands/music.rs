@@ -21,6 +21,7 @@ use tokio::time::delay_for;
 use serenity_lavalink::nodes::Node;
 
 #[command]
+#[aliases("p")]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     let guild_id = msg.guild_id.unwrap();
@@ -98,7 +99,23 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             node.start_loop(Arc::clone(lava_lock), Arc::new(handler.clone())).await;
         }
 
-        msg.channel_id.say(ctx, format!("Added to queue: {}", query_info.tracks[0].info.title)).await?;
+        let mut cl = Clock::new();
+        cl.set_time_ms(query_info.tracks[0].info.length as i64);
+
+        msg.channel_id.send_message(ctx, |m| {
+            m.content("Added to queue:");
+            m.embed(|e| {
+                e.color(0x98fb98);
+                e.title(&query_info.tracks[0].info.title);
+                e.url(&query_info.tracks[0].info.uri);
+                e.field("Uploader", &query_info.tracks[0].info.author, true);
+                e.field("Length", cl.get_time(), true);
+                e.footer(|f| {
+                    f.text(format!("Requested by {}", msg.author.name));
+                    f
+                })
+            })
+        }).await?;
 
         let ctx_clone = ctx.clone();
         tokio::spawn(async move {
@@ -205,6 +222,7 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[aliases("q")]
 async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
@@ -230,6 +248,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     let mut eb = CreateEmbed::default();
+    eb.color(0x0377fc);
     eb.title(format!("Queue for {}", guild_id.name(ctx).await.unwrap()));
 
     if let Some(t) = node.now_playing.as_ref() {
@@ -293,6 +312,7 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
 }
 
 #[command]
+#[aliases("c")]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     
@@ -318,6 +338,7 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[aliases("s")]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();

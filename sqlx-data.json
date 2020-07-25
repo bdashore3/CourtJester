@@ -117,26 +117,6 @@
       ]
     }
   },
-  "6b70d19acda0185fd00f1fa48b12e469da3124873cbd3f9925d6a429b061023e": {
-    "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "exists",
-          "type_info": "Bool"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
-      "nullable": [
-        null
-      ]
-    }
-  },
   "6ea93b3021f82b5f4c999054c9e6e1b722158ef2a68d63d92053c30b8adca1f5": {
     "query": "SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)",
     "describe": {
@@ -395,6 +375,26 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "dd172ab2c488ba807dca5278cd6fb5997f70713556804459941a247988a35ed5": {
+    "query": "SELECT starbot_threshold FROM guild_info WHERE guild_id = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "starbot_threshold",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        true
+      ]
     }
   },
   "dd50565e235d2fe44ed32987f7f5032f17c5cb64b0fe0c12d57c1ba3b611eb32": {
