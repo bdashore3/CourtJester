@@ -41,7 +41,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             create_new_timer(ctx_clone, guild.id).await;
         });
 
-        msg.channel_id.say(ctx, format!("Joined {}", connect_to)).await?;
+        msg.channel_id.say(ctx, format!("Joined {}", connect_to.name(ctx).await.unwrap())).await?;
     } else {
         msg.channel_id.say(ctx, "There was an error when joining the channel").await?;
     }
