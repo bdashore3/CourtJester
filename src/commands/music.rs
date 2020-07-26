@@ -297,7 +297,6 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
                 None => {
                     return
                 }
-
             };
             
             if node.queue.is_empty() && node.now_playing.is_none() {
@@ -366,7 +365,48 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         node.skip();
     }
 
-    msg.channel_id.say(ctx, "Skipping the current track...").await?;
+    msg.react(ctx, ReactionType::Unicode(String::from("⏭️"))).await?;
+
+    Ok(())
+}
+
+#[command]
+async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    if args.len() < 1 {
+        msg.channel_id.say(ctx, "Please provide a valid number of seconds!").await?;
+        return Ok(())
+    }
+
+    let guild_id = msg.guild_id.unwrap();
+    let guild = msg.guild(ctx).await.unwrap();
+    
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id.say(ctx, "You're not in a voice channel!").await?;
+        return Ok(())
+    }
+
+    let num = match args.single::<u64>() {
+        Ok(num) => num,
+        Err(_) => {
+            msg.channel_id.say(ctx, "Please provide a valid number of seconds!").await?;
+            return Ok(())
+        }
+    };
+
+    let data = ctx.data.read().await;
+    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_client_read = lava_lock.read().await.clone();
+    let mut lava_client = lava_lock.write().await;
+    let node = match lava_client.nodes.get_mut(&guild_id) {
+        Some(node) => node,
+        None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            return Ok(())
+        }
+    };
+
+    node.seek(&lava_client_read, &guild_id, Duration::from_secs(num)).await?;
+    msg.channel_id.say(ctx, "Seeking!").await?;
 
     Ok(())
 }
@@ -378,6 +418,7 @@ pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
     content.push_str("resume <author> <text>: Resumes the current track \nAlias: unpause \n\n");
     content.push_str("stop: Stops the current track and empties the queue. Doesn't disconnect the bot \n\n");
     content.push_str("skip: Skips the current track. If there are no tracks in the queue, the player is stopped \n\n");
+    content.push_str("seek <seconds>: Seeks in the current track for x seconds");
     content.push_str("queue: See the current queue for the guild and what's playing");
     
     let _ = channel_id.send_message(ctx, |m| {
