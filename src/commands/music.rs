@@ -305,7 +305,7 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
                 tokio::spawn(async move {
                     voice_utils::create_new_timer(ctx_clone, guild_id).await;
                 });
-                break;
+                return;
             }
         }
     }
