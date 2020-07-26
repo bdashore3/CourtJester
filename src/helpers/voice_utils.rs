@@ -50,6 +50,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[aliases("dc")]
 async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = ctx.cache.guild_channel(msg.channel_id).await.unwrap().guild_id;
     let guild = msg.guild(ctx).await.unwrap();
