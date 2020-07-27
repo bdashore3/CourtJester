@@ -13,7 +13,7 @@ use serenity::{
 };
 use crate::{
     helpers::voice_utils, 
-    structures::{Lavalink, VoiceManager, VoiceTimerMap}
+    structures::cmd_data::{VoiceManager, Lavalink, VoiceTimerMap}
 };
 use std::{time::Duration, sync::Arc};
 use rust_clock::Clock;

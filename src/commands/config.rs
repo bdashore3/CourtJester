@@ -9,7 +9,8 @@ use sqlx::{self, PgPool};
 use crate::{
     ConnectionPool,
     DefaultPrefix,
-    helpers::permissions_helper
+    helpers::permissions_helper, 
+    structures::cmd_data::CommandNameMap
 };
 
 /// Sets the prefix for the server using the first message argument
@@ -98,6 +99,13 @@ async fn command(ctx: &Context, msg: &Message) -> CommandResult {
 async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let command_name = args.single::<String>().unwrap();
     let data = ctx.data.read().await;
+    let command_names = data.get::<CommandNameMap>().unwrap();
+
+    if command_names.contains(&command_name) {
+        msg.channel_id.say(ctx, "This command is already hardcoded! Please choose a different name!").await?;
+        return Ok(())
+    }
+    
     let pool = data.get::<ConnectionPool>().unwrap();
     let guild_id = msg.guild_id.unwrap().0 as i64;
 

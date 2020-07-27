@@ -1,7 +1,7 @@
 use sqlx::postgres::{PgPoolOptions, PgPool};
 use std::error::Error;
 
-pub async fn obtain_pool(db_connection: String) -> Result<PgPool, Box<dyn Error>> {
+pub async fn obtain_db_pool(db_connection: String) -> Result<PgPool, Box<dyn Error>> {
 
     let connection_string = &db_connection;
 
