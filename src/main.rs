@@ -14,89 +14,33 @@ use serenity::{
         StandardFramework,
         CommandError,
         DispatchError,
-        macros:: {
-            group,
-            hook
-        }
+        macros::hook
     },
     http::Http,
-    model::{event::ResumedEvent, gateway::Ready, guild::Guild, guild::PartialGuild, channel::Reaction, id::GuildId},
-    model::prelude:: {
-        Permissions,
-        Message
+    model::{
+        prelude::{
+            Permissions,
+            Message
+        },
+        event::ResumedEvent, 
+        gateway::Ready, 
+        guild::Guild, 
+        guild::PartialGuild, 
+        channel::Reaction, 
+        id::GuildId
     },
-    prelude::*
+    prelude::*, 
+    client::bridge::gateway::GatewayIntents
 };
-use commands::{
-    other::*,
-    textmod::*,
-    ciphers::*,
-    textchannel_send::*,
-    config::*,
-    support::*,
-    starboard::*,
-    music::*
+use structures::{
+    cmd_data::*,
+    commands::*
 };
-use structures::*;
 use helpers::database_helper;
-use helpers::voice_utils::*;
 use reactions::reaction_handler;
 use serenity_lavalink::LavalinkClient;
 use futures::future::AbortHandle;
 use dashmap::DashMap;
-
-// All command groups
-#[group]
-#[help_available(false)]
-#[commands(ping)]
-struct General;
-
-#[group("Text Modification")]
-#[description = "Commands than modify text. \n
-Append l in the command to use the last message \n
-Example: `mockl` mocks the last message"]
-#[commands(mock, inv, upp, low, space, biggspace)]
-struct Text;
-
-#[group]
-#[help_available(false)]
-#[commands(mockl, invl, uppl, lowl, spacel, biggspacel)]
-struct TextLast;
-
-#[group("Ciphers")]
-#[description = "Commands that encode/decode messages"]
-#[commands(b64encode, b64decode)]
-struct Ciphers;
-
-#[group("Jars")]
-#[description = "Commands that send certain messages to channels"]
-#[commands(nice, bruh, quote)]
-struct TextChannelSend;
-
-#[group("Bot Configuration")]
-#[description = "Admin/Moderator commands that configure the bot"]
-#[commands(prefix, command)]
-struct Config;
-
-#[group("Support")]
-#[description = "Support commands for the bot"]
-#[commands(help)]
-struct Support;
-
-#[group("Starboard")]
-#[description = "Starboard admin commands"]
-#[commands(starboard)]
-struct Starboard;
-
-#[group("Voice")]
-#[description = "Commands used for voice chat"]
-#[commands(summon, disconnect)]
-struct Voice;
-
-#[group("Music")]
-#[description = "Commands used to play music"]
-#[commands(play, pause, resume, queue, skip, stop, clear, seek)]
-struct Music;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -162,13 +106,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
 
-    let pool = database_helper::obtain_pool(creds.db_connection).await?;
+    let pool = database_helper::obtain_db_pool(creds.db_connection).await?;
     let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new(); 
 
     let mut lava_client = LavalinkClient::new();
     lava_client.password = creds.lavalink_auth;
     lava_client.bot_id = bot_id;
     lava_client.initialize().await?;
+
+    let command_names = MASTER_GROUP.options.sub_groups.iter().flat_map(|x| {
+        x.options.commands
+            .iter()
+            .flat_map(|i| i.options.names.iter().map(ToString::to_string))
+            .collect::<Vec<_>>()
+    }).collect::<Vec<String>>();
 
     // If there's no command, check in the custom commands database
     #[hook]
@@ -261,6 +212,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = Client::new(&token)
         .framework(framework)
         .event_handler(Handler)
+        .add_intent({
+            let mut intents = GatewayIntents::all();
+            intents.remove(GatewayIntents::DIRECT_MESSAGES);
+            intents.remove(GatewayIntents::DIRECT_MESSAGE_REACTIONS);
+            intents.remove(GatewayIntents::DIRECT_MESSAGE_TYPING);
+            intents
+        })
         .await
         .expect("Err creating client");
 
@@ -274,6 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<Lavalink>(Arc::new(RwLock::new(lava_client)));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
+        data.insert::<CommandNameMap>(Arc::new(command_names));
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {

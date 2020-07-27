@@ -1,9 +1,12 @@
 use serenity::{
-    model::{id::{ChannelId, GuildId}, channel::Message}, 
+    model::{
+        id::{ChannelId, GuildId}, 
+        channel::Message
+    }, 
     client::Context,
     framework::standard::{macros::command, CommandResult}
 };
-use crate::structures::{Lavalink, VoiceManager, VoiceTimerMap};
+use crate::structures::cmd_data::{Lavalink, VoiceManager, VoiceTimerMap};
 use serenity_lavalink::nodes::Node;
 use futures::future::{Abortable, AbortHandle};
 use std::time::Duration;

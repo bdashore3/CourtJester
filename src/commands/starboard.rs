@@ -5,7 +5,7 @@ use serenity::{
     utils::parse_channel
 };
 use sqlx::PgPool;
-use crate::structures::ConnectionPool;
+use crate::structures::cmd_data::ConnectionPool;
 use crate::helpers::command_utils::*;
 
 #[command]
