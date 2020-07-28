@@ -19,6 +19,11 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     let data = ctx.data.read().await;
     let pool = data.get::<ConnectionPool>().unwrap();
     let reaction_message = reaction.message(&ctx.http).await?;
+
+    if reaction.guild_id != reaction_message.guild_id {
+        return Ok(())
+    }
+
     let reaction_channel = reaction.channel(ctx).await?;
     let reactions = reaction_message.reactions;
     let stars = match reactions.into_iter()
