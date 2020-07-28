@@ -6,11 +6,12 @@ use serenity::{
     prelude::{Mutex, TypeMapKey, RwLock}, 
     model::id::GuildId
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use sqlx::PgPool;
 use serenity_lavalink::LavalinkClient;
 use dashmap::DashMap;
 use futures::future::AbortHandle;
+use reqwest::Client as Reqwest;
 
 // All command context data structures
 pub struct ShardManagerContainer;
@@ -23,12 +24,6 @@ pub struct ConnectionPool;
 
 impl TypeMapKey for ConnectionPool {
     type Value = PgPool;
-}
-
-pub struct DefaultPrefix;
-
-impl TypeMapKey for DefaultPrefix {
-    type Value = Arc<String>;
 }
 
 pub struct VoiceManager;
@@ -53,4 +48,16 @@ pub struct CommandNameMap;
 
 impl TypeMapKey for CommandNameMap {
     type Value = Arc<Vec<String>>;
+}
+
+pub struct ReqwestClient;
+
+impl TypeMapKey for ReqwestClient {
+    type Value = Arc<Reqwest>;
+}
+
+pub struct PubCreds;
+
+impl TypeMapKey for PubCreds {
+    type Value = Arc<HashMap<String, String>>;
 }

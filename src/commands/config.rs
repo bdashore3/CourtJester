@@ -8,7 +8,7 @@ use serenity::framework::standard::{
 use sqlx::{self, PgPool};
 use crate::{
     ConnectionPool,
-    DefaultPrefix,
+    PubCreds,
     helpers::permissions_helper, 
     structures::cmd_data::CommandNameMap
 };
@@ -20,7 +20,7 @@ use crate::{
 async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let data = ctx.data.read().await;
     let pool = data.get::<ConnectionPool>().unwrap();
-    let default_prefix = data.get::<DefaultPrefix>().unwrap().to_string();
+    let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").unwrap().to_string();
     let guild_id = msg.guild_id.unwrap().0 as i64;
     let guild_name = msg.guild(ctx).await.unwrap().name;
 

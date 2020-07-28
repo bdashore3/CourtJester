@@ -7,13 +7,14 @@ use crate::commands::{
     config::*,
     support::*,
     starboard::*,
-    music::*
+    music::*,
+    images::*
 };
 use crate::helpers::voice_utils::*;
 
 // All command groups
 #[group("Master")]
-#[sub_groups(General, Text, TextLast, Ciphers, TextChannelSend, Config, Support, Starboard, Voice, Music)]
+#[sub_groups(General, Text, TextLast, Ciphers, TextChannelSend, Config, Support, Starboard, Voice, Music, Images)]
 pub struct Master;
 
 #[group]
@@ -67,3 +68,8 @@ pub struct Voice;
 #[description = "Commands used to play music"]
 #[commands(play, pause, resume, queue, skip, stop, clear, seek)]
 pub struct Music;
+
+#[group("Images")]
+#[description = "Commands for fetching/sending images"]
+#[commands(hug, pat, slap, cry, cringe)]
+pub struct Images;

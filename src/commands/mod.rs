@@ -6,3 +6,4 @@ pub mod config;
 pub mod support;
 pub mod starboard;
 pub mod music;
+pub mod images;
