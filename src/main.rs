@@ -5,7 +5,10 @@ mod reactions;
 
 use std::{
     env,
-    collections::HashSet,
+    collections::{
+        HashSet,
+        HashMap
+    },
     sync::Arc,
 };
 use serenity::{
@@ -41,6 +44,7 @@ use reactions::reaction_handler;
 use serenity_lavalink::LavalinkClient;
 use futures::future::AbortHandle;
 use dashmap::DashMap;
+use reqwest::Client as Reqwest;
 
 // Event handler for when the bot starts
 struct Handler;
@@ -114,6 +118,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     lava_client.bot_id = bot_id;
     lava_client.initialize().await?;
 
+    let mut pub_creds = HashMap::new();
+    pub_creds.insert("tenor".to_string(), creds.tenor_key);
+    pub_creds.insert("default prefix".to_string(), creds.default_prefix);
+
     let command_names = MASTER_GROUP.options.sub_groups.iter().flat_map(|x| {
         x.options.commands
             .iter()
@@ -179,7 +187,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
         let data = ctx.data.read().await;
         let pool = data.get::<ConnectionPool>().unwrap();
-        let default_prefix = data.get::<DefaultPrefix>().unwrap();
+        let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").unwrap();
         let guild_id = msg.guild_id.unwrap();
 
         let cur_prefix = commands::config::get_prefix(pool, guild_id, default_prefix.to_string()).await.unwrap();
@@ -207,7 +215,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .group(&SUPPORT_GROUP)
         .group(&STARBOARD_GROUP)
         .group(&VOICE_GROUP)
-        .group(&MUSIC_GROUP);
+        .group(&MUSIC_GROUP)
+        .group(&IMAGES_GROUP);
 
     let mut client = Client::new(&token)
         .framework(framework)
@@ -228,11 +237,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         data.insert::<ConnectionPool>(pool.clone());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-        data.insert::<DefaultPrefix>(Arc::new(creds.default_prefix));
         data.insert::<Lavalink>(Arc::new(RwLock::new(lava_client)));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<CommandNameMap>(Arc::new(command_names));
+        data.insert::<ReqwestClient>(Arc::new(Reqwest::new()));
+        data.insert::<PubCreds>(Arc::new(pub_creds));
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {
