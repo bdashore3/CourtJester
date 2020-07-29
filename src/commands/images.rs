@@ -2,7 +2,7 @@ use serenity::prelude::*;
 use serenity::model::prelude::*;
 use serenity::framework::standard::{
     CommandResult,
-    macros::command
+    macros::command, Args
 };
 use crate::structures::cmd_data::{
     ReqwestClient,
@@ -134,6 +134,38 @@ async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[command]
+#[aliases("gif")]
+async fn gifsearch(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    if args.len() < 1 {
+        msg.channel_id.say(ctx, "Please provide a search string after the command!").await?;
+        return Ok(())
+    }
+    
+    let search_string = args.message();
+
+    let filter = 
+        if msg.channel(ctx).await.unwrap().is_nsfw() {
+            "off" 
+        } else {
+            "medium"
+        };
+
+    let gifs = fetch_gifs(ctx, search_string, 10, filter).await?;
+    let mut rng = StdRng::from_entropy();
+    let val = rng.gen_range(0, 9);
+
+    msg.channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.color(0x5ed13b);
+            e.image(&gifs[val].media[0].get("gif").unwrap().url);
+            e
+        })
+    }).await?;
+
+    Ok(())
+}
+
 async fn fetch_gifs(ctx: &Context, search: &str, amount: u32, filter: &str) -> Result<Vec<GifResult>, Box<dyn std::error::Error + Send + Sync>> {
     let data = ctx.data.read().await;
     let reqwest_client = data.get::<ReqwestClient>().unwrap();
@@ -156,6 +188,7 @@ async fn fetch_gifs(ctx: &Context, search: &str, amount: u32, filter: &str) -> R
 
 pub async fn image_help(ctx: &Context, channel_id: ChannelId) {
     let mut content = String::new();
+    content.push_str("gif: Fetches a random gif from tenor \nNote: The content filter is turned off in an NSFW channel \n\n");
     content.push_str("hug <mention>: Gives wholesome hugs to someone \n\n");
     content.push_str("pat <mention>: Pats someone on the head \n\n");
     content.push_str("slap <mention>: Give someone a slap \n\n");
