@@ -13,6 +13,26 @@
       "nullable": []
     }
   },
+  "01b4cb07939a1fec7c1cb358bb7f2cea7c617cb4a877e227603319da270a5ec5": {
+    "query": "SELECT EXISTS(SELECT bruh_id FROM text_channels WHERE guild_id = $1)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "exists",
+          "type_info": "Bool"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
   "16e2ca2e84e805d2822da8b74d60f9e22f6b9b961fcd454483a4cb5b46adec31": {
     "query": "UPDATE guild_info SET prefix = null WHERE guild_id = $1",
     "describe": {
@@ -97,6 +117,32 @@
       "nullable": []
     }
   },
+  "6acb5eca1f314e5f0cd6c5504ed512f7f544951f730948f30c65253a87678700": {
+    "query": "SELECT guild_info.starbot_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id\n                                    WHERE guild_info.guild_id = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "starbot_threshold",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "quote_id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        true,
+        true
+      ]
+    }
+  },
   "6b691922ab0edf9d2c8db1c785936fd20aab4655bfd4769b84bad4526c2aa42a": {
     "query": "SELECT prefix FROM guild_info WHERE guild_id = $1",
     "describe": {
@@ -114,6 +160,26 @@
       },
       "nullable": [
         true
+      ]
+    }
+  },
+  "6b70d19acda0185fd00f1fa48b12e469da3124873cbd3f9925d6a429b061023e": {
+    "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "exists",
+          "type_info": "Bool"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        null
       ]
     }
   },
@@ -316,6 +382,26 @@
       "nullable": []
     }
   },
+  "b61ef698c98ea081dd7ac0fb03bdf4caacdaba9ee6ac9aeadceb83717b974080": {
+    "query": "SELECT EXISTS(SELECT nice_id FROM text_channels WHERE guild_id = $1)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "exists",
+          "type_info": "Bool"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        null
+      ]
+    }
+  },
   "b732ea9d230d75c58957b5bc873b500952a763f94495cafb5bb57e56199c33ee": {
     "query": "SELECT guild_info.starbot_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id",
     "describe": {
@@ -350,6 +436,26 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "c5adb0743b0ed31f8e5b1f508f8d0f3339d1ff42052539f3ad46abab50cb5047": {
+    "query": "SELECT EXISTS(SELECT starbot_threshold FROM guild_info WHERE guild_id = $1)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "exists",
+          "type_info": "Bool"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        null
+      ]
     }
   },
   "c7cc9ab54001965812d47d563ead948325c3666bb7767d19532e37c1cfd74249": {

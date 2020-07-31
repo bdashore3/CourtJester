@@ -18,11 +18,7 @@ struct StarbotConfig {
 pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) -> CommandResult {
     let data = ctx.data.read().await;
     let pool = data.get::<ConnectionPool>().unwrap();
-    let reaction_message = reaction.message(&ctx.http).await?;
-
-    if reaction.guild_id != reaction_message.guild_id {
-        return Ok(())
-    }
+    let reaction_message = reaction.message(ctx).await?;
 
     let reaction_channel = reaction.channel(ctx).await?;
     let reactions = reaction_message.reactions;
@@ -34,7 +30,8 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
 
     let config_data = sqlx::query_as!(StarbotConfig, "SELECT guild_info.starbot_threshold, text_channels.quote_id
                                     FROM guild_info
-                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id")
+                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id
+                                    WHERE guild_info.guild_id = $1", reaction.guild_id.unwrap().0 as i64)
         .fetch_one(pool).await?;
     
     if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {
@@ -76,6 +73,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             .execute(pool).await?;
     }
     else if (stars as i32) < config_data.starbot_threshold.unwrap() && remove {
+        println!("Less!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;
@@ -89,6 +87,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         }
     }
     else if stars > config_data.starbot_threshold.unwrap() as u64 || remove {
+        println!("Greater!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;

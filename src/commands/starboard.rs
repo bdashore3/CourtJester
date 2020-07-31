@@ -66,7 +66,7 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
     let pool = data.get::<ConnectionPool>().unwrap();
 
-    let sent_message = msg.channel_id.say(ctx, "Removing the starbot re-enables quoting! You want to do this?").await?;
+    let sent_message = msg.channel_id.say(ctx, "Removing the starboard re-enables quoting! You want to do this?").await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("✅"))).await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("❌"))).await?;
 
@@ -119,7 +119,7 @@ async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool) -> CommandResult {
-    msg.channel_id.say(ctx, "Sounds good! Please enter a number greater than 0 for the starbot threshold!").await?;
+    msg.channel_id.say(ctx, "Sounds good! Please enter a number greater than 0 for the starboard threshold!").await?;
     
     let mut _is_channel = false;
     loop {
@@ -128,9 +128,9 @@ async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool)
         match threshold_message.content.parse::<u32>() {
             Ok(threshold) => {
                 if threshold > 0 {
-                    sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2",
-                        threshold as i32, msg.guild_id.unwrap().0 as i64)
-                    .execute(pool).await?;
+                    sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", 
+                            threshold as i32, msg.guild_id.unwrap().0 as i64)
+                        .execute(pool).await?;
 
                     _is_channel = true;
                     break;
@@ -150,12 +150,24 @@ async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool)
 }
 
 async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -> CommandResult {
-    let channel_check = sqlx::query!("SELECT quote_id FROM text_channels WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+    let mut channel_check = false;
+    let row_check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", msg.guild_id.unwrap().0 as i64)
         .fetch_one(pool).await?;
     
-    if channel_check.quote_id.is_some() {
+    if row_check.exists.unwrap() {
+        let query = sqlx::query!("SELECT quote_id FROM text_channels WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+            .fetch_one(pool).await?;
+
+        if query.quote_id.is_some() {
+            channel_check = true;
+        } else {
+            channel_check = false;
+        }
+    };
+    
+    if channel_check {
         let mut send_string = String::new();
-        send_string.push_str("You already have a channel set up for quotes! \nIf you want to change it, run `starbot channel` \n");
+        send_string.push_str("You already have a channel set up for quotes! \nIf you want to change it, run `starboard channel <mention>` \n");
         send_string.push_str("Enjoy your new starboard!");
         msg.channel_id.say(ctx, send_string).await?;
     } else {
