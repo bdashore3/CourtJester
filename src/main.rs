@@ -25,7 +25,7 @@ use serenity::{
             Permissions,
             Message
         },
-        event::ResumedEvent, 
+        event::{VoiceServerUpdateEvent, ResumedEvent}, 
         gateway::Ready, 
         guild::Guild, 
         guild::PartialGuild, 
@@ -41,7 +41,10 @@ use structures::{
 };
 use helpers::database_helper;
 use reactions::reaction_handler;
-use serenity_lavalink::LavalinkClient;
+use lavalink_rs::{
+    gateway::*, 
+    LavalinkClient, model::TrackFinish
+};
 use futures::future::AbortHandle;
 use dashmap::DashMap;
 use reqwest::Client as Reqwest;
@@ -88,6 +91,30 @@ impl EventHandler for Handler {
     async fn reaction_remove(&self, ctx: Context, reaction: Reaction) {
         let _ = reaction_handler::dispatch_reaction(&ctx, &reaction, true).await;
     }
+
+    async fn voice_server_update(&self, ctx: Context, voice: VoiceServerUpdateEvent) {
+        if let Some(guild_id) = voice.guild_id {
+            let data = ctx.data.read().await;
+            let voice_server_lock = data.get::<VoiceGuildUpdate>().unwrap();
+            let mut voice_server = voice_server_lock.write().await;
+            voice_server.insert(guild_id);
+        }
+    }
+}
+
+struct LavalinkHandler;
+
+#[async_trait]
+impl LavalinkEventHandler for LavalinkHandler {
+    async fn track_finish(&self, client: Arc<Mutex<LavalinkClient>>, event: TrackFinish) {
+        /*
+        if &event.reason == "STOPPED" {
+            let mut client = client.lock().await;
+            let node = client.nodes.get_mut(&event.guild_id).unwrap();
+            node.now_playing = None;
+        }
+        */
+    }
 }
 
 #[tokio::main]
@@ -113,10 +140,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = database_helper::obtain_db_pool(creds.db_connection).await?;
     let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new(); 
 
-    let mut lava_client = LavalinkClient::new();
-    lava_client.password = creds.lavalink_auth;
-    lava_client.bot_id = bot_id;
-    lava_client.initialize().await?;
+    let mut lava_client = LavalinkClient::new(bot_id);
+    lava_client.set_host(creds.lavalink_host);
+    lava_client.set_password(creds.lavalink_auth);
+    let lava = lava_client.initialize(LavalinkHandler).await?;
 
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
@@ -237,7 +264,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         data.insert::<ConnectionPool>(pool.clone());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-        data.insert::<Lavalink>(Arc::new(RwLock::new(lava_client)));
+        data.insert::<Lavalink>(lava);
+        data.insert::<VoiceGuildUpdate>(Arc::new(RwLock::new(HashSet::new())));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<CommandNameMap>(Arc::new(command_names));
