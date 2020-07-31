@@ -35,7 +35,6 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         "voice" => voice_help(ctx, msg.channel_id).await,
         "music" => music_help(ctx, msg.channel_id).await,
         "images" => image_help(ctx, msg.channel_id).await,
-        "support" => support_message(ctx, msg.channel_id).await,
         _ => {}
     }
 
@@ -64,8 +63,9 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
     }).await;
 }
 
-async fn support_message(ctx: &Context, channel_id: ChannelId) {
-    let _ = channel_id.send_message(ctx, |m| {
+#[command]
+async fn support(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
             e.title("CourtJester Support");
             e.description("Need more help?");
@@ -76,5 +76,7 @@ async fn support_message(ctx: &Context, channel_id: ChannelId) {
                 f
             })
         })
-    }).await;
+    }).await?;
+
+    Ok(())
 }
