@@ -36,7 +36,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let pool = data.get::<ConnectionPool>().unwrap();
 
-    let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
+    let check = sqlx::query!("SELECT EXISTS(SELECT nice_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
         .fetch_one(pool)
         .await?;
 
@@ -60,7 +60,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    if check.exists.unwrap() == false {
+    if !check.exists.unwrap() {
         msg.channel_id.say(ctx, "The Nice channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
@@ -96,7 +96,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let pool = data.get::<ConnectionPool>().unwrap();
 
-    let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
+    let check = sqlx::query!("SELECT EXISTS(SELECT bruh_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
         .fetch_one(pool)
         .await?;
 
@@ -121,7 +121,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    if check.exists.unwrap() == false {
+    if !check.exists.unwrap() {
         msg.channel_id.say(ctx, "The Bruh channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
@@ -161,15 +161,15 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let pool = data.get::<ConnectionPool>().unwrap();
 
-    let starbot_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
+    let starboard_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
         .fetch_one(pool).await?;
-    
-    if starbot_data.starbot_threshold.is_some() {
+
+    if starboard_data.starbot_threshold.is_some() {
         msg.channel_id.say(ctx, "You can't use the quote command because starboard is enabled in this server!").await?;
         return Ok(())
     }
 
-    let check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
+    let check = sqlx::query!("SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
         .fetch_one(pool)
         .await?;
 
@@ -188,7 +188,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    if check.exists.unwrap() == false {
+    if !check.exists.unwrap() {
         msg.channel_id.say(ctx, "The Quote channel isn't set! Please specify a channel!").await?;
         return Ok(())
     }
