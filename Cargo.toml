@@ -24,8 +24,8 @@ branch = "await_next"
 default-features = true
 features = ["collector", "rustls_backend"]
 
-[dependencies.serenity-lavalink]
-git = "https://gitlab.com/nitsuga5124/serenity-lavalink/"
+[dependencies.lavalink-rs]
+git = "https://gitlab.com/nitsuga5124/lavalink-rs/"
 branch = "master"
 
 [dependencies.sqlx]

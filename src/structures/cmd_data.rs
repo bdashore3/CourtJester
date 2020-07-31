@@ -6,9 +6,9 @@ use serenity::{
     prelude::{Mutex, TypeMapKey, RwLock}, 
     model::id::GuildId
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::{HashSet, HashMap}, sync::Arc};
 use sqlx::PgPool;
-use serenity_lavalink::LavalinkClient;
+use lavalink_rs::LavalinkClient;
 use dashmap::DashMap;
 use futures::future::AbortHandle;
 use reqwest::Client as Reqwest;
@@ -35,7 +35,13 @@ impl TypeMapKey for VoiceManager {
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
-    type Value = Arc<RwLock<LavalinkClient>>;
+    type Value = Arc<Mutex<LavalinkClient>>;
+}
+
+pub struct VoiceGuildUpdate;
+
+impl TypeMapKey for VoiceGuildUpdate {
+    type Value = Arc<RwLock<HashSet<GuildId>>>;
 }
 
 pub struct VoiceTimerMap;
