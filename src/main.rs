@@ -49,6 +49,8 @@ use futures::future::AbortHandle;
 use dashmap::DashMap;
 use reqwest::Client as Reqwest;
 
+use graphql_client::*;
+
 // Event handler for when the bot starts
 struct Handler;
 
@@ -145,6 +147,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .flat_map(|i| i.options.names.iter().map(ToString::to_string))
             .collect::<Vec<_>>()
     }).collect::<Vec<String>>();
+
+    let reqwest_client = Reqwest::builder()
+        .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0")
+        .build()?;
 
     // If there's no command, check in the custom commands database
     #[hook]
@@ -259,7 +265,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<CommandNameMap>(Arc::new(command_names));
-        data.insert::<ReqwestClient>(Arc::new(Reqwest::new()));
+        data.insert::<ReqwestClient>(Arc::new(reqwest_client));
         data.insert::<PubCreds>(Arc::new(pub_creds));
     }
 
@@ -274,8 +280,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Start up the bot! If there's an error, let the user know
-    if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
+    if let Err(why) = client.start_autosharded().await {
+        eprintln!("Client error: {:?}", why);
     }
 
     Ok(())
