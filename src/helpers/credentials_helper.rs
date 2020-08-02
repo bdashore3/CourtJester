@@ -9,7 +9,7 @@ pub struct Credentials {
     pub db_connection: String,
     pub lavalink_host: String,
     pub lavalink_auth: String,
-    pub tenor_key: String
+    pub tenor_key: String,
 }
 
 pub fn read_creds(path: String) -> Result<Credentials, Box<dyn std::error::Error + 'static>> {

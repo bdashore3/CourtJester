@@ -17,6 +17,7 @@ uuid = { version = "0.8", features = ["v4"] }
 dashmap = "4.0.0-rc6"
 futures = "0.3"
 reqwest = { version = "0.10", features = ["json"] }
+graphql_client = "0.9.0"
 
 [dependencies.serenity]
 git = "https://github.com/acdenissk/serenity/"

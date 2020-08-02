@@ -51,7 +51,7 @@ pub struct Config;
 
 #[group("Support")]
 #[description = "Support commands for the bot"]
-#[commands(help, support)]
+#[commands(help, support, info)]
 pub struct Support;
 
 #[group("Starboard")]
