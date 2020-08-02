@@ -6,7 +6,7 @@ use serenity::{
     },
     client::Context, 
     framework::standard::CommandResult, 
-    builder::CreateEmbed
+    builder::CreateEmbed, prelude::Mentionable
 };
 use crate::{helpers::command_utils, structures::cmd_data::ConnectionPool};
 
@@ -21,6 +21,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     let reaction_message = reaction.message(ctx).await?;
 
     let reaction_channel = reaction.channel(ctx).await?;
+
     let reactions = reaction_message.reactions;
     let stars = match reactions.into_iter()
         .find(|_x| reaction.emoji == ReactionType::Unicode("\u{2b50}".to_string())) {
@@ -58,7 +59,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     }
 
     if stars == config_data.starbot_threshold.unwrap() as u64 && !remove {
-        let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
+        let first_message = format!("\u{2b50} {} {} ID: {}", stars, reaction_channel.mention(), reaction.message_id);
         let starboard_embed = get_starboard_embed(reaction, &reaction_message.author, reaction_message.content, reaction_message.attachments);
         let sent_message = star_channel_id.send_message(ctx, |m| {
             m.content(first_message);
@@ -73,7 +74,6 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             .execute(pool).await?;
     }
     else if (stars as i32) < config_data.starbot_threshold.unwrap() && remove {
-        println!("Less!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;
@@ -87,7 +87,6 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         }
     }
     else if stars > config_data.starbot_threshold.unwrap() as u64 || remove {
-        println!("Greater!");
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(pool).await?;
