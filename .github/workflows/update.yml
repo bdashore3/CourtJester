@@ -3,8 +3,6 @@ name: Push and Restart bot
 on:
   push:
     branches: [ serenity ]
-  pull_request:
-    branches: [ serenity ]
 
 env:
   CARGO_TERM_COLOR: always
