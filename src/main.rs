@@ -49,8 +49,6 @@ use futures::future::AbortHandle;
 use dashmap::DashMap;
 use reqwest::Client as Reqwest;
 
-use graphql_client::*;
-
 // Event handler for when the bot starts
 struct Handler;
 

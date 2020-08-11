@@ -1,4 +1,6 @@
 /.vscode
 /target
 /src/info.json
+/src/info-server.json
+/src/info-client.json
 .env

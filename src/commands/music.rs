@@ -167,6 +167,7 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
+    lava_client.skip(guild_id).await;
     lava_client.stop(guild_id).await?;
     msg.react(ctx, ReactionType::Unicode(String::from("🛑"))).await?;
 
