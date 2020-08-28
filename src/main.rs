@@ -23,14 +23,14 @@ use serenity::{
     model::{
         prelude::{
             Permissions,
-            Message
+            Message, User
         },
         event::{VoiceServerUpdateEvent, ResumedEvent}, 
         gateway::Ready, 
-        guild::Guild, 
+        guild::{Member, Guild}, 
         guild::PartialGuild, 
         channel::Reaction, 
-        id::GuildId
+        id::{UserId, GuildId}
     },
     prelude::*, 
     client::bridge::gateway::GatewayIntents
@@ -63,25 +63,25 @@ impl EventHandler for Handler {
     }
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-
         let data = ctx.data.read().await;
         let pool = data.get::<ConnectionPool>().unwrap();
-        let guild_id = guild.id.0 as i64;
 
         if is_new {
-            sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild_id)
+            sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild.id.0 as i64)
                 .execute(pool).await.unwrap();
         }
     }
 
-    async fn guild_delete(&self, ctx: Context, incomplete: PartialGuild, _full: Option<Guild>) {
-        
+    async fn guild_member_removal(&self, ctx: Context, guild_id: GuildId, user: User, _member_data_if_available: Option<Member>) {
         let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().unwrap();
-        let guild_id = incomplete.id.0 as i64;
+        let bot_id = data.get::<BotId>().unwrap();
 
-        sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id)
-            .execute(pool).await.unwrap();        
+        if &user.id == bot_id {
+            let pool = data.get::<ConnectionPool>().unwrap();
+    
+            sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
+                .execute(pool).await.unwrap();  
+        }
     }
 
     async fn reaction_add(&self, ctx: Context, reaction: Reaction) {
@@ -265,6 +265,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<CommandNameMap>(Arc::new(command_names));
         data.insert::<ReqwestClient>(Arc::new(reqwest_client));
         data.insert::<PubCreds>(Arc::new(pub_creds));
+        data.insert::<BotId>(bot_id);
     }
 
     let _owners = match client.cache_and_http.http.get_current_application_info().await {

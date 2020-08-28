@@ -4,7 +4,7 @@ use serenity::{
         gateway::ShardManager
     }, 
     prelude::{Mutex, TypeMapKey, RwLock}, 
-    model::id::GuildId
+    model::id::{UserId, GuildId}
 };
 use std::{collections::{HashSet, HashMap}, sync::Arc};
 use sqlx::PgPool;
@@ -66,4 +66,10 @@ pub struct PubCreds;
 
 impl TypeMapKey for PubCreds {
     type Value = Arc<HashMap<String, String>>;
+}
+
+pub struct BotId;
+
+impl TypeMapKey for BotId {
+    type Value = UserId;
 }
