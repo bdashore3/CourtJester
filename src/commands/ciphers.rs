@@ -5,6 +5,7 @@ use serenity::framework::standard::{
     macros::command,
     Args
 };
+use crate::JesterError;
 
 /// Encodes a message in base64
 /// Usage `b64encode <message>`
@@ -29,7 +30,7 @@ async fn b64decode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let b64_bytes = match base64::decode(args.rest()) {
         Ok(bytes) => bytes,
         Err(_error) => {
-            msg.channel_id.say(ctx, "Please provide a base64 string!").await?;
+            msg.channel_id.say(ctx, JesterError::MissingError("base64 string")).await?;
             return Ok(())
         }
     };

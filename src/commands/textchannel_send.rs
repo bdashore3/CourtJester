@@ -41,7 +41,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, &msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, &msg, None, false).await? {
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;
@@ -101,7 +101,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
+        if permissions_helper::check_permission(ctx, msg, None, false).await? {
         
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
@@ -174,7 +174,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {  
+        if permissions_helper::check_permission(ctx, msg, None, false).await? {  
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
                     .execute(pool).await?;

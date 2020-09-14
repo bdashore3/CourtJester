@@ -28,16 +28,16 @@ use serenity::{
         event::{VoiceServerUpdateEvent, ResumedEvent}, 
         gateway::Ready, 
         guild::{Member, Guild}, 
-        guild::PartialGuild, 
         channel::Reaction, 
-        id::{UserId, GuildId}
+        id::GuildId
     },
     prelude::*, 
     client::bridge::gateway::GatewayIntents
 };
 use structures::{
     cmd_data::*,
-    commands::*
+    commands::*,
+    errors::*
 };
 use helpers::database_helper;
 use reactions::reaction_handler;
@@ -183,11 +183,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match error {
             DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
                 let _ = msg.channel_id.say(ctx, 
-                    "You can't execute this command because you aren't an administrator!").await;
+                    JesterError::PermissionError(PermissionType::SelfPerm("administrator"))).await;
             },
             DispatchError::LackingPermissions(Permissions::MANAGE_MESSAGES) => {
                 let _ = msg.channel_id.say(ctx, 
-                    "You can't execute this command because you aren't a moderator! (Manage Messages permission)").await;
+                    JesterError::PermissionError(PermissionType::SelfPerm("moderator"))).await;
             },
             DispatchError::NotEnoughArguments { min, given } => {
                 let _ = msg.channel_id.say(ctx, format!("Args required: {}. Args given: {}", min, given)).await;

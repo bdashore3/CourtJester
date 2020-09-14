@@ -20,7 +20,8 @@ reqwest = { version = "0.10", features = ["json"] }
 lavalink-rs = "0.1.1-alpha"
 
 [dependencies.serenity]
-version = "0.9.0-rc.0"
+git = "https://github.com/serenity-rs/serenity"
+branch = "current"
 default-features = true
 features = ["collector", "rustls_backend"]
 
@@ -28,3 +29,9 @@ features = ["collector", "rustls_backend"]
 version = "0.4.0-beta.1"
 default-features = false
 features = ["runtime-tokio", "macros", "postgres", "uuid", "offline"]
+
+[patch.crates-io.serenity]
+git = "https://github.com/serenity-rs/serenity"
+branch = "current"
+default-features = true
+features = ["collector", "rustls_backend"]

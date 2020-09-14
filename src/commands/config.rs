@@ -11,7 +11,7 @@ use crate::{
     PubCreds,
     helpers::permissions_helper, 
     structures::cmd_data::CommandNameMap
-};
+, structures::errors::JesterError};
 
 /// Sets the prefix for the server using the first message argument
 /// Execute this command with no arguments to get the current prefix
@@ -31,7 +31,7 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
     
-    if !permissions_helper::check_permission(ctx, msg, Permissions::MANAGE_MESSAGES).await {
+    if !permissions_helper::check_permission(ctx, msg, None, false).await? {
         return Ok(())
     }
 
@@ -124,7 +124,6 @@ async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 // Subcommand used to remove a custom command
 #[command]
-#[required_permissions(Administrator)]
 #[min_args(1)]
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let command_name = args.single::<String>().unwrap();

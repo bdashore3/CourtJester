@@ -1,7 +1,10 @@
 use serenity::client::{bridge::gateway::ShardId, Context};
-use crate::structures::{
-    cmd_data::{ShardManagerContainer, ReqwestClient}, 
-    json_structs::*
+use crate::{
+    structures::{
+        CommitResponse,
+        SysInfo,
+        cmd_data::{ShardManagerContainer, ReqwestClient}, 
+    }
 };
 use tokio::process::Command;
 
