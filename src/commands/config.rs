@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use serenity::prelude::*;
 use serenity::model::prelude::*;
 use serenity::framework::standard::{
@@ -9,23 +11,34 @@ use sqlx::{self, PgPool};
 use crate::{
     ConnectionPool,
     PubCreds,
+    CommandNameMap,
+    PrefixMap,
     helpers::permissions_helper, 
-    structures::cmd_data::CommandNameMap
-, structures::errors::JesterError};
+    helpers::database_helper, 
+};
 
 /// Sets the prefix for the server using the first message argument
 /// Execute this command with no arguments to get the current prefix
 #[command]
-#[only_in("guilds")]
+#[sub_commands(restore)]
 async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
-    let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").unwrap().to_string();
-    let guild_id = msg.guild_id.unwrap().0 as i64;
+    let (pool, prefixes, default_prefix) = {
+        let data = ctx.data.read().await;
+
+        let pool = data.get::<ConnectionPool>().cloned().unwrap();
+        let prefixes = data.get::<PrefixMap>().unwrap().clone();
+        let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").cloned().unwrap();
+
+        (pool, prefixes, default_prefix)
+    };
+    let guild_id = msg.guild_id.unwrap();
     let guild_name = msg.guild(ctx).await.unwrap().name;
 
     if args.is_empty() {
-        let cur_prefix = get_prefix(pool, msg.guild_id.unwrap(), default_prefix).await?;
+        let cur_prefix = match prefixes.get(&guild_id) {
+            Some(prefix_guard) => prefix_guard.value().to_owned(),
+            None => default_prefix
+        };
 
         msg.channel_id.say(ctx, format!("My prefix for `{}` is `{}`", guild_name, cur_prefix)).await?;
         return Ok(())
@@ -38,12 +51,15 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let new_prefix = args.single::<String>().unwrap();
 
     if new_prefix == default_prefix {
-        sqlx::query!("UPDATE guild_info SET prefix = null WHERE guild_id = $1", guild_id)
-            .execute(pool).await?;
-    }
-    else {
-        sqlx::query!("UPDATE guild_info SET prefix = $1 WHERE guild_id = $2", new_prefix, guild_id)
-            .execute(pool).await?;
+        sqlx::query!("UPDATE guild_info SET prefix = null WHERE guild_id = $1", guild_id.0 as i64)
+            .execute(&pool).await?;
+        
+        prefixes.remove(&guild_id);
+    } else {
+        sqlx::query!("UPDATE guild_info SET prefix = $1 WHERE guild_id = $2", new_prefix, guild_id.0 as i64)
+            .execute(&pool).await?;
+
+        prefixes.insert(guild_id, new_prefix.to_owned());
     }
 
     msg.channel_id.say(ctx, format!("My new prefix is `{}` for `{}`!", new_prefix, guild_name)).await?;
@@ -51,18 +67,50 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
-pub async fn get_prefix(pool: &PgPool, guild_id: GuildId, default_prefix: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let mut cur_prefix = default_prefix;
-    let guild_data = sqlx::query!("SELECT prefix FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
-        .fetch_optional(pool).await?;
-    
-    if let Some(guild_data) = guild_data {
-        if let Some(prefix) = guild_data.prefix {
-            cur_prefix = prefix;
-        }
+#[command]
+#[required_permissions("ADMINISTRATOR")]
+async fn resetprefix(ctx: &Context, msg: &Message) -> CommandResult {
+    let (pool, prefixes, default_prefix) = {
+        let data = ctx.data.read().await;
+
+        let pool = data.get::<ConnectionPool>().cloned().unwrap();
+        let prefixes = data.get::<PrefixMap>().unwrap().clone();
+        let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").cloned().unwrap();
+
+        (pool, prefixes, default_prefix)
+    };
+
+
+    let guild_id = msg.guild_id.unwrap();
+
+    if prefixes.contains_key(&guild_id) {
+        prefixes.remove(&guild_id);
+
+        sqlx::query!("UPDATE guild_info SET prefix = null WHERE guild_id = $1", guild_id.0 as i64)
+            .execute(&pool).await?;
     }
 
-    Ok(cur_prefix)
+    msg.channel_id.say(ctx, format!("Reset the prefix back to {}", default_prefix)).await?;
+
+    Ok(())
+}
+
+#[command]
+#[owners_only(true)]
+async fn restore(ctx: &Context, msg: &Message) -> CommandResult {
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
+
+    {
+        let mut data = ctx.data.write().await;
+        let new_prefixes = database_helper::fetch_prefixes(&pool).await?;
+
+        data.insert::<PrefixMap>(Arc::new(new_prefixes));
+    }
+
+    msg.channel_id.say(ctx, "Prefixes successfully restored!").await?;
+
+    Ok(())
 }
 
 pub async fn prefix_help(ctx: &Context, channel_id: ChannelId) {

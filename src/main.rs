@@ -33,7 +33,7 @@ use serenity::{
     },
     prelude::*, 
     client::bridge::gateway::GatewayIntents
-};
+, framework::standard::CommandResult};
 use structures::{
     cmd_data::*,
     commands::*,
@@ -108,7 +108,7 @@ struct LavalinkHandler;
 impl LavalinkEventHandler for LavalinkHandler {}
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> CommandResult {
     pretty_env_logger::init();
     
     let args: Vec<String> = env::args().collect();
@@ -128,6 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let pool = database_helper::obtain_db_pool(creds.db_connection).await?;
+    let prefixes = database_helper::fetch_prefixes(&pool).await?;
     let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new(); 
 
     let mut lava_client = LavalinkClient::new(bot_id);
@@ -204,21 +205,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
      * If the guild has a prefix in the Dashmap, use that prefix
      * Otherwise, use the default prefix from credentials_helper
      */
+
     #[hook]
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
-        let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().unwrap();
-        let default_prefix = data.get::<PubCreds>().unwrap().get("default prefix").unwrap();
+        let prefixes = ctx.data.read().await
+            .get::<PrefixMap>().cloned().unwrap();
         let guild_id = msg.guild_id.unwrap();
-
-        let cur_prefix = commands::config::get_prefix(pool, guild_id, default_prefix.to_string()).await.unwrap();
-
-        Some(cur_prefix)
+ 
+        match prefixes.get(&guild_id) {
+            Some(prefix_guard) => Some(prefix_guard.value().to_owned()),
+            None => None
+        }
     }
+ 
+    let prefix = pub_creds.get("default prefix").unwrap();
 
     // Link everything together!
     let framework = StandardFramework::new()
         .configure(|c| c
+            .prefix(prefix)
             .dynamic_prefix(dynamic_prefix)
             .owners(owners)
         )
@@ -262,6 +267,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         data.insert::<VoiceGuildUpdate>(Arc::new(RwLock::new(HashSet::new())));
         data.insert::<VoiceManager>(Arc::clone(&client.voice_manager));
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
+        data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<CommandNameMap>(Arc::new(command_names));
         data.insert::<ReqwestClient>(Arc::new(reqwest_client));
         data.insert::<PubCreds>(Arc::new(pub_creds));

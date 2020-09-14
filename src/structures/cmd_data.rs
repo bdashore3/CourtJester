@@ -73,3 +73,9 @@ pub struct BotId;
 impl TypeMapKey for BotId {
     type Value = UserId;
 }
+
+pub struct PrefixMap;
+
+impl TypeMapKey for PrefixMap {
+    type Value = Arc<DashMap<GuildId, String>>;
+}

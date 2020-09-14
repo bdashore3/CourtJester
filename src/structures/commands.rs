@@ -46,7 +46,7 @@ pub struct TextChannelSend;
 
 #[group("Bot Configuration")]
 #[description = "Admin/Moderator commands that configure the bot"]
-#[commands(prefix, command)]
+#[commands(prefix, command, resetprefix)]
 pub struct Config;
 
 #[group("Support")]
