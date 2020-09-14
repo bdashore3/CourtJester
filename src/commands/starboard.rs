@@ -92,9 +92,9 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
-    let mut intro_string = String::new();
-    intro_string.push_str("Welcome to starboard configuration \n");
-    intro_string.push_str("Reacting with ✅ will disable quoting on your guild!");
+    let intro_string = concat!(
+        "Welcome to starboard configuration \n",
+        "Reacting with ✅ will disable quoting on your guild!");
 
     let sent_message = msg.channel_id.say(ctx, intro_string).await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("✅"))).await?;
@@ -166,9 +166,9 @@ async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -
     };
     
     if channel_check {
-        let mut send_string = String::new();
-        send_string.push_str("You already have a channel set up for quotes! \nIf you want to change it, run `starboard channel <mention>` \n");
-        send_string.push_str("Enjoy your new starboard!");
+        let send_string = concat!(
+            "You already have a channel set up for quotes! \nIf you want to change it, run `starboard channel <mention>` \n",
+            "Enjoy your new starboard!");
         msg.channel_id.say(ctx, send_string).await?;
     } else {
         msg.channel_id.say(ctx, "Now please mention the channel you want messages sent to!").await?;
@@ -200,11 +200,11 @@ async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -
 }
 
 pub async fn starboard_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("wizard: Easy way to setup the starboard \n\n");
-    content.push_str("threshold: Sets the threshold for a message to appear \n\n");
-    content.push_str("channel: Sets the channel where starboard embeds are sent \n\n");
-    content.push_str("Deactivate: Deactivates the starboard and re-enables quoting");
+    let content = concat!(
+        "wizard: Easy way to setup the starboard \n\n",
+        "threshold: Sets the threshold for a message to appear \n\n",
+        "channel: Sets the channel where starboard embeds are sent \n\n",
+        "Deactivate: Deactivates the starboard and re-enables quoting");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

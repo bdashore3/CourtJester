@@ -49,9 +49,9 @@ async fn b64decode(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 pub async fn cipher_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("b64encode <message>: Encodes a message in base64 \n\n");
-    content.push_str("b64decode <b64 string>: Decodes a base64 message");
+    let content = concat!(
+        "b64encode <message>: Encodes a message in base64 \n\n",
+        "b64decode <b64 string>: Decodes a base64 message");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

@@ -187,13 +187,13 @@ async fn fetch_gifs(ctx: &Context, search: &str, amount: u32, filter: &str) -> R
 }
 
 pub async fn image_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("gif: Fetches a random gif from tenor \nNote: The content filter is turned off in an NSFW channel \n\n");
-    content.push_str("hug <mention>: Gives wholesome hugs to someone \n\n");
-    content.push_str("pat <mention>: Pats someone on the head \n\n");
-    content.push_str("slap <mention>: Give someone a slap \n\n");
-    content.push_str("cry: Emphasizes that you're crying  \n\n");
-    content.push_str("cringe: Emphasizes that something is cringey \n\n");
+    let content = concat!(
+        "gif: Fetches a random gif from tenor \nNote: The content filter is turned off in an NSFW channel \n\n",
+        "hug <mention>: Gives wholesome hugs to someone \n\n",
+        "pat <mention>: Pats someone on the head \n\n",
+        "slap <mention>: Give someone a slap \n\n",
+        "cry: Emphasizes that you're crying  \n\n",
+        "cringe: Emphasizes that something is cringey \n\n");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

@@ -288,10 +288,10 @@ async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, 
 }
 
 pub async fn sender_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("nice: Sends nice to a defined channel \n\n");
-    content.push_str("bruh: Sends a bruh moment to a defined channel \n\n");
-    content.push_str("quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n");
+    let content = concat!(
+        "nice: Sends nice to a defined channel \n\n",
+        "bruh: Sends a bruh moment to a defined channel \n\n",
+        "quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

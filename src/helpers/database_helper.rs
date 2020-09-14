@@ -4,7 +4,6 @@ use serenity::{
     model::id::GuildId
 };
 use sqlx::postgres::{PgPoolOptions, PgPool};
-use std::error::Error;
 
 pub async fn obtain_db_pool(db_connection: String) -> CommandResult<PgPool> {
 

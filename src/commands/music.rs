@@ -405,14 +405,14 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("play <URL or search keywords> : Plays the specified track \n\n");
-    content.push_str("pause: Pauses the current track \n\n");
-    content.push_str("resume <author> <text>: Resumes the current track \nAlias: unpause \n\n");
-    content.push_str("stop: Stops the current track and empties the queue. Doesn't disconnect the bot \n\n");
-    content.push_str("skip: Skips the current track. If there are no tracks in the queue, the player is stopped \n\n");
-    content.push_str("seek <seconds>: Seeks in the current track for x seconds");
-    content.push_str("queue: See the current queue for the guild and what's playing");
+    let content = concat!(
+        "play <URL or search keywords> : Plays the specified track \n\n",
+        "pause: Pauses the current track \n\n",
+        "resume <author> <text>: Resumes the current track \nAlias: unpause \n\n",
+        "stop: Stops the current track and empties the queue. Doesn't disconnect the bot \n\n",
+        "skip: Skips the current track. If there are no tracks in the queue, the player is stopped \n\n",
+        "seek <seconds>: Seeks in the current track for x seconds",
+        "queue: See the current queue for the guild and what's playing");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

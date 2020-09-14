@@ -43,16 +43,16 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
-    let mut categories = String::new();
-    categories.push_str("prefix \n");
-    categories.push_str("command \n");
-    categories.push_str("starboard \n");
-    categories.push_str("senders \n");
-    categories.push_str("ciphers \n");
-    categories.push_str("text \n");
-    categories.push_str("voice \n");
-    categories.push_str("music \n");
-    categories.push_str("images \n");
+    let categories = concat!(
+        "prefix \n",
+        "command \n",
+        "starboard \n",
+        "senders \n",
+        "ciphers \n",
+        "text \n",
+        "voice \n",
+        "music \n",
+        "images \n");
 
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

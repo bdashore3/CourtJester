@@ -25,7 +25,7 @@ use serenity::{
             Permissions,
             Message, User
         },
-        event::{VoiceServerUpdateEvent, ResumedEvent}, 
+        event::VoiceServerUpdateEvent, 
         gateway::Ready, 
         guild::{Member, Guild}, 
         channel::Reaction, 
@@ -56,10 +56,6 @@ struct Handler;
 impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("Connected as {}", ready.user.name);
-    }
-
-    async fn resume(&self, _: Context, _: ResumedEvent) {
-        println!("Resumed");
     }
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
@@ -195,7 +191,8 @@ async fn main() -> CommandResult {
             },
             DispatchError::OnlyForOwners => {
                 let _ = msg.channel_id.say(ctx, "This is a bot dev only command!").await;
-            }
+            },
+            DispatchError::IgnoredBot => {},
             _ => println!("Unhandled dispatch error: {:?}", error),
         }        
     }

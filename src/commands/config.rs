@@ -7,7 +7,6 @@ use serenity::framework::standard::{
     macros::command,
     Args
 };
-use sqlx::{self, PgPool};
 use crate::{
     ConnectionPool,
     PubCreds,
@@ -114,9 +113,9 @@ async fn restore(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 pub async fn prefix_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("prefix: Gets the server's current prefix \n\n");
-    content.push_str("prefix <character>: Sets the server's prefix (Can be one or multiple characters)");
+    let content = concat!(
+        "prefix: Gets the server's current prefix \n\n",
+        "prefix <character>: Sets the server's prefix (Can be one or multiple characters)");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
@@ -215,10 +214,10 @@ async fn list(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 pub async fn command_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("set <name> <content>: Sets a new custom command, {user} is replaced with a mention \n\n");
-    content.push_str("remove <name>: Removes an existing custom command \n\n");
-    content.push_str("list: Lists all custom commands in the server");
+    let content = concat!(
+        "set <name> <content>: Sets a new custom command, {user} is replaced with a mention \n\n",
+        "remove <name>: Removes an existing custom command \n\n",
+        "list: Lists all custom commands in the server");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

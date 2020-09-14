@@ -152,9 +152,9 @@ pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
 }
 
 pub async fn voice_help(ctx: &Context, channel_id: ChannelId) {
-    let mut content = String::new();
-    content.push_str("summon: Forces the bot to join the voice chat \nAlias: connect \n\n");
-    content.push_str("disconnect: Leaves the voice chat and clears everything \n\n");
+    let content = concat!(
+        "summon: Forces the bot to join the voice chat \nAlias: connect \n\n",
+        "disconnect: Leaves the voice chat and clears everything \n\n");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
