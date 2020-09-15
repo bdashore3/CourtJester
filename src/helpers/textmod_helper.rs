@@ -2,22 +2,17 @@ use rand::prelude::*;
 
 // Switches the case of each character in the word and returns the new word
 pub fn get_inverted_string(input: &str) -> String {
-    
-    let mut output = String::with_capacity(input.len());
-
-    for x in input.chars() {
+    input.chars().map(|x| {
         if x.is_uppercase() {
-            output.push(x.to_lowercase().collect::<Vec<_>>()[0]);
+            x.to_lowercase().collect::<Vec<_>>()[0]
         }
         else if x.is_lowercase() {
-            output.push(x.to_uppercase().collect::<Vec<_>>()[0]);
+            x.to_uppercase().collect::<Vec<_>>()[0]
         }
         else {
-            output.push(x);
+            x
         }
-    }
-
-    output
+    }).collect()
 }
 
 /*
@@ -26,19 +21,14 @@ pub fn get_inverted_string(input: &str) -> String {
  * There is a chance it will output an uppercased or original string due to probability
  */
 pub fn get_mock_string(input: &str) -> String {
-
-    let mut output = String::with_capacity(input.len());
-
-    for x in input.chars() {
+    input.chars().map(|x| {
         if random() {
-            output.push(x.to_uppercase().collect::<Vec<_>>()[0]);
+            x.to_uppercase().collect::<Vec<_>>()[0]
         }
         else {
-            output.push(x.to_lowercase().collect::<Vec<_>>()[0]);
+            x.to_lowercase().collect::<Vec<_>>()[0]
         }
-    }
-
-    output
+    }).collect()
 }
 
 /*
@@ -46,7 +36,6 @@ pub fn get_mock_string(input: &str) -> String {
  * If biggspace is true, add a larger space between each character
  */
 pub fn get_spaced_string(input: &str, biggspace: bool) -> String {
-
     let pass_string: String = input.chars().filter(|c| !c.is_whitespace()).collect();
 
     pass_string.split("").map(|x|
@@ -68,4 +57,19 @@ pub fn get_spaced_string(input: &str, biggspace: bool) -> String {
                 format!("{}  ", x)
             }
         }).collect::<String>()
+}
+
+pub fn get_hacked_string(input: &str) -> String {
+    input.chars()
+        .map(|x| match x {
+            'l'|'L' => '1',
+            'e'|'E' => '3',
+            'a' | 'A' => '4',
+            's' | 'S' => '5',
+            't' | 'T' => '7',
+            'b' | 'B' => '8',
+            'p' | 'P' => '9',
+            'o' | 'O' => '0',
+            _ => x
+        }).collect()
 }

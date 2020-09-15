@@ -146,6 +146,13 @@ async fn biggspacel(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[command]
+async fn h4ck(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+    msg.channel_id.say(ctx, textmod_helper::get_hacked_string(args.rest())).await?;
+
+    Ok(())
+}
+
 pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "mock <message>: Spongebob mocks a string \n\n",
@@ -153,7 +160,8 @@ pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
         "upp <message>: Every letter becomes uppercase \n\n",
         "low <message>: Every letter becomes lowercase \n\n",
         "space <message>: Spaces out each letter in the message (whitespace omitted) \n\n",
-        "biggspace <message>: Same as space, but W I D E R");
+        "biggspace <message>: Same as space, but W I D E R",
+        "h4ck <message>: Become a hackerman by making h4ck3d w0rd5");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
@@ -161,7 +169,8 @@ pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
             e.description("Description: Commands that modify text");
             e.field("Commands", content, false);
             e.footer(|f| {
-                f.text("Putting an l in front of any command will use the last message");
+                f.text(concat!("Putting an l in front of any command",
+                    "(except h4ck) will use the last message"));
                 f
             });
             e
