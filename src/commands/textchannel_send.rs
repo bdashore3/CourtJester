@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serenity::prelude::*;
 use serenity::model::prelude::*;
 use serenity::framework::standard::{
@@ -6,22 +8,21 @@ use serenity::framework::standard::{
     Args
 };
 use serenity::utils::*;
-
+use rand::prelude::*;
 use sqlx::PgPool;
-use crate::ConnectionPool;
-use crate::helpers::*;
+use tokio::time::delay_for;
+use crate::{
+    ConnectionPool,
+    helpers::{
+        permissions_helper,
+        command_utils
+    }
+};
 
 struct TextChannels {
     nice_id: Option<i64>,
     bruh_id: Option<i64>,
     quote_id: Option<i64>
-}
-
-async fn get_channels(pool: &PgPool, guild_id: GuildId) -> Result<TextChannels, Box<dyn std::error::Error + Send + Sync>> {
-    let data = sqlx::query_as!(TextChannels, "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
-        .fetch_one(pool).await?;
-
-    Ok(data)
 }
 
 /// Sends `nice` to a specified channel. Provide a channel as the first argument to set it
@@ -258,6 +259,29 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
+#[command]
+async fn vibecheck(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.channel_id.say(ctx, "Initiating vibe check...").await?;
+
+    delay_for(Duration::from_secs(3)).await;
+
+    if random() {
+        msg.channel_id.say(ctx, 
+            format!("{} has passed the vibe check. Continue vibing good sir.", msg.author.mention())).await?;
+    } else {
+        msg.channel_id.say(ctx, 
+            format!("{} has failed the vibe check. Show me your vibing license!", msg.author.mention())).await?;
+    }
+    Ok(())
+}
+
+async fn get_channels(pool: &PgPool, guild_id: GuildId) -> Result<TextChannels, Box<dyn std::error::Error + Send + Sync>> {
+    let data = sqlx::query_as!(TextChannels, "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1", guild_id.0 as i64)
+        .fetch_one(pool).await?;
+
+    Ok(data)
+}
+
 async fn insert_or_update(pool: &PgPool, guild_id: GuildId, channel_type: &str, channel_id: i64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match channel_type {
         "nice" => {
@@ -291,7 +315,8 @@ pub async fn sender_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "nice: Sends nice to a defined channel \n\n",
         "bruh: Sends a bruh moment to a defined channel \n\n",
-        "quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n");
+        "quote <author> <text>: Quotes a user. Deactivated when starboard is enabled \n\n", 
+        "vibecheck: Checks your vibe. Try it out!");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

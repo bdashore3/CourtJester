@@ -39,9 +39,9 @@ pub struct TextLast;
 #[commands(b64encode, b64decode)]
 pub struct Ciphers;
 
-#[group("Jars")]
+#[group("Senders")]
 #[description = "Commands that send certain messages to channels"]
-#[commands(nice, bruh, quote)]
+#[commands(nice, bruh, quote, vibecheck)]
 pub struct TextChannelSend;
 
 #[group("Bot Configuration")]
