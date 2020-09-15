@@ -104,6 +104,30 @@
       "nullable": []
     }
   },
+  "45c66b0d0f327a3cd4af85140e886ed3bc9baf789af9a8b8c78f03897e5060c8": {
+    "query": "SELECT guild_id, prefix FROM guild_info",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "guild_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "prefix",
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        true
+      ]
+    }
+  },
   "4b9c868f145dd0c0c31b0b4c0ea30e35b841cda1934ae3bd3e7a55792d4f3f7c": {
     "query": "UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2",
     "describe": {
@@ -402,30 +426,6 @@
       ]
     }
   },
-  "b732ea9d230d75c58957b5bc873b500952a763f94495cafb5bb57e56199c33ee": {
-    "query": "SELECT guild_info.starbot_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "starbot_threshold",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 1,
-          "name": "quote_id",
-          "type_info": "Int8"
-        }
-      ],
-      "parameters": {
-        "Left": []
-      },
-      "nullable": [
-        true,
-        true
-      ]
-    }
-  },
   "bd00d906f4687793d76091518d10fa353f0af7e531f2eeff2553e280d249ec3a": {
     "query": "INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING",
     "describe": {
@@ -436,26 +436,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "c5adb0743b0ed31f8e5b1f508f8d0f3339d1ff42052539f3ad46abab50cb5047": {
-    "query": "SELECT EXISTS(SELECT starbot_threshold FROM guild_info WHERE guild_id = $1)",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "exists",
-          "type_info": "Bool"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
-      "nullable": [
-        null
-      ]
     }
   },
   "c7cc9ab54001965812d47d563ead948325c3666bb7767d19532e37c1cfd74249": {
