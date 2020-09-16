@@ -26,7 +26,7 @@ pub struct General;
 #[description = "Commands than modify text. \n
 Append l in the command to use the last message \n
 Example: `mockl` mocks the last message"]
-#[commands(mock, inv, upp, low, space, biggspace, h4ck)]
+#[commands(mock, inv, upp, low, space, biggspace, h4ck, uwu)]
 pub struct Text;
 
 #[group]
