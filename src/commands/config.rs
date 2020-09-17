@@ -115,7 +115,7 @@ async fn restore(ctx: &Context, msg: &Message) -> CommandResult {
 pub async fn prefix_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "prefix: Gets the server's current prefix \n\n",
-        "prefix <character>: Sets the server's prefix (Can be one or multiple characters)");
+        "prefix (characters): Sets the server's prefix (Can be one or multiple characters)");
     
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {

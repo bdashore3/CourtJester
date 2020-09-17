@@ -39,7 +39,7 @@ use structures::{
     commands::*,
     errors::*
 };
-use helpers::database_helper;
+use helpers::{database_helper, command_utils};
 use reactions::reaction_handler;
 use lavalink_rs::{
     gateway::*, 
@@ -139,6 +139,8 @@ async fn main() -> CommandResult {
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
 
+    let emergency_commands = command_utils::get_allowed_commands();
+
     let command_names = MASTER_GROUP.options.sub_groups.iter().flat_map(|x| {
         x.options.commands
             .iter()
@@ -170,11 +172,42 @@ async fn main() -> CommandResult {
         }
     }
 
+    #[hook]
+    async fn before(ctx: &Context, msg: &Message, cmd_name: &str) -> bool {
+        if command_utils::check_mention_prefix(msg) {
+            let emergency_commands = ctx.data.read().await
+                .get::<EmergencyCommands>().cloned().unwrap();
+
+            if emergency_commands.contains(&cmd_name.to_owned()) {
+                let _ = msg.channel_id.say(ctx, 
+                    format!("{}, you are running an emergency command!", msg.author.mention())).await;
+                return true
+            } else {
+                return false
+            }
+        }
+
+        true
+    }
+
     // After a command is executed, goto here
     #[hook]
-    async fn after(_: &Context, _: &Message, cmd_name: &str, error: Result<(), CommandError>) {
+    async fn after(ctx: &Context, msg: &Message, cmd_name: &str, error: Result<(), CommandError>) {
         if let Err(why) = error {
-            println!("Error in {}: {:?}", cmd_name, why);
+            let part_1 = "Looks like the bot encountered an error! \n";
+            let part_2 = "Please use the `support` command and send the output to the support server!";
+            let error_string = format!("{}{}", part_1, part_2);
+
+            let _ = msg.channel_id.send_message(ctx, |m| {
+                m.embed(|e| {
+                    e.color(0xff69b4);
+                    e.title("Aw Snap!");
+                    e.description(error_string);
+                    e.field("Command Name", cmd_name, false);
+                    e.field("Error", format!("```{} \n```", why), false);
+                    e
+                })
+            }).await;
         }
     }
 
@@ -230,11 +263,13 @@ async fn main() -> CommandResult {
     let framework = StandardFramework::new()
         .configure(|c| c
             .dynamic_prefix(dynamic_prefix)
+            .on_mention(Some(bot_id))
             .owners(owners)
         )
 
         .on_dispatch_error(dispatch_error)
         .unrecognised_command(unrecognized_command_hook)
+        .before(before)
         .after(after)
         
         .group(&GENERAL_GROUP)
@@ -276,6 +311,7 @@ async fn main() -> CommandResult {
         data.insert::<CommandNameMap>(Arc::new(command_names));
         data.insert::<ReqwestClient>(Arc::new(reqwest_client));
         data.insert::<PubCreds>(Arc::new(pub_creds));
+        data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);
     }
 

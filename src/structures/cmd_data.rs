@@ -79,3 +79,9 @@ pub struct PrefixMap;
 impl TypeMapKey for PrefixMap {
     type Value = Arc<DashMap<GuildId, String>>;
 }
+
+pub struct EmergencyCommands;
+
+impl TypeMapKey for EmergencyCommands {
+    type Value = Arc<Vec<String>>;
+}

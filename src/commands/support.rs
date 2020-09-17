@@ -14,13 +14,21 @@ use crate::commands::{
     music::*,
     images::*
 };
-use crate::helpers::botinfo::*;
-use crate::helpers::voice_utils::*;
+use crate::helpers::{
+    botinfo::*,
+    voice_utils::*,
+    command_utils,
+};
 
 #[command]
 async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if args.len() < 1 {
-        default_help_message(ctx, msg.channel_id).await;
+    if args.is_empty() {
+        if command_utils::check_mention_prefix(msg) {
+            emergency_help_message(ctx, msg.channel_id).await;
+        } else {
+            default_help_message(ctx, msg.channel_id).await;
+        }
+
         return Ok(())
     }
 
@@ -42,6 +50,20 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     Ok(())
 }
 
+async fn emergency_help_message(ctx: &Context, channel_id: ChannelId) {
+    let content = concat!("prefix (characters): Sets the server's bot prefix \n\n",
+        "resetprefix: Reset's the server's prefix back to the default one");
+
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("CourtJester Emergency Help");
+            e.description("You should only use this if you mess up your prefix!");
+            e.field("Commands", content, false);
+            e
+        })
+    }).await;
+}
+
 async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
     let categories = concat!(
         "prefix \n",
@@ -57,7 +79,8 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
             e.title("CourtJester Help");
-            e.description("Help for the CourtJester Discord bot");
+            e.description(concat!("Help for the RoyalGuard Discord bot \n",
+                "Command parameters: <> is required and () is optional"));
             e.field("Subcategories", format!("```\n{}```", categories), false);
             e.footer(|f| {
                 f.text("Use the support command for any further help!");
