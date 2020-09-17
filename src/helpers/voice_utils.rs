@@ -56,9 +56,10 @@ pub async fn join_voice_internal(ctx: &Context, msg: &Message, voice_channel: Ch
         drop(manager);
 
         loop {
-            let data = ctx.data.read().await;
-            let vgu_lock = data.get::<VoiceGuildUpdate>().unwrap();
+            let vgu_lock = ctx.data.read().await
+                .get::<VoiceGuildUpdate>().cloned().unwrap();
             let mut vgu = vgu_lock.write().await;
+
             if !vgu.contains(&guild_id) {
                 delay_for(Duration::from_millis(500)).await;
             } else {
@@ -71,9 +72,10 @@ pub async fn join_voice_internal(ctx: &Context, msg: &Message, voice_channel: Ch
         let manager = manager_lock.lock().await;
 
         {
-            let mut data = ctx.data.write().await;
-            let lava_lock = data.get_mut::<Lavalink>().unwrap();
+            let lava_lock = ctx.data.read().await
+                .get::<Lavalink>().cloned().unwrap();
             let handler = manager.get(guild_id).unwrap();
+
             lava_lock.lock().await.create_session(guild_id, &handler).await?;
         }
     }
@@ -94,8 +96,8 @@ async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
 
     match leavevc_internal(ctx, &guild_id).await {
         Ok(_) => {
-            let data = ctx.data.read().await;
-            let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+            let voice_timer_map = ctx.data.read().await
+                .get::<VoiceTimerMap>().cloned().unwrap();
         
             if voice_timer_map.contains_key(&guild_id) {
                 if let Some(future_guard) = voice_timer_map.get(&guild_id) {
@@ -115,7 +117,8 @@ async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 pub async fn leavevc_internal(ctx: &Context, guild_id: &GuildId) -> CommandResult {
-    let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
+    let manager_lock = ctx.data.read().await
+        .get::<VoiceManager>().cloned().unwrap();
     let mut manager = manager_lock.lock().await;
 
     if manager.get(guild_id).is_some() {
@@ -138,13 +141,12 @@ pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
     let (abort_handle, abort_registration) = AbortHandle::new_pair();
     let future = Abortable::new(leavevc_internal(&ctx, &guild_id), abort_registration);
 
-    {
-        let data = ctx.data.read().await;
-        let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
-        voice_timer_map.insert(guild_id, abort_handle);
-    }
+    let voice_timer_map = ctx.data.read().await
+        .get::<VoiceTimerMap>().cloned().unwrap();
 
-    delay_for(Duration::from_secs(300)).await;
+    voice_timer_map.insert(guild_id, abort_handle);
+
+    delay_for(Duration::from_secs(20)).await;
     match future.await {
         Ok(_) => {},
         Err(_e) => {}

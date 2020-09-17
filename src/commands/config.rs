@@ -145,15 +145,20 @@ async fn command(ctx: &Context, msg: &Message) -> CommandResult {
 #[min_args(2)]
 async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let command_name = args.single::<String>().unwrap();
-    let data = ctx.data.read().await;
-    let command_names = data.get::<CommandNameMap>().unwrap();
+    let (pool, command_names) = {
+        let data = ctx.data.read().await;
+        let pool = data.get::<ConnectionPool>().cloned().unwrap();
+        let command_names = data.get::<CommandNameMap>().cloned().unwrap();
+
+        (pool, command_names)
+    };
+
 
     if command_names.contains(&command_name) {
         msg.channel_id.say(ctx, "This command is already hardcoded! Please choose a different name!").await?;
         return Ok(())
     }
-    
-    let pool = data.get::<ConnectionPool>().unwrap();
+
     let guild_id = msg.guild_id.unwrap().0 as i64;
 
     sqlx::query!("INSERT INTO commands(guild_id, name, content)
@@ -162,7 +167,7 @@ async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             DO UPDATE
             SET content = EXCLUDED.content",
             guild_id, command_name, args.rest())
-        .execute(pool).await?;
+        .execute(&pool).await?;
 
     msg.channel_id.say(ctx, format!("Command `{}` sucessfully set!", command_name)).await?;
 
@@ -189,13 +194,13 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 #[command]
 async fn list(ctx: &Context, msg: &Message) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
     let guild_id = msg.guild_id.unwrap().0 as i64;
     let mut command_map: Vec<String> = Vec::new();
 
     let command_data = sqlx::query!("SELECT name, content FROM commands WHERE guild_id = $1", guild_id)
-        .fetch_all(pool).await?;
+        .fetch_all(&pool).await?;
 
     for i in command_data {
         command_map.push(i.name);

@@ -59,24 +59,27 @@ impl EventHandler for Handler {
     }
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
-        let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().unwrap();
+        let pool = ctx.data.read().await
+            .get::<ConnectionPool>().cloned().unwrap();
 
         if is_new {
             sqlx::query!("INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING", guild.id.0 as i64)
-                .execute(pool).await.unwrap();
+                .execute(&pool).await.unwrap();
         }
     }
 
     async fn guild_member_removal(&self, ctx: Context, guild_id: GuildId, user: User, _member_data_if_available: Option<Member>) {
-        let data = ctx.data.read().await;
-        let bot_id = data.get::<BotId>().unwrap();
+        let (bot_id, pool) = {
+            let data = ctx.data.read().await;
+            let bot_id = data.get::<BotId>().cloned().unwrap();
+            let pool = data.get::<ConnectionPool>().cloned().unwrap();
 
-        if &user.id == bot_id {
-            let pool = data.get::<ConnectionPool>().unwrap();
-    
+            (bot_id, pool)
+        };
+
+        if user.id == bot_id {    
             sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
-                .execute(pool).await.unwrap();  
+                .execute(&pool).await.unwrap();  
         }
     }
 
@@ -90,8 +93,8 @@ impl EventHandler for Handler {
 
     async fn voice_server_update(&self, ctx: Context, voice: VoiceServerUpdateEvent) {
         if let Some(guild_id) = voice.guild_id {
-            let data = ctx.data.read().await;
-            let voice_server_lock = data.get::<VoiceGuildUpdate>().unwrap();
+            let voice_server_lock = ctx.data.read().await
+                .get::<VoiceGuildUpdate>().cloned().unwrap();
             let mut voice_server = voice_server_lock.write().await;
             voice_server.insert(guild_id);
         }
@@ -150,14 +153,15 @@ async fn main() -> CommandResult {
     // If there's no command, check in the custom commands database
     #[hook]
     async fn unrecognized_command_hook(ctx: &Context, msg: &Message, command_name: &str) {
-        let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().unwrap();
+        let pool = ctx.data.read().await
+            .get::<ConnectionPool>().cloned().unwrap();
+
         let guild_id = msg.guild_id.unwrap().0 as i64;
 
         let cmd_data = sqlx::query!(
                 "SELECT content FROM commands WHERE guild_id = $1 AND name = $2",
                 guild_id, command_name)
-            .fetch_optional(pool).await.unwrap();
+            .fetch_optional(&pool).await.unwrap();
 
         if let Some(cmd_data) = cmd_data {
             let content = cmd_data.content.unwrap()

@@ -33,21 +33,20 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let test_id = args.single::<String>().unwrap_or_default();
 
-    let data = ctx.data.read().await;
-
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let check = sqlx::query!("SELECT EXISTS(SELECT nice_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-        .fetch_one(pool)
+        .fetch_one(&pool)
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
         if permissions_helper::check_permission(ctx, &msg, None, false).await? {
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
-                    .execute(pool).await?;
+                    .execute(&pool).await?;
             } else {
-                insert_or_update(pool, guild_id, "nice", channel_id as i64).await?;
+                insert_or_update(&pool, guild_id, "nice", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -66,7 +65,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channel_num = get_channels(pool, guild_id).await?;
+    let channel_num = get_channels(&pool, guild_id).await?;
 
     if channel_num.nice_id.is_none() {
         msg.channel_id.say(ctx, "The Nice channel isn't set! Please specify a channel!").await?;
@@ -93,12 +92,11 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let test_id = args.single::<String>().unwrap_or_default();
 
-    let data = ctx.data.read().await;
-
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let check = sqlx::query!("SELECT EXISTS(SELECT bruh_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-        .fetch_one(pool)
+        .fetch_one(&pool)
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
@@ -106,9 +104,9 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
-                    .execute(pool).await?;
+                    .execute(&pool).await?;
             } else {
-                insert_or_update(pool, guild_id, "bruh", channel_id as i64).await?;
+                insert_or_update(&pool, guild_id, "bruh", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -127,7 +125,7 @@ async fn bruh(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channel_nums = get_channels(pool, guild_id).await?;
+    let channel_nums = get_channels(&pool, guild_id).await?;
 
     if channel_nums.bruh_id.is_none() {
         msg.channel_id.say(ctx, "The Bruh channel isn't set! Please specify a channel!").await?;
@@ -158,12 +156,11 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let test_id = args.parse::<String>().unwrap_or_default();
 
-    let data = ctx.data.read().await;
-
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let starboard_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
-        .fetch_one(pool).await?;
+        .fetch_one(&pool).await?;
 
     if starboard_data.starbot_threshold.is_some() {
         msg.channel_id.say(ctx, "You can't use the quote command because starboard is enabled in this server!").await?;
@@ -171,16 +168,16 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     let check = sqlx::query!("SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)", guild_id.0 as i64)
-        .fetch_one(pool)
+        .fetch_one(&pool)
         .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
         if permissions_helper::check_permission(ctx, msg, None, false).await? {  
             if check.exists.unwrap() {
                 sqlx::query!("UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2", channel_id as i64, guild_id.0 as i64)
-                    .execute(pool).await?;
+                    .execute(&pool).await?;
             } else {
-                insert_or_update(pool, guild_id, "quote", channel_id as i64).await?;
+                insert_or_update(&pool, guild_id, "quote", channel_id as i64).await?;
             }
         
             msg.channel_id.say(ctx, "Channel sucessfully set!").await?;
@@ -203,7 +200,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let channels = get_channels(pool, guild_id).await?;
+    let channels = get_channels(&pool, guild_id).await?;
 
     if channels.quote_id.is_none() {
         msg.channel_id.say(ctx, "The Quote channel isn't set! Please specify a channel!").await?;

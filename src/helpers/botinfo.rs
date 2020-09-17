@@ -9,8 +9,8 @@ use crate::{
 use tokio::process::Command;
 
 pub async fn get_last_commit(ctx: &Context) -> Result<CommitResponse, Box<dyn std::error::Error + Send + Sync>> {
-    let data = ctx.data.read().await;
-    let reqwest_client = data.get::<ReqwestClient>().unwrap();
+    let reqwest_client = ctx.data.read().await
+        .get::<ReqwestClient>().cloned().unwrap();
 
     let resp = reqwest_client
         .get("https://api.github.com/repos/bdashore3/courtjester/commits/serenity")
@@ -21,12 +21,11 @@ pub async fn get_last_commit(ctx: &Context) -> Result<CommitResponse, Box<dyn st
 }
 
 pub async fn get_system_info(ctx: &Context) -> SysInfo {
-    let data = ctx.data.read().await;
+    let shard_manager = ctx.data.read().await
+        .get::<ShardManagerContainer>().cloned().unwrap();
     let mut sys_info = SysInfo::default();
 
     sys_info.shard_latency = {
-        let shard_manager = data.get::<ShardManagerContainer>().unwrap();
-
         let manager = shard_manager.lock().await;
         let runners = manager.runners.lock().await;
     

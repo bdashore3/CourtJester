@@ -167,14 +167,19 @@ async fn gifsearch(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 async fn fetch_gifs(ctx: &Context, search: &str, amount: u32, filter: &str) -> Result<Vec<GifResult>, Box<dyn std::error::Error + Send + Sync>> {
-    let data = ctx.data.read().await;
-    let reqwest_client = data.get::<ReqwestClient>().unwrap();
-    let tenor_key = data.get::<PubCreds>().unwrap().get("tenor").unwrap().as_str();
+    let (reqwest_client, tenor_key) = {
+        let data = ctx.data.read().await;
+        let reqwest_client = data.get::<ReqwestClient>().cloned().unwrap();
+        let tenor_key = data.get::<PubCreds>().unwrap()
+            .get("tenor").cloned().unwrap();
+
+        (reqwest_client, tenor_key)
+    };
 
     let url = Url::parse_with_params("https://api.tenor.com/v1/search",
             &[
                 ("q", search),
-                ("key", tenor_key),
+                ("key", tenor_key.as_str()),
                 ("limit", &format!("{}", amount)),
                 ("contentfilter", filter)
             ])?;

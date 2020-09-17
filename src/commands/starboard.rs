@@ -17,8 +17,8 @@ async fn starboard(_ctx: &Context, _msg: &Message) -> CommandResult {
 
 #[command]
 async fn threshold(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let new_threshold = match args.single::<u32>() {
         Ok(threshold) => threshold,
@@ -29,7 +29,7 @@ async fn threshold(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
     };
 
     sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", new_threshold as i32, msg.guild_id.unwrap().0 as i64)
-        .execute(pool).await?;
+        .execute(&pool).await?;
 
     msg.channel_id.say(ctx, "New threshold sucessfully set!").await?;
 
@@ -38,8 +38,8 @@ async fn threshold(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 
 #[command]
 async fn channel (ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let test_id = args.single::<String>().unwrap();
     let new_channel = match parse_channel(&test_id) {
@@ -54,7 +54,7 @@ async fn channel (ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
                 ON CONFLICT (guild_id)
                 DO UPDATE SET quote_id = $2",
             msg.guild_id.unwrap().0 as i64, new_channel as i64)
-        .execute(pool).await?;
+        .execute(&pool).await?;
 
     msg.channel_id.say(ctx, "New starboard channel sucessfully set!").await?;
 
@@ -63,8 +63,8 @@ async fn channel (ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 
 #[command]
 async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
 
     let sent_message = msg.channel_id.say(ctx, "Removing the starboard re-enables quoting! You want to do this?").await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("✅"))).await?;
@@ -76,10 +76,10 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
 
     if reaction_emoji == "✅" {
         sqlx::query!("UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
-            .execute(pool).await?;
+            .execute(&pool).await?;
 
         sqlx::query!("UPDATE text_channels SET quote_id = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
-            .execute(pool).await?;
+            .execute(&pool).await?;
         
         msg.channel_id.say(ctx, "The starboard has been deactivated").await?;
     }
@@ -106,10 +106,10 @@ async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
     let reaction_emoji = get_reaction_emoji(&reaction.emoji);
 
     if reaction_emoji == "✅" {
-        let data = ctx.data.read().await;
-        let pool = data.get::<ConnectionPool>().unwrap();
+        let pool = ctx.data.read().await
+            .get::<ConnectionPool>().cloned().unwrap();
 
-        starboard_wizard_threshold(ctx, msg, pool).await?
+        starboard_wizard_threshold(ctx, msg, &pool).await?
     }
     else if reaction_emoji == "❌" {
         msg.channel_id.say(ctx, "Aborting...").await?;

@@ -51,8 +51,16 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         return Ok(())
     }
 
+    let (manager_lock, voice_timer_map, lava_lock) = {
+        let data = ctx.data.read().await;
+        let manager_lock = data.get::<VoiceManager>().cloned().unwrap();
+        let voice_timer_map = data.get::<VoiceTimerMap>().cloned().unwrap();
+        let lava_lock = data.get::<Lavalink>().cloned().unwrap();
+
+        (manager_lock, voice_timer_map, lava_lock)
+    };
+
     {
-        let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
         let manager = manager_lock.lock().await;
 
         if manager.get(&guild_id).is_none() {
@@ -63,26 +71,16 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let query = args.message().to_string();
 
-    {
-        let data = ctx.data.read().await;
-        let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
-
-        if voice_timer_map.contains_key(&guild_id) {
-            if let Some(future_guard) = voice_timer_map.get(&guild_id) {
-                future_guard.value().abort();
-            }
-            voice_timer_map.remove(&guild_id);
+    if voice_timer_map.contains_key(&guild_id) {
+        if let Some(future_guard) = voice_timer_map.get(&guild_id) {
+            future_guard.value().abort();
         }
+        voice_timer_map.remove(&guild_id);
     }
 
-    let manager_lock = ctx.data.read().await.get::<VoiceManager>().cloned().unwrap();
-
-    let mut manager = manager_lock.lock().await;
+    let manager = manager_lock.lock().await;
     
-    if manager.get_mut(guild_id).is_some() {
-        let mut data = ctx.data.write().await;
-        let lava_lock = data.get_mut::<Lavalink>().unwrap();
-
+    if manager.get(guild_id).is_some() {
         let lava_client = lava_lock.lock().await;
 
         let query_info = lava_client.auto_search_tracks(&query).await?;
@@ -94,9 +92,8 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
         drop(lava_client);
 
-        if let Err(why) = LavalinkClient::play(guild_id, query_info.tracks[0].clone()).queue(Arc::clone(lava_lock)).await {
-            eprintln!("{}", why);
-            return Ok(())
+        if let Err(why) = LavalinkClient::play(guild_id, query_info.tracks[0].clone()).queue(Arc::clone(&lava_lock)).await {
+            return Err(why.into())
         };
 
         let track_info = query_info.tracks[0].info.as_ref();
@@ -139,9 +136,10 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let data = ctx.data.read().await;
-    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
     let mut lava_client = lava_lock.lock().await;
+
     if lava_client.nodes.contains_key(&guild_id.0) {
         lava_client.pause(guild_id).await?;
         msg.react(ctx, ReactionType::Unicode(String::from("⏸"))).await?;
@@ -165,9 +163,8 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let data = ctx.data.read().await;
-
-    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
     let mut lava_client = lava_lock.lock().await;
 
     if !lava_client.nodes.contains_key(&guild_id.0) {
@@ -198,8 +195,8 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let data = ctx.data.read().await;
-    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
     let mut lava_client = lava_lock.lock().await;
 
     if !lava_client.nodes.contains_key(&guild_id.0) {
@@ -208,7 +205,8 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+    let voice_timer_map = ctx.data.read().await
+        .get::<VoiceTimerMap>().cloned().unwrap();
 
     if let Some(future_guard) = voice_timer_map.get(&guild_id) {
         future_guard.value().abort();
@@ -232,8 +230,10 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let data = ctx.data.read().await;
-    let lava_client = data.get::<Lavalink>().unwrap().lock().await;
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
+    let lava_client = lava_lock.lock().await;
+
     let node = match lava_client.nodes.get(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
@@ -295,14 +295,18 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
     loop {
         delay_for(Duration::from_secs(60)).await;
         {
-            let data = ctx.data.read().await;
-            let voice_timer_map = data.get::<VoiceTimerMap>().unwrap();
+            let (voice_timer_map, lava_lock) = {
+                let data = ctx.data.read().await;
+                let voice_timer_map = data.get::<VoiceTimerMap>().cloned().unwrap();
+                let lava_lock = data.get::<Lavalink>().cloned().unwrap();
+
+                (voice_timer_map, lava_lock)
+            };
 
             if voice_timer_map.get(&guild_id).is_some() {
                 return
             }
 
-            let lava_lock = data.get::<Lavalink>().unwrap();
             let lava_client = lava_lock.lock().await;
             let node = match lava_client.nodes.get(&guild_id.0) {
                 Some(node) => node,
@@ -332,8 +336,10 @@ async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let data = ctx.data.read().await;
-    let mut lava_client = data.get::<Lavalink>().unwrap().lock().await;
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
+    let mut lava_client = lava_lock.lock().await;
+
     let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
@@ -392,8 +398,8 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(())
     }
 
-    let mut data = ctx.data.write().await;
-    let lava_lock = data.get_mut::<Lavalink>().unwrap();
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
     let mut lava_client = lava_lock.lock().await;
 
     if !lava_client.nodes.contains_key(&guild_id.0) {
@@ -440,8 +446,8 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    let data = ctx.data.read().await;
-    let lava_lock = data.get::<Lavalink>().unwrap();
+    let lava_lock = ctx.data.read().await
+        .get::<Lavalink>().cloned().unwrap();
     let mut lava_client = lava_lock.lock().await;
 
     if !lava_client.nodes.contains_key(&guild_id.0) {

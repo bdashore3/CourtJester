@@ -16,8 +16,8 @@ struct StarbotConfig {
 }
 
 pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) -> CommandResult {
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionPool>().unwrap();
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
     let reaction_message = reaction.message(ctx).await?;
 
     let reaction_channel = reaction.channel(ctx).await?;
@@ -33,7 +33,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
                                     FROM guild_info
                                     INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id
                                     WHERE guild_info.guild_id = $1", reaction.guild_id.unwrap().0 as i64)
-        .fetch_one(pool).await?;
+        .fetch_one(&pool).await?;
     
     if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {
         if !remove {
@@ -71,25 +71,25 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
 
         sqlx::query!("INSERT INTO starbot VALUES($1, $2, $3) ON CONFLICT DO NOTHING",
                 reaction.guild_id.unwrap().0 as i64, reaction_message.id.0 as i64, sent_message.id.0 as i64)
-            .execute(pool).await?;
+            .execute(&pool).await?;
     }
     else if (stars as i32) < config_data.starbot_threshold.unwrap() && remove {
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
-            .fetch_optional(pool).await?;
+            .fetch_optional(&pool).await?;
         
         if let Some(data) = message_data {
             ctx.http.delete_message(star_channel_id.0 as u64, data.sent_message_id as u64).await?;
 
             sqlx::query!("DELETE FROM starbot WHERE guild_id = $1 and reaction_message_id = $2",
                     reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
-                .execute(pool).await?;
+                .execute(&pool).await?;
         }
     }
     else if stars > config_data.starbot_threshold.unwrap() as u64 || remove {
         let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
-            .fetch_optional(pool).await?;
+            .fetch_optional(&pool).await?;
 
         if let Some(data) = message_data {
             let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
