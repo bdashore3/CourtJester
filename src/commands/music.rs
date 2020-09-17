@@ -12,9 +12,17 @@ use serenity::{
     builder::CreateEmbed
 };
 use crate::{
-    helpers::voice_utils, 
-    structures::cmd_data::{VoiceManager, Lavalink, VoiceTimerMap}
-};
+    helpers::{
+        voice_utils,
+        command_utils,
+        permissions_helper
+    },
+    structures::cmd_data::{
+        VoiceManager,
+        Lavalink,
+        VoiceTimerMap
+    },
+    structures::errors::JesterError, structures::errors::PermissionType};
 use std::{time::Duration, sync::Arc};
 use rust_clock::Clock;
 use tokio::time::delay_for;
@@ -196,6 +204,7 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
 
     if !lava_client.nodes.contains_key(&guild_id.0) {
         msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+
         return Ok(())
     }
 
@@ -228,6 +237,8 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let node = match lava_client.nodes.get(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
+            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+
             return Ok(())
         }
     };
@@ -236,6 +247,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     if queue.is_empty() && node.now_playing.is_none() {
         msg.channel_id.say(ctx, "The queue is currently empty!").await?;
+
         return Ok(())
     }
 
@@ -253,13 +265,17 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     if queue.len() > 1 {
         let mut queue_string = String::new();
+        let mut num = 1;
 
         for i in queue.iter().skip(1) {
             let i_info = i.track.info.as_ref();
 
             let mut cl = Clock::new();
             cl.set_time_ms(i_info.unwrap().length.clone() as i64);
-            queue_string.push_str(&format!("[{}]({}) | `{}` \n\n", i_info.unwrap().title, i_info.unwrap().uri, cl.get_time()));
+            queue_string.push_str(
+                &format!("{}. [{}]({}) | `{}` \n\n", num, i_info.unwrap().title, i_info.unwrap().uri, cl.get_time()));
+
+            num = num + 1;
         }
     
         eb.field("Next Songs", queue_string, false);
@@ -308,7 +324,7 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
 
 #[command]
 #[aliases("c")]
-async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
+async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     
     if !guild.voice_states.contains_key(&msg.author.id) {
@@ -321,13 +337,46 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
-            msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            msg.channel_id.say(
+                ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
             return Ok(())
         }
     };
-    node.queue.clear();
+    
+    if args.is_empty() {
+        if !permissions_helper::check_permission(ctx, msg, None, false).await? {
+            msg.channel_id.say(ctx, 
+                JesterError::PermissionError(PermissionType::SelfPerm("moderator"))).await?;
+        } else {
+            node.queue.clear();
 
-    msg.react(ctx, ReactionType::Unicode(String::from("💣"))).await?;
+            msg.react(ctx, ReactionType::Unicode(String::from("💣"))).await?;
+        }
+    } else {
+        let clear_num = match args.single::<usize>() {
+            Ok(size) => {
+                if size <= 0 {
+                    msg.channel_id.say(ctx, JesterError::MissingError("number greater than 0")).await?;
+
+                    return Ok(())
+                }
+
+                size
+            },
+            Err(_) => {
+                msg.channel_id.say(ctx, JesterError::MissingError("number")).await?;
+
+                return Ok(())
+            }
+        };
+
+        node.queue.remove(clear_num - 1);
+
+        let track = node.queue[clear_num - 1].track.info.as_ref();
+        let name = &track.unwrap().title;
+
+        msg.channel_id.say(ctx, format!("Successfully removed track {}", name)).await?;
+    }
 
     Ok(())
 }
@@ -381,11 +430,13 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(())
     }
 
-    let num = match args.single::<u64>() {
-        Ok(num) => num,
-        Err(_) => {
-            msg.channel_id.say(ctx, "Please provide a valid number of seconds!").await?;
-            return Ok(())
+    let time = match command_utils::deconstruct_time(args.single::<String>().unwrap()) {
+        Ok(time) => time,
+        Err(e) => {
+            msg.channel_id.say(ctx, 
+                JesterError::MissingError(&format!("valid amount of {}", e))).await?;
+
+                return Ok(())
         }
     };
 
@@ -398,7 +449,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
          return Ok(())
     };
 
-    lava_client.seek(guild_id, Duration::from_secs(num)).await?;
+    lava_client.seek(guild_id, Duration::from_secs(time)).await?;
     msg.channel_id.say(ctx, "Seeking!").await?;
 
     Ok(())
@@ -411,7 +462,8 @@ pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
         "resume <author> <text>: Resumes the current track \nAlias: unpause \n\n",
         "stop: Stops the current track and empties the queue. Doesn't disconnect the bot \n\n",
         "skip: Skips the current track. If there are no tracks in the queue, the player is stopped \n\n",
-        "seek <seconds>: Seeks in the current track for x seconds",
+        "seek <time>: Seeks in the current track using hh:mm:ss format. mm:ss is also supported",
+        "clear (track number): either clears the entire queue, or removes a specific track",
         "queue: See the current queue for the guild and what's playing");
     
     let _ = channel_id.send_message(ctx, |m| {

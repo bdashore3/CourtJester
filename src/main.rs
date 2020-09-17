@@ -205,22 +205,26 @@ async fn main() -> CommandResult {
 
     #[hook]
     async fn dynamic_prefix(ctx: &Context, msg: &Message) -> Option<String> {
-        let prefixes = ctx.data.read().await
-            .get::<PrefixMap>().cloned().unwrap();
+        let (prefixes, default_prefix) = {
+            let data = ctx.data.read().await;
+            let prefixes = data.get::<PrefixMap>().cloned().unwrap();
+            let default_prefix = data.get::<PubCreds>().unwrap()
+                .get("default prefix").cloned().unwrap();
+
+            (prefixes, default_prefix)
+        };
+
         let guild_id = msg.guild_id.unwrap();
  
         match prefixes.get(&guild_id) {
             Some(prefix_guard) => Some(prefix_guard.value().to_owned()),
-            None => None
+            None => Some(default_prefix)
         }
     }
- 
-    let prefix = pub_creds.get("default prefix").unwrap();
 
     // Link everything together!
     let framework = StandardFramework::new()
         .configure(|c| c
-            .prefix(prefix)
             .dynamic_prefix(dynamic_prefix)
             .owners(owners)
         )
