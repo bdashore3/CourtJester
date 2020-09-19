@@ -128,7 +128,13 @@ pub async fn leavevc_internal(ctx: &Context, guild_id: &GuildId) -> CommandResul
 
             let mut data = ctx.data.write().await;
             let lava_lock = data.get_mut::<Lavalink>().unwrap();
-            lava_lock.lock().await.destroy(guild_id.0).await?;
+            let mut lava_client = lava_lock.lock().await;
+
+            lava_client.destroy(guild_id.0).await?;
+            if let Some(node) = lava_client.nodes.get_mut(&guild_id.0) {
+                node.now_playing = None;
+                node.queue = Vec::new();
+            }
         }
     } else {
         return Err("The bot isn't in a voice channel!".into());
