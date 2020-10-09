@@ -167,26 +167,6 @@
       ]
     }
   },
-  "6b691922ab0edf9d2c8db1c785936fd20aab4655bfd4769b84bad4526c2aa42a": {
-    "query": "SELECT prefix FROM guild_info WHERE guild_id = $1",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "prefix",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
-      "nullable": [
-        true
-      ]
-    }
-  },
   "6b70d19acda0185fd00f1fa48b12e469da3124873cbd3f9925d6a429b061023e": {
     "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)",
     "describe": {
@@ -523,6 +503,19 @@
   },
   "fd5d2077d28be9a6bd06fe6cca6b519317aafa2ccd0da1b12edf8479b43b41f2": {
     "query": "UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "fea9ffb520925d26ba70c0929a2cb6c0f52ca7fb546ec853c507872569cec790": {
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                        ON CONFLICT (guild_id)\n                                        DO UPDATE SET quote_id = $2",
     "describe": {
       "columns": [],
       "parameters": {
