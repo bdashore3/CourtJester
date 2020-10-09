@@ -4,6 +4,7 @@ use serenity::{
     model::{id::ChannelId, channel::{ReactionType, Message}},
     utils::parse_channel
 };
+use std::time::Duration;
 use sqlx::PgPool;
 use crate::structures::cmd_data::ConnectionPool;
 use crate::helpers::command_utils::*;
@@ -66,25 +67,40 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
     let pool = ctx.data.read().await
         .get::<ConnectionPool>().cloned().unwrap();
 
+    let author_id = msg.author.id;
+    let channel_id = msg.channel_id;
+
     let sent_message = msg.channel_id.say(ctx, "Removing the starboard re-enables quoting! You want to do this?").await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("✅"))).await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("❌"))).await?;
 
-    let reaction_action = sent_message.await_reaction(ctx).await.unwrap();
-    let reaction = reaction_action.as_inner_ref();
-    let reaction_emoji = get_reaction_emoji(&reaction.emoji);
+    let reaction_action = sent_message.await_reaction(ctx)
+        .filter(move |reaction| reaction.user_id == Some(author_id) &&
+            reaction.channel_id == channel_id)
+        .timeout(Duration::from_secs(120))
+        .await;
 
-    if reaction_emoji == "✅" {
-        sqlx::query!("UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
-            .execute(&pool).await?;
-
-        sqlx::query!("UPDATE text_channels SET quote_id = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
-            .execute(&pool).await?;
+    match reaction_action {
+        Some(action) => {
+            let reaction = action.as_inner_ref();
+            let reaction_emoji = get_reaction_emoji(&reaction.emoji);
         
-        msg.channel_id.say(ctx, "The starboard has been deactivated").await?;
-    }
-    else if reaction_emoji == "❌" {
-        msg.channel_id.say(ctx, "Aborting...").await?;
+            if reaction_emoji == "✅" {
+                sqlx::query!("UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+                    .execute(&pool).await?;
+        
+                sqlx::query!("UPDATE text_channels SET quote_id = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+                    .execute(&pool).await?;
+                
+                msg.channel_id.say(ctx, "The starboard has been deactivated").await?;
+            }
+            else if reaction_emoji == "❌" {
+                msg.channel_id.say(ctx, "Aborting...").await?;
+            }
+        },
+        None => {
+            msg.channel_id.say(ctx, "Timed out").await?;
+        }
     }
 
     Ok(())
@@ -96,23 +112,38 @@ async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
         "Welcome to starboard configuration \n",
         "Reacting with ✅ will disable quoting on your guild!");
 
+    let author_id = msg.author.id;
+    let channel_id = msg.channel_id;
+
     let sent_message = msg.channel_id.say(ctx, intro_string).await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("✅"))).await?;
     sent_message.react(ctx, ReactionType::Unicode(String::from("❌"))).await?;
 
-    let reaction_action = sent_message.await_reaction(ctx).await.unwrap();
-    let reaction = reaction_action.as_inner_ref();
+    let reaction_action = sent_message.await_reaction(ctx)
+        .timeout(Duration::from_secs(120))
+        .filter(move |reaction| reaction.user_id == Some(author_id) &&
+            reaction.channel_id == channel_id)
+        .await;
 
-    let reaction_emoji = get_reaction_emoji(&reaction.emoji);
+    match reaction_action {
+        Some(action) => {
+            let reaction = action.as_inner_ref();
 
-    if reaction_emoji == "✅" {
-        let pool = ctx.data.read().await
-            .get::<ConnectionPool>().cloned().unwrap();
-
-        starboard_wizard_threshold(ctx, msg, &pool).await?
-    }
-    else if reaction_emoji == "❌" {
-        msg.channel_id.say(ctx, "Aborting...").await?;
+            let reaction_emoji = get_reaction_emoji(&reaction.emoji);
+        
+            if reaction_emoji == "✅" {
+                let pool = ctx.data.read().await
+                    .get::<ConnectionPool>().cloned().unwrap();
+        
+                starboard_wizard_threshold(ctx, msg, &pool).await?
+            }
+            else if reaction_emoji == "❌" {
+                msg.channel_id.say(ctx, "Aborting...").await?;
+            }
+        },
+        None => {
+            msg.channel_id.say(ctx, "Timed out").await?;
+        }
     }
 
     Ok(())
@@ -121,36 +152,49 @@ async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
 async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool) -> CommandResult {
     msg.channel_id.say(ctx, "Sounds good! Please enter a number greater than 0 for the starboard threshold!").await?;
     
-    let mut _is_channel = false;
+    let channel_id = msg.channel_id;
+
     loop {
-        let threshold_message = msg.author.await_reply(ctx).await.unwrap();
+        let threshold_message = msg.author.await_reply(ctx)
+            .timeout(Duration::from_secs(120))
+            .filter(move |given_msg| given_msg.channel_id == channel_id)
+            .await;
 
-        match threshold_message.content.parse::<u32>() {
-            Ok(threshold) => {
-                if threshold > 0 {
-                    sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", 
-                            threshold as i32, msg.guild_id.unwrap().0 as i64)
-                        .execute(pool).await?;
+        match threshold_message {
+            Some(message) => {
+                match message.content.parse::<u32>() {
+                    Ok(threshold) => {
+                        if threshold > 0 {
+                            sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", 
+                                    threshold as i32, msg.guild_id.unwrap().0 as i64)
+                                .execute(pool).await?;
+            
+                            break;
+                        } else {
+                            msg.channel_id.say(ctx, "Please enter an integer greater than 0!").await?;
+                        }
+                    }
+                    Err(_) => {
+                        msg.channel_id.say(ctx, "Please enter an integer greater than 0!").await?;
+                    }
+                }   
+            },
+            None => {
+                msg.channel_id.say(ctx, "Timed out").await?;
 
-                    _is_channel = true;
-                    break;
-                }
-            }
-            Err(_e) => {
-                msg.channel_id.say(ctx, "Please enter an integer greater than 0!").await?;
+                return Ok(())
             }
         }
     }
 
-    if _is_channel {
-        starboard_wizard_channel(ctx, msg, pool).await?;
-    }
+    starboard_wizard_channel(ctx, msg, pool).await?;
 
     Ok(())
 }
 
 async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -> CommandResult {
     let mut channel_check = false;
+    
     let row_check = sqlx::query!("SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)", msg.guild_id.unwrap().0 as i64)
         .fetch_one(pool).await?;
     
@@ -172,25 +216,39 @@ async fn starboard_wizard_channel(ctx: &Context, msg: &Message, pool: &PgPool) -
         msg.channel_id.say(ctx, send_string).await?;
     } else {
         msg.channel_id.say(ctx, "Now please mention the channel you want messages sent to!").await?;
+        let channel_id = msg.channel_id;
 
         loop {
-            let channel_message = msg.author.await_reply(ctx).await.unwrap();
-            let args = Args::new(&channel_message.content, &[Delimiter::Single(' ')]);
-            let given_id = args.parse::<String>().unwrap();
+            let channel_message = msg.author.await_reply(ctx)
+                .timeout(Duration::from_secs(120))
+                .filter(move |given_msg| given_msg.channel_id == channel_id)
+                .await;
 
-            match parse_channel(given_id) {
-                Some(channel_id) => {
-                    sqlx::query!("INSERT INTO text_channels VALUES($1, null, null, $2)
-                                ON CONFLICT (guild_id)
-                                DO UPDATE SET quote_id = $2",
-                            msg.guild_id.unwrap().0 as i64, channel_id as i64)
-                        .execute(pool).await?;
-
-                    msg.channel_id.say(ctx, "Enjoy your new starboard!").await?;
-                    break;
+            match channel_message {
+                Some(message) => {
+                    let args = Args::new(&message.content, &[Delimiter::Single(' ')]);
+                    let given_id = args.parse::<String>().unwrap();
+        
+                    match parse_channel(given_id) {
+                        Some(channel_id) => {
+                            sqlx::query!("INSERT INTO text_channels VALUES($1, null, null, $2)
+                                        ON CONFLICT (guild_id)
+                                        DO UPDATE SET quote_id = $2",
+                                    msg.guild_id.unwrap().0 as i64, channel_id as i64)
+                                .execute(pool).await?;
+        
+                            msg.channel_id.say(ctx, "Enjoy your new starboard!").await?;
+                            break;
+                        },
+                        None => {
+                            msg.channel_id.say(ctx, "Please mention a channel in this guild!").await?;
+                        }
+                    }
                 },
                 None => {
-                    msg.channel_id.say(ctx, "Please mention a channel in this guild!").await?;
+                    msg.channel_id.say(ctx, "Timed out").await?;
+
+                    return Ok(()) 
                 }
             }
         }

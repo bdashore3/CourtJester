@@ -229,7 +229,6 @@ async fn main() -> CommandResult {
             DispatchError::OnlyForOwners => {
                 let _ = msg.channel_id.say(ctx, "This is a bot dev only command!").await;
             },
-            DispatchError::IgnoredBot => {},
             _ => println!("Unhandled dispatch error: {:?}", error),
         }        
     }
@@ -284,7 +283,7 @@ async fn main() -> CommandResult {
         .group(&MUSIC_GROUP)
         .group(&IMAGES_GROUP);
 
-    let mut client = Client::new(&token)
+    let mut client = Client::builder(&token)
         .framework(framework)
         .event_handler(Handler)
         .add_intent({
