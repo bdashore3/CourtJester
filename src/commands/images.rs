@@ -40,10 +40,16 @@ async fn hug(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
+    let message = if msg.mentions[0].id == msg.author.id {
+            "You hugged yourself. Cute 🙂".to_owned()
+        } else {
+            format!("{} hugs {}", msg.author.name, msg.mentions[0].name)
+        };
+
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
             e.color(0xed9e2f);
-            e.description(format!("{} hugs {}", msg.author.name, msg.mentions[0].name));
+            e.description(message);
             e.image(&gifs[val].media[0].get("gif").unwrap().url);
             e
         })
@@ -63,10 +69,16 @@ async fn pat(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
+    let message = if msg.mentions[0].id == msg.author.id {
+            "You gave yourself a pat on the back!".to_owned()
+        } else {
+            format!("{} pats {}", msg.author.name, msg.mentions[0].name)
+        };
+
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
             e.color(0x27e6d9);
-            e.description(format!("{} pats {}", msg.author.name, msg.mentions[0].name));
+            e.description(message);
             e.image(&gifs[val].media[0].get("gif").unwrap().url);
             e
         })
@@ -86,10 +98,16 @@ async fn slap(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
+    let message = if msg.mentions[0].id == msg.author.id {
+            "You slapped yourself? Not sure if that's a good or bad thing...".to_owned()
+        } else {
+            format!("{} slaps {}", msg.author.name, msg.mentions[0].name)
+        };
+
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
             e.color(0xd62929);
-            e.description(format!("{} slaps {}", msg.author.name, msg.mentions[0].name));
+            e.description(message);
             e.image(&gifs[val].media[0].get("gif").unwrap().url);
             e
         })
