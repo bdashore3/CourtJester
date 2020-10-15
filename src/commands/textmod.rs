@@ -1,10 +1,17 @@
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult, Args,
-    macros::command,
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    }
 };
-use crate::{JesterError, helpers::*};
+
+use crate::{
+    JesterError,
+    helpers::*
+};
 
 /// Outputs a spongebob mock string
 /// Usage: `mock <message>`

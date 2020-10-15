@@ -1,8 +1,10 @@
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command,
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+    }
 };
 
 #[command]

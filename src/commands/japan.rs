@@ -1,12 +1,17 @@
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    }
+};
 use std::time::Duration;
 use std::fmt::Write;
+use reqwest::Url;
+use serde::{Serialize, Deserialize};
 
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command, Args
-};
 use crate::{
     helpers::embed_store,
     structures::{
@@ -15,8 +20,6 @@ use crate::{
         errors::JesterError
     }
 };
-use reqwest::Url;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Response {

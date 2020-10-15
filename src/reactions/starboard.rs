@@ -8,7 +8,11 @@ use serenity::{
     framework::standard::CommandResult, 
     builder::CreateEmbed, prelude::Mentionable
 };
-use crate::{helpers::command_utils, structures::cmd_data::ConnectionPool};
+
+use crate::{
+    helpers::command_utils,
+    structures::cmd_data::ConnectionPool
+};
 
 struct StarbotConfig {
     starbot_threshold: Option<i32>,

@@ -1,12 +1,14 @@
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    }
+};
 use std::sync::Arc;
 
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command,
-    Args
-};
 use crate::{
     ConnectionPool,
     PubCreds,

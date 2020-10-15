@@ -1,17 +1,21 @@
 use serenity::framework::standard::macros::group;
-use crate::commands::{
-    other::*,
-    textmod::*,
-    ciphers::*,
-    textchannel_send::*,
-    config::*,
-    support::*,
-    starboard::*,
-    music::*,
-    images::*,
-    japan::*
+
+use crate::{
+    commands::{
+        other::*,
+        textmod::*,
+        ciphers::*,
+        textchannel_send::*,
+        config::*,
+        support::*,
+        starboard::*,
+        music::*,
+        images::*,
+        japan::*
+    },
+    helpers::voice_utils::*
 };
-use crate::helpers::voice_utils::*;
+
 
 // All command groups
 #[group("Master")]

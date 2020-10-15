@@ -1,17 +1,21 @@
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command, Args
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    }
 };
+use std::collections::HashMap;
+use reqwest::Url;
+use serde::Deserialize;
+use rand::{prelude::StdRng, Rng, SeedableRng};
+
 use crate::structures::cmd_data::{
     ReqwestClient,
     PubCreds
 };
-use reqwest::Url;
-use serde::Deserialize;
-use rand::{prelude::StdRng, Rng, SeedableRng};
-use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 struct Response {

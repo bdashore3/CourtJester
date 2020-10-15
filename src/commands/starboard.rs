@@ -1,13 +1,23 @@
 use serenity::{
     client::Context, 
-    framework::standard::{CommandResult, macros::command, Args, Delimiter}, 
-    model::{id::ChannelId, channel::{ReactionType, Message}},
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args, Delimiter
+    }, 
+    model::{
+        id::ChannelId,
+        channel::{ReactionType, Message}
+    },
     utils::parse_channel
 };
 use std::time::Duration;
 use sqlx::PgPool;
-use crate::structures::cmd_data::ConnectionPool;
-use crate::helpers::command_utils::*;
+
+use crate::{
+    structures::cmd_data::ConnectionPool,
+    helpers::command_utils::*
+};
 
 #[command]
 #[required_permissions(Administrator)]

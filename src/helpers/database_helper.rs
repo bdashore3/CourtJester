@@ -1,8 +1,8 @@
-use dashmap::DashMap;
 use serenity::{
     framework::standard::CommandResult,
     model::id::GuildId
 };
+use dashmap::DashMap;
 use sqlx::postgres::{PgPoolOptions, PgPool};
 
 pub async fn obtain_db_pool(db_connection: String) -> CommandResult<PgPool> {

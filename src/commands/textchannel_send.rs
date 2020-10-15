@@ -1,16 +1,18 @@
-use std::time::Duration;
-
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command,
-    Args
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    },
+    utils::{parse_channel, parse_username}
 };
-use serenity::utils::*;
+use std::time::Duration;
 use rand::prelude::*;
 use sqlx::PgPool;
 use tokio::time::delay_for;
+
 use crate::{
     ConnectionPool,
     helpers::{

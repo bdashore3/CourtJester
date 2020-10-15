@@ -1,4 +1,5 @@
 use serenity::builder::CreateEmbed;
+
 use crate::structures::{AnimeResult, MangaResult};
 
 pub fn get_result_embed(result_string: &str) -> CreateEmbed {

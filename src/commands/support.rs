@@ -1,24 +1,31 @@
-use serenity::prelude::*;
-use serenity::model::prelude::*;
-use serenity::{builder::CreateEmbed, framework::standard::{
-    CommandResult,
-    macros::command,
-    Args
-}};
-use crate::commands::{
-    config::*,
-    starboard::*,
-    textchannel_send::*,
-    ciphers::*,
-    textmod::*,
-    music::*,
-    images::*,
-    japan::*
+
+use serenity::{
+    prelude::*,
+    model::prelude::*,
+    builder::CreateEmbed,
+    framework::standard::{
+        CommandResult,
+        macros::command,
+        Args
+    }
 };
-use crate::helpers::{
-    botinfo::*,
-    voice_utils::*,
-    command_utils,
+
+use crate::{
+    commands::{
+        config::*,
+        starboard::*,
+        textchannel_send::*,
+        ciphers::*,
+        textmod::*,
+        music::*,
+        images::*,
+        japan::*
+    },
+    helpers::{
+        botinfo::*,
+        voice_utils::*,
+        command_utils,
+    }
 };
 
 #[command]

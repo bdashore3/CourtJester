@@ -3,14 +3,6 @@ mod helpers;
 mod structures;
 mod reactions;
 
-use std::{
-    env,
-    collections::{
-        HashSet,
-        HashMap
-    },
-    sync::Arc,
-};
 use serenity::{
     async_trait,
     framework::standard::{
@@ -35,13 +27,14 @@ use serenity::{
     client::bridge::gateway::GatewayIntents,
     framework::standard::CommandResult
 };
-use structures::{
-    cmd_data::*,
-    commands::*,
-    errors::*
+use std::{
+    env,
+    collections::{
+        HashSet,
+        HashMap
+    },
+    sync::Arc,
 };
-use helpers::{database_helper, command_utils};
-use reactions::reaction_handler;
 use lavalink_rs::{
     gateway::*, 
     LavalinkClient
@@ -49,6 +42,14 @@ use lavalink_rs::{
 use futures::future::AbortHandle;
 use dashmap::DashMap;
 use reqwest::Client as Reqwest;
+
+use structures::{
+    cmd_data::*,
+    commands::*,
+    errors::*
+};
+use helpers::{database_helper, command_utils};
+use reactions::reaction_handler;
 
 // Event handler for when the bot starts
 struct Handler;

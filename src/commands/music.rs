@@ -1,9 +1,9 @@
 use serenity::{
     client::Context, 
-    framework::standard::{
-        Args, 
-        macros::command, 
-        CommandResult
+    framework::standard::{ 
+        CommandResult,
+        macros::command,
+        Args
     }, 
     model::{
         id::{ChannelId, GuildId},
@@ -11,7 +11,14 @@ use serenity::{
     },
     builder::CreateEmbed
 };
+use std::{time::Duration, sync::Arc};
+use rust_clock::Clock;
+use tokio::time::delay_for;
+use lavalink_rs::LavalinkClient;
+
 use crate::{
+    JesterError,
+    PermissionType,
     helpers::{
         voice_utils,
         command_utils,
@@ -21,12 +28,8 @@ use crate::{
         VoiceManager,
         Lavalink,
         VoiceTimerMap
-    },
-    structures::errors::JesterError, structures::errors::PermissionType};
-use std::{time::Duration, sync::Arc};
-use rust_clock::Clock;
-use tokio::time::delay_for;
-use lavalink_rs::LavalinkClient;
+    }
+};
 
 #[command]
 #[aliases("p")]

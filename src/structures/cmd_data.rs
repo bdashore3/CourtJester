@@ -6,7 +6,10 @@ use serenity::{
     prelude::{Mutex, TypeMapKey, RwLock}, 
     model::id::{UserId, GuildId}
 };
-use std::{collections::{HashSet, HashMap}, sync::Arc};
+use std::{
+    collections::{HashSet, HashMap},
+    sync::Arc
+};
 use sqlx::PgPool;
 use lavalink_rs::LavalinkClient;
 use dashmap::DashMap;

@@ -1,4 +1,9 @@
-use serenity::client::{bridge::gateway::ShardId, Context};
+use serenity::client::{
+    bridge::gateway::ShardId,
+    Context
+};
+use tokio::process::Command;
+
 use crate::{
     structures::{
         CommitResponse,
@@ -6,7 +11,6 @@ use crate::{
         cmd_data::{ShardManagerContainer, ReqwestClient}, 
     }
 };
-use tokio::process::Command;
 
 pub async fn get_last_commit(ctx: &Context) -> Result<CommitResponse, Box<dyn std::error::Error + Send + Sync>> {
     let reqwest_client = ctx.data.read().await

@@ -6,10 +6,14 @@ use serenity::{
     client::Context,
     framework::standard::{macros::command, CommandResult}
 };
-use crate::structures::cmd_data::{Lavalink, VoiceManager, VoiceTimerMap, VoiceGuildUpdate};
-use futures::future::{Abortable, AbortHandle};
 use std::time::Duration;
+use futures::future::{Abortable, AbortHandle};
 use tokio::time::delay_for;
+
+use crate::structures::cmd_data::{
+    Lavalink, VoiceManager,
+    VoiceTimerMap, VoiceGuildUpdate
+};
 
 #[command]
 #[aliases("connect")]

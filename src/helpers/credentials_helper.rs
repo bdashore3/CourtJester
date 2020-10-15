@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use serenity::framework::standard::CommandResult;
 use std::fs;
 use std::io::BufReader;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Credentials {

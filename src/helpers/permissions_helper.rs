@@ -1,5 +1,8 @@
-use serenity::prelude::*;
-use serenity::model::prelude::*;
+use serenity::{
+    prelude::*,
+    model::prelude::*
+};
+
 use crate::structures::errors::{JesterError, PermissionType};
 
 pub async fn check_permission(ctx: &Context, msg: &Message, user_id: Option<UserId>, check_admin: bool) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
