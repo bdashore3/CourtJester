@@ -30,9 +30,17 @@ struct Media {
 }
 
 #[command]
-async fn hug(ctx: &Context, msg: &Message) -> CommandResult {
-    if msg.mentions.len() < 1 {
-        msg.channel_id.say(ctx, "You want to give a hug? Please mention who you want to hug!").await?;
+async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let is_everyone = match args.single::<String>() {
+        Ok(test) => {
+            &test == "everyone" || &test == "Everyone"
+        },
+        Err(_) => false
+    };
+
+    if msg.mentions.len() < 1  && !is_everyone {
+        msg.channel_id.say(ctx, 
+            "You want to give a hug? Please mention who you want to hug or provide `everyone`!").await?;
         return Ok(())
     }
 
@@ -40,7 +48,11 @@ async fn hug(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
-    let message = if msg.mentions[0].id == msg.author.id {
+    let message = 
+        if is_everyone {
+            "Group hug!".to_owned()
+        } 
+        else if msg.mentions[0].id == msg.author.id {
             "You hugged yourself. Cute 🙂".to_owned()
         } else {
             format!("{} hugs {}", msg.author.name, msg.mentions[0].name)
@@ -59,9 +71,16 @@ async fn hug(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn pat(ctx: &Context, msg: &Message) -> CommandResult {
-    if msg.mentions.len() < 1 {
-        msg.channel_id.say(ctx, "I wanna pat someone! Please mention who to pat!").await?;
+async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let is_everyone = match args.single::<String>() {
+        Ok(test) => (&test == "everyone" || &test == "Everyone"),
+        Err(_) => false
+    };
+
+    if msg.mentions.len() < 1 && !is_everyone {
+        msg.channel_id.say(ctx, 
+            "I wanna pat someone! Please mention who to pat or provide `everyone`!").await?;
+        
         return Ok(())
     }
 
@@ -69,9 +88,14 @@ async fn pat(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
-    let message = if msg.mentions[0].id == msg.author.id {
+    let message = 
+        if is_everyone {
+            "Pats for everyone!".to_owned()
+        }
+        else if msg.mentions[0].id == msg.author.id {
             "You gave yourself a pat on the back!".to_owned()
-        } else {
+        }
+        else {
             format!("{} pats {}", msg.author.name, msg.mentions[0].name)
         };
 
@@ -88,9 +112,16 @@ async fn pat(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn slap(ctx: &Context, msg: &Message) -> CommandResult {
-    if msg.mentions.len() < 1 {
-        msg.channel_id.say(ctx, "Wait... who do I slap again? Please mention the person!").await?;
+async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let is_everyone = match args.single::<String>() {
+        Ok(test) => (&test == "everyone" || &test == "Everyone"),
+        Err(_) => false
+    };
+
+    if msg.mentions.len() < 1 && !is_everyone {
+        msg.channel_id.say(ctx, 
+            "Wait... who do I slap again? Please mention the person or provide `everyone`!").await?;
+        
         return Ok(())
     }
 
@@ -98,7 +129,10 @@ async fn slap(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
     let val = rng.gen_range(0, 9);
 
-    let message = if msg.mentions[0].id == msg.author.id {
+    let message = if is_everyone {
+            "You slapped everyone! Ouch... that's gotta hurt.".to_owned()
+        }
+        else if msg.mentions[0].id == msg.author.id {
             "You slapped yourself? Not sure if that's a good or bad thing...".to_owned()
         } else {
             format!("{} slaps {}", msg.author.name, msg.mentions[0].name)
