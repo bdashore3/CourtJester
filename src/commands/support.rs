@@ -12,7 +12,8 @@ use crate::commands::{
     ciphers::*,
     textmod::*,
     music::*,
-    images::*
+    images::*,
+    japan::*
 };
 use crate::helpers::{
     botinfo::*,
@@ -44,6 +45,7 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         "voice" => voice_help(ctx, msg.channel_id).await,
         "music" => music_help(ctx, msg.channel_id).await,
         "images" => image_help(ctx, msg.channel_id).await,
+        "japan" => japan_help(ctx, msg.channel_id).await,
         _ => {}
     }
 
@@ -74,7 +76,8 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
         "text \n",
         "voice \n",
         "music \n",
-        "images \n");
+        "images \n",
+        "japan \n");
 
     let _ = channel_id.send_message(ctx, |m| {
         m.embed(|e| {
@@ -98,6 +101,7 @@ async fn support(ctx: &Context, msg: &Message) -> CommandResult {
             e.title("CourtJester Support");
             e.description("Need more help?");
             e.field("Support Server", "https://discord.gg/pswt7by", false);
+            e.field("Github repository", "https://github.com/bdashore3/courtjester", false);
             e.field("kingbri's twitter", "https://twitter.com/kingbri1st", false);
             e.footer(|f| {
                 f.text("Created with ❤️ by kingbri#6666");

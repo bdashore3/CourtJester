@@ -204,3 +204,18 @@ async fn fetch_info(ctx: &Context, search_type: &str, search: &str) -> CommandRe
 
     Ok(resp)
 }
+
+pub async fn japan_help(ctx: &Context, channel_id: ChannelId) {
+    let content = concat!(
+        "anime <title>: Searches for an anime's information from the title \n\n",
+        "manga <title>: Searches for a manga's information from the title");
+    
+    let _ = channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Japan Help");
+            e.description("Description: Commands that deal with japanese media");
+            e.field("Commands", content, false);
+            e
+        })
+    }).await;
+}

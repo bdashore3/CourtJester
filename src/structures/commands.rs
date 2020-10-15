@@ -9,7 +9,7 @@ use crate::commands::{
     starboard::*,
     music::*,
     images::*,
-    anime::*
+    japan::*
 };
 use crate::helpers::voice_utils::*;
 
