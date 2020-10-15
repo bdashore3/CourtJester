@@ -430,19 +430,6 @@
       "nullable": []
     }
   },
-  "d5f33f958b1ebbf39a0564aa7fa8615bfb87468514cf077b0c1797fcaed8823e": {
-    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                ON CONFLICT (guild_id)\n                                DO UPDATE SET quote_id = $2",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Int8"
-        ]
-      },
-      "nullable": []
-    }
-  },
   "dd172ab2c488ba807dca5278cd6fb5997f70713556804459941a247988a35ed5": {
     "query": "SELECT starbot_threshold FROM guild_info WHERE guild_id = $1",
     "describe": {
