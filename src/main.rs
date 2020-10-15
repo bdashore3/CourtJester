@@ -32,8 +32,9 @@ use serenity::{
         id::GuildId
     },
     prelude::*, 
-    client::bridge::gateway::GatewayIntents
-, framework::standard::CommandResult};
+    client::bridge::gateway::GatewayIntents,
+    framework::standard::CommandResult
+};
 use structures::{
     cmd_data::*,
     commands::*,
@@ -111,7 +112,7 @@ async fn main() -> CommandResult {
     pretty_env_logger::init();
     
     let args: Vec<String> = env::args().collect();
-    let creds = helpers::credentials_helper::read_creds(args[1].to_string()).unwrap();
+    let creds = helpers::credentials_helper::read_creds(&args[1])?;
     let token = &creds.bot_token;
 
     let http = Http::new_with_token(&token);
@@ -281,7 +282,8 @@ async fn main() -> CommandResult {
         .group(&STARBOARD_GROUP)
         .group(&VOICE_GROUP)
         .group(&MUSIC_GROUP)
-        .group(&IMAGES_GROUP);
+        .group(&IMAGES_GROUP)
+        .group(&JAPAN_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)
@@ -308,7 +310,7 @@ async fn main() -> CommandResult {
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<CommandNameMap>(Arc::new(command_names));
-        data.insert::<ReqwestClient>(Arc::new(reqwest_client));
+        data.insert::<ReqwestClient>(reqwest_client);
         data.insert::<PubCreds>(Arc::new(pub_creds));
         data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);

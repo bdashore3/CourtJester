@@ -8,7 +8,8 @@ use crate::commands::{
     support::*,
     starboard::*,
     music::*,
-    images::*
+    images::*,
+    anime::*
 };
 use crate::helpers::voice_utils::*;
 
@@ -64,14 +65,17 @@ pub struct Starboard;
 #[commands(summon, disconnect)]
 pub struct Voice;
 
-
 #[group("Music")]
 #[description = "Commands used to play music"]
 #[commands(play, pause, resume, stop, skip, queue, clear, seek)]
 pub struct Music;
 
-
 #[group("Images")]
 #[description = "Commands for fetching/sending images"]
 #[commands(hug, pat, slap, cry, cringe, gifsearch)]
 pub struct Images;
+
+#[group("Japan")]
+#[description("Commands for anime/manga")]
+#[commands(anime, manga)]
+pub struct Japan;

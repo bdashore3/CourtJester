@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serenity::framework::standard::CommandResult;
 use std::fs;
 use std::io::BufReader;
 
@@ -12,7 +13,7 @@ pub struct Credentials {
     pub tenor_key: String,
 }
 
-pub fn read_creds(path: String) -> Result<Credentials, Box<dyn std::error::Error + 'static>> {
+pub fn read_creds(path: &str) -> CommandResult<Credentials> {
     let file = fs::File::open(path)?;
     let reader = BufReader::new(file);
 

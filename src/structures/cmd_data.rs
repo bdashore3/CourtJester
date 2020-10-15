@@ -59,7 +59,7 @@ impl TypeMapKey for CommandNameMap {
 pub struct ReqwestClient;
 
 impl TypeMapKey for ReqwestClient {
-    type Value = Arc<Reqwest>;
+    type Value = Reqwest;
 }
 
 pub struct PubCreds;

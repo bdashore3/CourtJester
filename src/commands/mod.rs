@@ -7,3 +7,4 @@ pub mod support;
 pub mod starboard;
 pub mod music;
 pub mod images;
+pub mod anime;

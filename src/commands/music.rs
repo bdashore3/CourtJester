@@ -265,17 +265,14 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     if queue.len() > 1 {
         let mut queue_string = String::new();
-        let mut num = 1;
 
-        for i in queue.iter().skip(1) {
-            let i_info = i.track.info.as_ref();
+        for (num, t) in queue.iter().enumerate().skip(1) {
+            let t_info = t.track.info.as_ref();
 
             let mut cl = Clock::new();
-            cl.set_time_ms(i_info.unwrap().length.clone() as i64);
+            cl.set_time_ms(t_info.unwrap().length.clone() as i64);
             queue_string.push_str(
-                &format!("{}. [{}]({}) | `{}` \n\n", num, i_info.unwrap().title, i_info.unwrap().uri, cl.get_time()));
-
-            num = num + 1;
+                &format!("{}. [{}]({}) | `{}` \n\n", num, t_info.unwrap().title, t_info.unwrap().uri, cl.get_time()));
         }
     
         eb.field("Next Songs", queue_string, false);
