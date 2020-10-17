@@ -161,10 +161,10 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let pool = ctx.data.read().await
         .get::<ConnectionPool>().cloned().unwrap();
 
-    let starboard_data = sqlx::query!("SELECT starbot_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
+    let starboard_data = sqlx::query!("SELECT starboard_threshold FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
         .fetch_one(&pool).await?;
 
-    if starboard_data.starbot_threshold.is_some() {
+    if starboard_data.starboard_threshold.is_some() {
         msg.channel_id.say(ctx, "You can't use the quote command because starboard is enabled in this server!").await?;
         return Ok(())
     }

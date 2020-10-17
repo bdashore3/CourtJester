@@ -6,3 +6,4 @@ pub mod command_utils;
 pub mod voice_utils;
 pub mod botinfo;
 pub mod embed_store;
+pub mod delete_buffer;

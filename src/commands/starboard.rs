@@ -39,7 +39,7 @@ async fn threshold(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
         }
     };
 
-    sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", new_threshold as i32, msg.guild_id.unwrap().0 as i64)
+    sqlx::query!("UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2", new_threshold as i32, msg.guild_id.unwrap().0 as i64)
         .execute(&pool).await?;
 
     msg.channel_id.say(ctx, "New threshold sucessfully set!").await?;
@@ -96,7 +96,7 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
             let reaction_emoji = get_reaction_emoji(&reaction.emoji);
         
             if reaction_emoji == "✅" {
-                sqlx::query!("UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
+                sqlx::query!("UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
                     .execute(&pool).await?;
         
                 sqlx::query!("UPDATE text_channels SET quote_id = null WHERE guild_id = $1", msg.guild_id.unwrap().0 as i64)
@@ -175,7 +175,7 @@ async fn starboard_wizard_threshold(ctx: &Context, msg: &Message, pool: &PgPool)
                 match message.content.parse::<u32>() {
                     Ok(threshold) => {
                         if threshold > 0 {
-                            sqlx::query!("UPDATE guild_info SET starbot_threshold = $1 WHERE guild_id = $2", 
+                            sqlx::query!("UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2", 
                                     threshold as i32, msg.guild_id.unwrap().0 as i64)
                                 .execute(pool).await?;
             

@@ -28,12 +28,15 @@ use serenity::{
     framework::standard::CommandResult
 };
 use std::{
-    env,
     collections::{
         HashSet,
         HashMap
     },
-    sync::Arc,
+    env, 
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering}
+    }
 };
 use lavalink_rs::{
     gateway::*, 
@@ -48,16 +51,31 @@ use structures::{
     commands::*,
     errors::*
 };
-use helpers::{database_helper, command_utils};
+use helpers::{database_helper, delete_buffer, command_utils};
 use reactions::reaction_handler;
 
 // Event handler for when the bot starts
-struct Handler;
+struct Handler {
+    run_loop: AtomicBool
+}
 
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("Connected as {}", ready.user.name);
+    }
+
+    async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
+        if self.run_loop.load(Ordering::Relaxed) {
+            self.run_loop.store(false, Ordering::Relaxed);
+
+            println!("Starting starboard deletion loop!");
+            tokio::spawn(async move {
+                if let Err(e) = delete_buffer::starboard_removal_loop(ctx).await {
+                    panic!("Delete buffer failed to start!: {}", e);
+                };
+            });
+        }
     }
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {
@@ -288,7 +306,7 @@ async fn main() -> CommandResult {
 
     let mut client = Client::builder(&token)
         .framework(framework)
-        .event_handler(Handler)
+        .event_handler(Handler { run_loop: AtomicBool::new(true) })
         .add_intent({
             let mut intents = GatewayIntents::all();
             intents.remove(GatewayIntents::DIRECT_MESSAGES);

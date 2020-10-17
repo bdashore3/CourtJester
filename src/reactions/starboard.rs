@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use serenity::{
     model::{
         id::ChannelId, 
@@ -15,7 +17,7 @@ use crate::{
 };
 
 struct StarbotConfig {
-    starbot_threshold: Option<i32>,
+    starboard_threshold: Option<i32>,
     quote_id: Option<i64>
 }
 
@@ -33,13 +35,13 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             None => 0
         };
 
-    let config_data = sqlx::query_as!(StarbotConfig, "SELECT guild_info.starbot_threshold, text_channels.quote_id
+    let config_data = sqlx::query_as!(StarbotConfig, "SELECT guild_info.starboard_threshold, text_channels.quote_id
                                     FROM guild_info
                                     INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id
                                     WHERE guild_info.guild_id = $1", reaction.guild_id.unwrap().0 as i64)
         .fetch_one(&pool).await?;
     
-    if config_data.starbot_threshold.is_none() || config_data.quote_id.is_none() {        
+    if config_data.starboard_threshold.is_none() || config_data.quote_id.is_none() {        
         return Ok(())
     }
     
@@ -57,7 +59,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         return Ok(())
     }
 
-    if stars == config_data.starbot_threshold.unwrap() as u64 && !remove {
+    if stars == config_data.starboard_threshold.unwrap() as u64 && !remove {
         let first_message = format!("\u{2b50} {} {} ID: {}", stars, reaction_channel.mention(), reaction.message_id);
         let starboard_embed = get_starboard_embed(reaction, &reaction_message.author, reaction_message.content, reaction_message.attachments);
         let sent_message = star_channel_id.send_message(ctx, |m| {
@@ -68,25 +70,30 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             })
         }).await?;
 
-        sqlx::query!("INSERT INTO starbot VALUES($1, $2, $3) ON CONFLICT DO NOTHING",
-                reaction.guild_id.unwrap().0 as i64, reaction_message.id.0 as i64, sent_message.id.0 as i64)
+        let advance_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards?")
+            .as_secs() + 1210000;
+
+        sqlx::query!("INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                reaction.guild_id.unwrap().0 as i64, reaction_message.id.0 as i64, sent_message.id.0 as i64, advance_time as i64)
             .execute(&pool).await?;
     }
-    else if (stars as i32) < config_data.starbot_threshold.unwrap() && remove {
-        let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
+    else if (stars as i32) < config_data.starboard_threshold.unwrap() && remove {
+        let message_data = sqlx::query!("SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(&pool).await?;
         
         if let Some(data) = message_data {
             ctx.http.delete_message(star_channel_id.0 as u64, data.sent_message_id as u64).await?;
 
-            sqlx::query!("DELETE FROM starbot WHERE guild_id = $1 and reaction_message_id = $2",
+            sqlx::query!("DELETE FROM starboard WHERE guild_id = $1 and reaction_message_id = $2",
                     reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
                 .execute(&pool).await?;
         }
     }
-    else if stars > config_data.starbot_threshold.unwrap() as u64 || remove {
-        let message_data = sqlx::query!("SELECT sent_message_id FROM starbot WHERE guild_id = $1 AND reaction_message_id = $2", 
+    else if stars > config_data.starboard_threshold.unwrap() as u64 || remove {
+        let message_data = sqlx::query!("SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
             .fetch_optional(&pool).await?;
 
