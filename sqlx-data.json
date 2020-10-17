@@ -33,6 +33,18 @@
       ]
     }
   },
+  "0e4872dd93f9ccd0bc864ef2864a690334b0cd01b405d0f66a5dcc8dbd3d9afe": {
+    "query": "UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "16e2ca2e84e805d2822da8b74d60f9e22f6b9b961fcd454483a4cb5b46adec31": {
     "query": "UPDATE guild_info SET prefix = null WHERE guild_id = $1",
     "describe": {
@@ -56,6 +68,32 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "26af4ed3ff2733400ccd4cc3df04b57c8ff399a68fdee5c7ba79d5a9b802a453": {
+    "query": "SELECT guild_info.starboard_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id\n                                    WHERE guild_info.guild_id = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "starboard_threshold",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "quote_id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        true,
+        true
+      ]
     }
   },
   "2c19ba846721bcd2127ada83effd3e5042875f249011935acf6e19e6d2396983": {
@@ -88,6 +126,43 @@
       },
       "nullable": [
         true
+      ]
+    }
+  },
+  "37da36e57578379d204e2d3727fb0b6208d221e78ce0b9465a96ac06f7bbb24d": {
+    "query": "UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "3976e7e39e7fe3ec06084b4fc5eccfc207782926e28fd063f0d9e3d4457ba313": {
+    "query": "SELECT guild_id, delete_time FROM starboard",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "guild_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "delete_time",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false
       ]
     }
   },
@@ -139,6 +214,56 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "4bcdbafb7a97ff7686216397fc8922af42c56dc4e5bff35e2fb0a454bd33aece": {
+    "query": "DELETE FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2 AND sent_message_id = $3",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "6544db24f0bf61ac833552a96d4d717bc80d969f8d485947f295efe0b3877d0d": {
+    "query": "SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "guild_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "reaction_message_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 2,
+          "name": "sent_message_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 3,
+          "name": "delete_time",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
     }
   },
   "6acb5eca1f314e5f0cd6c5504ed512f7f544951f730948f30c65253a87678700": {
@@ -418,12 +543,61 @@
       "nullable": []
     }
   },
+  "c008004b1398dd97a55dd00ad08f34f3e29bae8068b24a6a986a45f3af30b12b": {
+    "query": "INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8",
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "c7cc9ab54001965812d47d563ead948325c3666bb7767d19532e37c1cfd74249": {
     "query": "UPDATE guild_info SET starbot_threshold = null WHERE guild_id = $1",
     "describe": {
       "columns": [],
       "parameters": {
         "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "cf6458300c0e50e9cfc7e896360fa49e16d1977e48b10ba94e7e053511dae1e2": {
+    "query": "SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "sent_message_id",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "d5e25ea884ea659d174768f50e4ce04a478fa8205d66640cf584c5d8f0bb0f36": {
+    "query": "DELETE FROM starboard WHERE guild_id = $1 and reaction_message_id = $2",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
           "Int8"
         ]
       },
@@ -512,6 +686,26 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "ff6c8d0d6d8b790d73b1cd8b0ce9726cf2c3b970ec3cf5f3af2cf1c0f711faeb": {
+    "query": "SELECT starboard_threshold FROM guild_info WHERE guild_id = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "starboard_threshold",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        true
+      ]
     }
   }
 }
