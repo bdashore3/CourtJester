@@ -3,30 +3,15 @@ mod helpers;
 mod structures;
 mod reactions;
 
-use serenity::{
-    async_trait,
-    framework::standard::{
+use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::standard::{
         StandardFramework,
         CommandError,
         DispatchError,
         macros::hook
-    },
-    http::Http,
-    model::{
-        prelude::{
+    }, framework::standard::CommandResult, http::Http, model::{channel::Reaction, event::VoiceServerUpdateEvent, gateway::Ready, guild::{Member, Guild}, id::GuildId, guild::GuildUnavailable, prelude::{
             Permissions,
             Message, User
-        },
-        event::VoiceServerUpdateEvent, 
-        gateway::Ready, 
-        guild::{Member, Guild}, 
-        channel::Reaction, 
-        id::GuildId
-    },
-    prelude::*, 
-    client::bridge::gateway::GatewayIntents,
-    framework::standard::CommandResult
-};
+        }}, prelude::*};
 use std::{
     collections::{
         HashSet,
@@ -88,18 +73,23 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn guild_member_removal(&self, ctx: Context, guild_id: GuildId, user: User, _member_data_if_available: Option<Member>) {
-        let (bot_id, pool) = {
+    async fn guild_delete(&self, ctx: Context, incomplete: GuildUnavailable, _full: Option<Guild>) {
+        let (pool, prefixes) = {
             let data = ctx.data.read().await;
-            let bot_id = data.get::<BotId>().cloned().unwrap();
             let pool = data.get::<ConnectionPool>().cloned().unwrap();
-
-            (bot_id, pool)
+            let prefixes = data.get::<PrefixMap>().cloned().unwrap();
+    
+            (pool, prefixes)
         };
+ 
+        if let Err(e) = 
+            sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", incomplete.id.0 as i64)
+                .execute(&pool).await {
+            eprintln!("Error in guild removal! (ID {}): {}", incomplete.id.0, e)
+        }
 
-        if user.id == bot_id {    
-            sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild_id.0 as i64)
-                .execute(&pool).await.unwrap();  
+        if prefixes.contains_key(&incomplete.id) {
+            prefixes.remove(&incomplete.id);
         }
     }
 

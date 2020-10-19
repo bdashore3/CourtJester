@@ -8,10 +8,10 @@ use tokio::time::delay_for;
 
 
 pub async fn starboard_removal_loop(ctx: Context) -> CommandResult {
-    loop {
-        let pool = ctx.data.read().await
-            .get::<ConnectionPool>().cloned().unwrap();
-    
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
+
+    loop {    
         let delete_data = sqlx::query!("SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard")
             .fetch_all(&pool).await?;
         
