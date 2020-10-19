@@ -8,10 +8,22 @@ use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::
         CommandError,
         DispatchError,
         macros::hook
-    }, framework::standard::CommandResult, http::Http, model::{channel::Reaction, event::VoiceServerUpdateEvent, gateway::Ready, guild::{Member, Guild}, id::GuildId, guild::GuildUnavailable, prelude::{
+    }, 
+    framework::standard::CommandResult, 
+    http::Http, 
+    model::{
+        channel::Reaction,
+        event::VoiceServerUpdateEvent,
+        gateway::Ready,
+        guild::{Guild, GuildUnavailable}, 
+        id::GuildId, 
+        prelude::{
             Permissions,
-            Message, User
-        }}, prelude::*};
+            Message,
+        }
+    },
+    prelude::*
+};
 use std::{
     collections::{
         HashSet,
