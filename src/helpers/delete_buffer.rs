@@ -1,7 +1,4 @@
-use serenity::{
-    prelude::*,
-    framework::standard::CommandResult,
-};
+use serenity::{framework::standard::CommandResult, model::id::GuildId, prelude::*};
 use crate::ConnectionPool;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use tokio::time::delay_for;
@@ -35,4 +32,29 @@ pub async fn starboard_removal_loop(ctx: Context) -> CommandResult {
     
         delay_for(Duration::from_secs(345600)).await;
     }
+}
+
+pub async fn guild_pruner(ctx: &Context) -> CommandResult {
+    let pool = ctx.data.read().await
+        .get::<ConnectionPool>().cloned().unwrap();
+
+    let guilds = ctx.cache.guilds().await;
+
+    let guild_data = sqlx::query!("SELECT guild_id FROM guild_info")
+        .fetch_all(&pool).await?;
+
+    println!(" ");
+
+    for guild in guild_data {
+        if !guilds.contains(&GuildId::from(guild.guild_id as u64)) {
+            println!("Removing guild: {}", guild.guild_id);
+
+            sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild.guild_id)
+                .execute(&pool).await?;
+        }
+    }
+
+    println!(" ");
+
+    Ok(())
 }

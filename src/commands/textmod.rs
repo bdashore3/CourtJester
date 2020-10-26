@@ -215,8 +215,8 @@ pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
         "upp <message>: Every letter becomes uppercase \n\n",
         "low <message>: Every letter becomes lowercase \n\n",
         "space <message>: Spaces out each letter in the message (whitespace omitted) \n\n",
-        "biggspace <message>: Same as space, but W I D E R",
-        "h4ck <message>: Become a hackerman by making h4ck3d w0rd5",
+        "biggspace <message>: Same as space, but W I D E R \n\n",
+        "h4ck <message>: Become a hackerman by making h4ck3d w0rd5 \n\n",
         "uwu <message>: Translate to the uwu wanguwage uwu");
     
     let _ = channel_id.send_message(ctx, |m| {

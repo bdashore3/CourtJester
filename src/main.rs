@@ -3,13 +3,16 @@ mod helpers;
 mod structures;
 mod reactions;
 
-use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::standard::{
+use serenity::{
+    async_trait, 
+    client::bridge::gateway::GatewayIntents, 
+    framework::standard::{
         StandardFramework,
+        CommandResult,
         CommandError,
         DispatchError,
         macros::hook
     }, 
-    framework::standard::CommandResult, 
     http::Http, 
     model::{
         channel::Reaction,
@@ -48,7 +51,11 @@ use structures::{
     commands::*,
     errors::*
 };
-use helpers::{database_helper, delete_buffer, command_utils};
+use helpers::{
+    command_utils,
+    database_helper,
+    delete_buffer
+};
 use reactions::reaction_handler;
 
 // Event handler for when the bot starts
@@ -65,6 +72,11 @@ impl EventHandler for Handler {
     async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
         if self.run_loop.load(Ordering::Relaxed) {
             self.run_loop.store(false, Ordering::Relaxed);
+
+            println!("Running guild pruner!");
+            if let Err(e) = delete_buffer::guild_pruner(&ctx).await {
+                panic!("Error when pruning guilds! {}", e);
+            }
 
             println!("Starting starboard deletion loop!");
             tokio::spawn(async move {
