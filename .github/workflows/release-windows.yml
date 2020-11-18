@@ -1,0 +1,38 @@
+name: Upload windows release binary
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    name: Upload Release Assets
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Deps
+        uses: actions/cache@v2
+        with:
+          path: |
+            C:/Users/$env:USERNAME/.cargo/registry
+            C:/Users/$env:USERNAME/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Run Tests
+        run: cargo test --verbose
+      - name: Build
+        run: cargo build --release --verbose
+      - name: Create zip files
+        run: |
+          Compress-Archive -Path ./target/release/courtjester.exe, ./info_sample.json -DestinationPath CourtJester-x86-pc-windows-msvc.zip
+      - name: Upload binaries
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./CourtJester-x86-pc-windows-msvc.zip
+          asset_name: CourtJester-x86-pc-windows-msvc.zip
+          asset_content_type: application/zip

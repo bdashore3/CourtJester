@@ -39,6 +39,10 @@ version = "0.4.1"
 default-features = false
 features = ["runtime-tokio-native-tls", "macros", "postgres", "uuid", "offline"]
 
+[target.'cfg(linux)'.dependencies.openssl]
+version = "0.10"
+features = ["vendored"]
+
 [patch.crates-io.serenity]
 git = "https://github.com/serenity-rs/serenity"
 branch = "current"
