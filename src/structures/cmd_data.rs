@@ -1,20 +1,14 @@
-use serenity::{
-    client::bridge::{
-        voice::ClientVoiceManager, 
-        gateway::ShardManager
-    }, 
-    prelude::{Mutex, TypeMapKey, RwLock}, 
-    model::id::{UserId, GuildId}
-};
-use std::{
-    collections::{HashSet, HashMap},
-    sync::Arc
-};
-use sqlx::PgPool;
-use lavalink_rs::LavalinkClient;
 use dashmap::DashMap;
 use futures::future::AbortHandle;
+use lavalink_rs::LavalinkClient;
 use reqwest::Client as Reqwest;
+use serenity::{
+    client::bridge::gateway::ShardManager,
+    model::id::{GuildId, UserId},
+    prelude::{Mutex, TypeMapKey},
+};
+use sqlx::PgPool;
+use std::{collections::HashMap, sync::Arc};
 
 // All command context data structures
 pub struct ShardManagerContainer;
@@ -29,22 +23,10 @@ impl TypeMapKey for ConnectionPool {
     type Value = PgPool;
 }
 
-pub struct VoiceManager;
-
-impl TypeMapKey for VoiceManager {
-    type Value = Arc<Mutex<ClientVoiceManager>>;
-}
-
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
     type Value = Arc<Mutex<LavalinkClient>>;
-}
-
-pub struct VoiceGuildUpdate;
-
-impl TypeMapKey for VoiceGuildUpdate {
-    type Value = Arc<RwLock<HashSet<GuildId>>>;
 }
 
 pub struct VoiceTimerMap;
