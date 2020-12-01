@@ -15,7 +15,9 @@ use crate::ConnectionPool;
 #[command]
 #[required_permissions(Administrator)]
 #[sub_commands("deactivate", "wizard", "threshold", "channel")]
-async fn starboard(_ctx: &Context, _msg: &Message) -> CommandResult {
+async fn starboard(ctx: &Context, msg: &Message) -> CommandResult {
+    starboard_help(ctx, msg.channel_id).await;
+
     Ok(())
 }
 
