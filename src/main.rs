@@ -7,22 +7,9 @@ use dashmap::DashMap;
 use futures::future::AbortHandle;
 use lavalink_rs::{gateway::*, LavalinkClient};
 use reqwest::Client as Reqwest;
-use serenity::{
-    async_trait,
-    client::bridge::gateway::GatewayIntents,
-    framework::standard::{
+use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::standard::{
         macros::hook, CommandError, CommandResult, DispatchError, StandardFramework,
-    },
-    http::Http,
-    model::{
-        channel::Reaction,
-        gateway::Ready,
-        guild::{Guild, GuildUnavailable},
-        id::GuildId,
-        prelude::{Message, Permissions},
-    },
-    prelude::*,
-};
+    }, http::Http, model::{channel::Reaction, gateway::Ready, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::{Activity, Message, Permissions}}, prelude::*};
 use songbird::SerenityInit;
 use std::{
     collections::{HashMap, HashSet},
@@ -33,7 +20,7 @@ use std::{
     },
 };
 
-use helpers::{command_utils, database_helper, delete_buffer};
+use helpers::{command_utils, database_helper, start_loops};
 use reactions::reaction_handler;
 use structures::{cmd_data::*, commands::*, errors::*};
 
@@ -53,15 +40,22 @@ impl EventHandler for Handler {
             self.run_loop.store(false, Ordering::Relaxed);
 
             println!("Running guild pruner!");
-            if let Err(e) = delete_buffer::guild_pruner(&ctx).await {
+            if let Err(e) = start_loops::guild_pruner(&ctx).await {
                 panic!("Error when pruning guilds! {}", e);
             }
 
+            let ctx_clone = ctx.clone();
+
             println!("Starting starboard deletion loop!");
             tokio::spawn(async move {
-                if let Err(e) = delete_buffer::starboard_removal_loop(ctx).await {
+                if let Err(e) = start_loops::starboard_removal_loop(ctx_clone).await {
                     panic!("Delete buffer failed to start!: {}", e);
                 };
+            });
+
+            println!("Starting activity loop!");
+            tokio::spawn(async move {
+                start_loops::activity_loop(&ctx).await;
             });
         }
     }

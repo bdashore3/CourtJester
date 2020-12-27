@@ -1,4 +1,5 @@
-use serenity::{framework::standard::CommandResult, model::id::GuildId, prelude::*};
+use rand::{Rng, SeedableRng, prelude::StdRng};
+use serenity::{framework::standard::CommandResult, model::{id::GuildId, prelude::Activity}, prelude::*};
 use crate::ConnectionPool;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use tokio::time::delay_for;
@@ -57,4 +58,26 @@ pub async fn guild_pruner(ctx: &Context) -> CommandResult {
     println!(" ");
 
     Ok(())
+}
+
+pub async fn activity_loop(ctx: &Context) {
+    let activity_vec = vec![
+        Activity::playing("as the fool"),
+        Activity::listening("to a tune!"),
+        Activity::listening("to straight vibes"),
+        Activity::playing("vibe checks"),
+        Activity::playing("hacking the mainframe"),
+        Activity::playing("boof simulator 2021"),
+        Activity::playing("ZA WARUDO!")
+    ];
+
+    let mut rng = StdRng::from_entropy();
+
+    loop {
+        let val = rng.gen_range(0..=activity_vec.len() - 1);
+
+        ctx.set_activity(activity_vec[val].to_owned()).await;
+
+        delay_for(Duration::from_secs(14400)).await;
+    }
 }
