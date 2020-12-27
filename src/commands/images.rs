@@ -50,7 +50,7 @@ async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let gifs = fetch_gifs(ctx, "anime hug", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     let message = 
         if is_everyone {
@@ -90,7 +90,7 @@ async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let gifs = fetch_gifs(ctx, "anime pat", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     let message = 
         if is_everyone {
@@ -131,7 +131,7 @@ async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let gifs = fetch_gifs(ctx, "anime slap", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     let message = if is_everyone {
             "You slapped everyone! Ouch... that's gotta hurt.".to_owned()
@@ -158,7 +158,7 @@ async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
     let gifs = fetch_gifs(ctx, "anime cry", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
@@ -176,7 +176,7 @@ async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
 async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
     let gifs = fetch_gifs(ctx, "cringe", 10, "low").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
@@ -209,7 +209,7 @@ async fn gifsearch(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let gifs = fetch_gifs(ctx, search_string, 10, filter).await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0, 9);
+    let val = rng.gen_range(0..=9);
 
     msg.channel_id.send_message(ctx, |m| {
         m.embed(|e| {
