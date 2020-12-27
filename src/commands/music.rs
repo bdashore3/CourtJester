@@ -353,7 +353,7 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
 
 #[command]
 #[aliases("c")]
-async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
 
     if !guild.voice_states.contains_key(&msg.author.id) {

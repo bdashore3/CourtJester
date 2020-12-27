@@ -9,7 +9,7 @@ use lavalink_rs::{gateway::*, LavalinkClient};
 use reqwest::Client as Reqwest;
 use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::standard::{
         macros::hook, CommandError, CommandResult, DispatchError, StandardFramework,
-    }, http::Http, model::{channel::Reaction, gateway::Ready, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::{Activity, Message, Permissions}}, prelude::*};
+    }, http::Http, model::{channel::Reaction, gateway::Ready, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::{Message, Permissions}}, prelude::*};
 use songbird::SerenityInit;
 use std::{
     collections::{HashMap, HashSet},
