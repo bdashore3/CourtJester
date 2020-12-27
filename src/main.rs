@@ -327,7 +327,9 @@ async fn main() -> CommandResult {
 
         let guild_id = msg.guild_id.unwrap();
 
-        match prefixes.get(&guild_id) {
+        let wrapped_prefix = prefixes.get(&guild_id);
+
+        match wrapped_prefix {
             Some(prefix_guard) => Some(prefix_guard.value().to_owned()),
             None => Some(default_prefix),
         }
