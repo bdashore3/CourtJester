@@ -265,8 +265,20 @@ async fn vibecheck(ctx: &Context, msg: &Message) -> CommandResult {
     delay_for(Duration::from_secs(3)).await;
 
     if random() {
+        let success_vec = vec![
+            "Continue vibing good sir/madam",
+            "Have a wonderful day",
+            "Your wish will come true",
+            "STRAIGHT vibing! I like that",
+            "Drop your favorite vibes in the chat"
+        ];
+    
+        let mut rng = StdRng::from_entropy();
+
+        let val = rng.gen_range(0..=success_vec.len() - 1);
+
         msg.channel_id.say(ctx, 
-            format!("{} has passed the vibe check. Continue vibing good sir.", msg.author.mention())).await?;
+            format!("{} has passed the vibe check. {}.", msg.author.mention(), success_vec[val])).await?;
     } else {
         msg.channel_id.say(ctx, 
             format!("{} has failed the vibe check. Show me your vibing license!", msg.author.mention())).await?;
