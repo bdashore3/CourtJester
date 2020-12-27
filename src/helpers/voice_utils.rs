@@ -75,7 +75,7 @@ pub async fn join_voice_internal(
             lava_lock
                 .lock()
                 .await
-                .create_session(guild_id, &conn_info.recv_async().await?)
+                .create_session(guild_id, &conn_info)
                 .await?;
         }
         Err(e) => return Err(e.into()),
