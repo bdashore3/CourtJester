@@ -68,8 +68,6 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let query = args.message().to_string();
 
-    println!("There's a connection!");
-
     let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
     let lava_client = lava_lock.lock().await;
 
