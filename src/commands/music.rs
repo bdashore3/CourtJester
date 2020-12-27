@@ -377,51 +377,76 @@ async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    if args.is_empty() {
-        if !permissions_helper::check_permission(ctx, msg, None, false).await? {
-            msg.channel_id
-                .say(
-                    ctx,
-                    JesterError::PermissionError(PermissionType::SelfPerm("moderator")),
-                )
-                .await?;
-        } else {
-            node.queue.clear();
-
-            msg.react(ctx, ReactionType::Unicode(String::from("💣")))
-                .await?;
-        }
+    if !permissions_helper::check_permission(ctx, msg, None, false).await? {
+        msg.channel_id
+            .say(
+                ctx,
+                JesterError::PermissionError(PermissionType::SelfPerm("moderator")),
+            )
+            .await?;
     } else {
-        let clear_num = match args.single::<usize>() {
-            Ok(size) => {
-                if size <= 0 {
-                    msg.channel_id
-                        .say(ctx, JesterError::MissingError("number greater than 0"))
-                        .await?;
+        node.queue.clear();
 
-                    return Ok(());
-                }
+        msg.react(ctx, ReactionType::Unicode(String::from("💣")))
+            .await?;
+    }
 
-                size
-            }
-            Err(_) => {
+    Ok(())
+}
+
+#[command]
+#[aliases("r")]
+async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let guild = msg.guild(ctx).await.unwrap();
+
+    if !guild.voice_states.contains_key(&msg.author.id) {
+        msg.channel_id
+            .say(ctx, "You're not in a voice channel!")
+            .await?;
+        return Ok(());
+    }
+
+    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let mut lava_client = lava_lock.lock().await;
+
+    let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap().0) {
+        Some(node) => node,
+        None => {
+            msg.channel_id.say(
+                ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
+            return Ok(());
+        }
+    };
+
+    let clear_num = match args.single::<usize>() {
+        Ok(size) => {
+            if size <= 0 {
                 msg.channel_id
-                    .say(ctx, JesterError::MissingError("number"))
+                    .say(ctx, JesterError::MissingError("number greater than 0"))
                     .await?;
 
                 return Ok(());
             }
-        };
 
-        node.queue.remove(clear_num - 1);
+            size
+        }
+        Err(_) => {
+            msg.channel_id
+                .say(ctx, JesterError::MissingError("number"))
+                .await?;
 
-        let track = node.queue[clear_num - 1].track.info.as_ref();
-        let name = &track.unwrap().title;
+            return Ok(());
+        }
+    };
 
-        msg.channel_id
-            .say(ctx, format!("Successfully removed track {}", name))
-            .await?;
-    }
+    node.queue.remove(clear_num - 1);
+
+    let track = node.queue[clear_num - 1].track.info.as_ref();
+    let name = &track.unwrap().title;
+
+    msg.channel_id
+        .say(ctx, format!("Successfully removed track {}", name))
+        .await?;
 
     Ok(())
 }
