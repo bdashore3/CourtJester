@@ -69,7 +69,9 @@ pub async fn activity_loop(messenger: &ShardMessenger) {
         Activity::playing("ZA WARUDO!"),
         Activity::listening("lofi music"),
         Activity::playing("Minecraft"),
-        Activity::listening("Bhai tunes")
+        Activity::listening("Bhai tunes"),
+        Activity::playing("Purging scalpers"),
+        Activity::listening("the rustdoc audiobook")
     ];
 
     let mut rng = StdRng::from_entropy();
