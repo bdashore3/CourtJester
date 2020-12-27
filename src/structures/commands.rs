@@ -2,24 +2,27 @@ use serenity::framework::standard::macros::group;
 
 use crate::{
     commands::{
-        other::*,
-        textmod::*,
-        ciphers::*,
-        textchannel_send::*,
-        config::*,
-        support::*,
-        starboard::*,
-        music::*,
-        images::*,
-        japan::*
+        ciphers::*, config::*, images::*, japan::*, music::REMOVE_COMMAND, music::*, other::*,
+        starboard::*, support::*, textchannel_send::*, textmod::*,
     },
-    helpers::voice_utils::*
+    helpers::voice_utils::*,
 };
-
 
 // All command groups
 #[group("Master")]
-#[sub_groups(General, Text, TextLast, Ciphers, TextChannelSend, Config, Support, Starboard, Voice, Images, Music)]
+#[sub_groups(
+    General,
+    Text,
+    TextLast,
+    Ciphers,
+    TextChannelSend,
+    Config,
+    Support,
+    Starboard,
+    Voice,
+    Images,
+    Music
+)]
 pub struct Master;
 
 #[group]
@@ -71,7 +74,7 @@ pub struct Voice;
 
 #[group("Music")]
 #[description = "Commands used to play music"]
-#[commands(play, pause, resume, stop, skip, queue, clear, seek)]
+#[commands(play, pause, resume, stop, skip, queue, clear, remove, seek)]
 pub struct Music;
 
 #[group("Images")]
