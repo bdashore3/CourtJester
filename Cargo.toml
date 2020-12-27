@@ -9,7 +9,7 @@ tokio  = { version = "0.2", features = ["macros", "time"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing-subscriber = "0.2.15"
-rand = "0.7.3"
+rand = "0.8"
 rust-clock = "0.1.0"
 base64 = "0.13.0"
 uuid = { version = "0.8", features = ["v4"] }
