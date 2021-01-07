@@ -4,5 +4,8 @@
     "db_connection": "postgres://postgres:{password}@{IP}:5432/{Db Name}",
     "lavalink_host": "0.0.0.0",
     "lavalink_auth": "youshallnotpass",
-    "tenor_key": "Get one from Tenor"
+    "tenor_key": "Get one from Tenor",
+    "spotify_client_id": "Get one from Spotify: https://developer.spotify.com/dashboard",
+    "spotify_client_secret": "Get one from Spotify: https://developer.spotify.com/dashboard",
+    "spotify_redirect_uri": "https://localhost:8888/callback"
 }

@@ -63,6 +63,9 @@ Copy `info_sample.json` to `info.json` in the project directory. From there, add
 - lavalink_host (IP for the lavalink server)
 - lavalink_auth (Password for said server)
 - tenor_key (Get one from [tenor](https://tenor.com/developer/keyregistration))
+- spotify_client_id
+- spotify_client_secret
+- spotify_redirect_uri (if different than info_sample.md)
 ```
 
 ### Finally:

@@ -1,4 +1,7 @@
 use regex::Regex;
+use rspotify::client::Spotify;
+use rspotify::util::get_token;
+use rspotify::oauth2::{SpotifyClientCredentials, SpotifyOAuth};
 use serenity::{
     framework::standard::CommandResult,
     model::{
@@ -52,4 +55,29 @@ pub fn get_allowed_commands() -> Vec<String> {
     ];
 
     allowed_commands
+}
+
+pub async fn get_spotify_track_info(track_id: &String) -> String {
+    let mut oauth = SpotifyOAuth::default()
+        .scope("")
+        .build();
+    let res = match get_token(&mut oauth).await {
+        Some(token_info) => {
+            let client_credential = SpotifyClientCredentials::default()
+                .token_info(token_info)
+                .build(); // to be phased out for below
+// let client_credential = SpotifyClientCredentials::default()
+//     .client_id("this-is-my-client-id")
+//     .client_secret("this-is-my-client-secret")
+//     .build();
+            let spotify = Spotify::default()
+                .client_credentials_manager(client_credential)
+                .build();
+            let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
+            let track = spotify.track(&spotify_uri).await.ok().unwrap();
+            track.name
+        }
+        None => "".parse().unwrap()
+    };
+    return res
 }
