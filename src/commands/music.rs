@@ -66,8 +66,15 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         voice_timer_map.remove(&guild_id);
     }
 
-    let query = args.message().to_string();
+    let mut query = args.message().to_string();
 
+    if query.contains("https://open.spotify.com") {
+        // search spotify API
+        let query_track_split: Vec<&str> = query.split('/').collect();
+        let query_track_id: Vec<&str> = query_track_split[query_track_split.len() - 1].split("?").collect();
+        let track_id = query_track_id[0].to_string();
+        query = command_utils::get_spotify_track_info(&track_id).await;
+    }
     let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
     let lava_client = lava_lock.lock().await;
 
