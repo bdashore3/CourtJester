@@ -68,22 +68,35 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         voice_timer_map.remove(&guild_id);
     }
 
-    let mut query = args.message().to_string();
+    let args_message = args.message();
 
-    if query.contains("https://open.spotify.com") {
-        // search spotify API
-        let query_track_split: Vec<&str> = query.split('/').collect();
-        let query_track_id: Vec<&str> = query_track_split[query_track_split.len() - 1].split("?").collect();
-        let track_id = query_track_id[0].to_string();
-        query = get_spotify_track_info(&track_id, &ctx).await;
-    }
+    let query = if args_message.contains("https://open.spotify.com") {
+        let track_id = match args_message.rsplit('/').next() {
+            Some(id) => id,
+            None => {
+                msg.channel_id.say(ctx, JesterError::MissingError("valid Spotify URL")).await?;
+                return Ok(())
+            }
+        };
+
+        match get_spotify_track_info(track_id, &ctx).await {
+            Some(track_info) => track_info,
+            None => {
+                msg.channel_id.say(ctx, "Couldn't find the track on spotify! Check the URL?").await?;
+                return Ok(())
+            }
+        }
+    } else {
+        args_message.to_string()
+    };
+
     let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
     let lava_client = lava_lock.lock().await;
 
     let query_info = lava_client.auto_search_tracks(&query).await?;
 
     if query_info.tracks.is_empty() {
-        msg.channel_id.say(ctx, "Couldn't find the video!").await?;
+        msg.channel_id.say(ctx, "Couldn't find the video on YouTube! Check the query?").await?;
         return Ok(());
     }
 
@@ -124,6 +137,19 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     });
 
     Ok(())
+}
+
+pub async fn get_spotify_track_info(track_id: &str, ctx: &Context) -> Option<String> {
+    let spotify = ctx.data.read().await
+        .get::<SpotifyClient>().cloned().unwrap();
+
+    let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
+
+    if let Some(track) = spotify.track(&spotify_uri).await.ok() {
+        Some(track.name + " " + &track.artists[0].name)
+    } else {
+        None
+    }
 }
 
 #[command]
@@ -578,25 +604,3 @@ pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
         })
         .await;
 }
-
-pub async fn get_spotify_track_info(track_id: &String, ctx: &Context) -> String {
-    let spotify = ctx.data.read().await.get::<SpotifyClient>().cloned().unwrap();
-    let credential_manager = (&(&spotify).client_credentials_manager).as_ref().unwrap();
-    let mut oauth = SpotifyOAuth::default()
-        .redirect_uri("https://localhost:8888/callback")
-        .client_id(&*(&credential_manager.client_id))
-        .client_secret(&*(&credential_manager.client_secret))
-        .scope("")
-        .build();
-    let res = match get_token(&mut oauth).await {
-        Some(_token_info) => {
-            let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
-            let track = (&spotify).track(&spotify_uri).await.ok().unwrap();
-            let searchquery = track.name + " " + &track.artists[0].name;
-            searchquery
-        }
-        None => "".parse().unwrap()
-    };
-    return res
-}
-
