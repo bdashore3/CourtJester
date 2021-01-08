@@ -1,5 +1,7 @@
 use lavalink_rs::LavalinkClient;
 use rust_clock::Clock;
+use rspotify::util::get_token;
+use rspotify::oauth2::SpotifyOAuth;
 use serenity::{
     builder::CreateEmbed,
     client::Context,
@@ -14,7 +16,7 @@ use tokio::time::delay_for;
 
 use crate::{
     helpers::{command_utils, permissions_helper, voice_utils},
-    structures::cmd_data::{Lavalink, VoiceTimerMap},
+    structures::cmd_data::{Lavalink, SpotifyClient, VoiceTimerMap},
     JesterError, PermissionType,
 };
 
@@ -73,7 +75,7 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         let query_track_split: Vec<&str> = query.split('/').collect();
         let query_track_id: Vec<&str> = query_track_split[query_track_split.len() - 1].split("?").collect();
         let track_id = query_track_id[0].to_string();
-        query = command_utils::get_spotify_track_info(&track_id).await;
+        query = get_spotify_track_info(&track_id, &ctx).await;
     }
     let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
     let lava_client = lava_lock.lock().await;
@@ -576,3 +578,24 @@ pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
         })
         .await;
 }
+
+pub async fn get_spotify_track_info(track_id: &String, ctx: &Context) -> String {
+    let spotify = ctx.data.read().await.get::<SpotifyClient>().cloned().unwrap();
+    let credential_manager = (&(&spotify).client_credentials_manager).as_ref().unwrap();
+    let mut oauth = SpotifyOAuth::default()
+        .redirect_uri("https://localhost:8888/callback")
+        .client_id(&*(&credential_manager.client_id))
+        .client_secret(&*(&credential_manager.client_secret))
+        .scope("")
+        .build();
+    let res = match get_token(&mut oauth).await {
+        Some(_token_info) => {
+            let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
+            let track = (&spotify).track(&spotify_uri).await.ok().unwrap();
+            track.name
+        }
+        None => "".parse().unwrap()
+    };
+    return res
+}
+

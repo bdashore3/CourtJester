@@ -23,6 +23,8 @@ use std::{
 use helpers::{command_utils, database_helper, start_loops};
 use reactions::reaction_handler;
 use structures::{cmd_data::*, commands::*, errors::*};
+use rspotify::client::Spotify;
+use rspotify::oauth2::SpotifyClientCredentials;
 
 // Event handler for when the bot starts
 struct Handler {
@@ -150,6 +152,14 @@ async fn main() -> CommandResult {
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
+
+    let client_credential = SpotifyClientCredentials::default()
+        .client_id(&*creds.spotify_client_id)
+        .client_secret(&*creds.spotify_client_secret)
+        .build();
+    let spotify = Spotify::default()
+        .client_credentials_manager(client_credential)
+        .build();
 
     let emergency_commands = command_utils::get_allowed_commands();
 
@@ -384,6 +394,7 @@ async fn main() -> CommandResult {
         data.insert::<PubCreds>(Arc::new(pub_creds));
         data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);
+        data.insert::<SpotifyClient>(spotify);
     }
 
     let _owners = match client
