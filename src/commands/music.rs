@@ -592,7 +592,8 @@ pub async fn get_spotify_track_info(track_id: &String, ctx: &Context) -> String 
         Some(_token_info) => {
             let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
             let track = (&spotify).track(&spotify_uri).await.ok().unwrap();
-            track.name
+            let searchquery = track.name + " " + &track.artists[0].name;
+            searchquery
         }
         None => "".parse().unwrap()
     };
