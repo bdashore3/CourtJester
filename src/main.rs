@@ -154,8 +154,8 @@ async fn main() -> CommandResult {
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
 
     let client_credential = SpotifyClientCredentials::default()
-        .client_id(&*creds.spotify_client_id)
-        .client_secret(&*creds.spotify_client_secret)
+        .client_id(&creds.spotify_client_id)
+        .client_secret(&creds.spotify_client_secret)
         .build();
     let spotify = Spotify::default()
         .client_credentials_manager(client_credential)
