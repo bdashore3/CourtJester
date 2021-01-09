@@ -1,31 +1,16 @@
-
 use serenity::{
-    prelude::*,
-    model::prelude::*,
     builder::CreateEmbed,
-    framework::standard::{
-        CommandResult,
-        macros::command,
-        Args
-    }
+    framework::standard::{macros::command, Args, CommandResult},
+    model::prelude::*,
+    prelude::*,
 };
 
 use crate::{
     commands::{
-        config::*,
-        starboard::*,
-        textchannel_send::*,
-        ciphers::*,
+        ciphers::*, config::*, images::*, japan::*, music::*, starboard::*, textchannel_send::*,
         textmod::*,
-        music::*,
-        images::*,
-        japan::*
     },
-    helpers::{
-        botinfo::*,
-        voice_utils::*,
-        command_utils,
-    }
+    helpers::{botinfo::*, command_utils, voice_utils::*},
 };
 
 #[command]
@@ -37,11 +22,11 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             default_help_message(ctx, msg.channel_id).await;
         }
 
-        return Ok(())
+        return Ok(());
     }
 
     let subcommand = args.single::<String>()?;
-    
+
     match subcommand.as_str() {
         "prefix" => prefix_help(ctx, msg.channel_id).await,
         "command" => command_help(ctx, msg.channel_id).await,
@@ -60,17 +45,21 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 async fn emergency_help_message(ctx: &Context, channel_id: ChannelId) {
-    let content = concat!("prefix (characters): Sets the server's bot prefix \n\n",
-        "resetprefix: Reset's the server's prefix back to the default one");
+    let content = concat!(
+        "prefix (characters): Sets the server's bot prefix \n\n",
+        "resetprefix: Reset's the server's prefix back to the default one"
+    );
 
-    let _ = channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.title("CourtJester Emergency Help");
-            e.description("You should only use this if you mess up your prefix!");
-            e.field("Commands", content, false);
-            e
+    let _ = channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("CourtJester Emergency Help");
+                e.description("You should only use this if you mess up your prefix!");
+                e.field("Commands", content, false);
+                e
+            })
         })
-    }).await;
+        .await;
 }
 
 async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
@@ -84,38 +73,49 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
         "voice \n",
         "music \n",
         "images \n",
-        "japan \n");
+        "japan \n"
+    );
 
-    let _ = channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.title("CourtJester Help");
-            e.description(concat!("Help for the RoyalGuard Discord bot \n",
-                "Command parameters: <> is required and () is optional"));
-            e.field("Subcategories", format!("```\n{}```", categories), false);
-            e.footer(|f| {
-                f.text("Use the support command for any further help!");
-                f
-            });
-            e
+    let _ = channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("CourtJester Help");
+                e.description(concat!(
+                    "Help for the RoyalGuard Discord bot \n",
+                    "Command parameters: <> is required and () is optional"
+                ));
+                e.field("Subcategories", format!("```\n{}```", categories), false);
+                e.footer(|f| {
+                    f.text("Use the support command for any further help!");
+                    f
+                });
+                e
+            })
         })
-    }).await;
+        .await;
 }
 
 #[command]
 async fn support(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.title("CourtJester Support");
-            e.description("Need more help?");
-            e.field("Support Server", "https://discord.gg/pswt7by", false);
-            e.field("Github repository", "https://github.com/bdashore3/courtjester", false);
-            e.field("kingbri's twitter", "https://twitter.com/kingbri1st", false);
-            e.footer(|f| {
-                f.text("Created with ❤️ by kingbri#6666");
-                f
+    msg.channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("CourtJester Support");
+                e.description("Need more help?");
+                e.field("Support Server", "https://discord.gg/pswt7by", false);
+                e.field(
+                    "Github repository",
+                    "https://github.com/bdashore3/courtjester",
+                    false,
+                );
+                e.field("kingbri's twitter", "https://twitter.com/kingbri1st", false);
+                e.footer(|f| {
+                    f.text("Created with ❤️ by kingbri#6666");
+                    f
+                })
             })
         })
-    }).await?;
+        .await?;
 
     Ok(())
 }
@@ -128,36 +128,40 @@ async fn info(ctx: &Context, msg: &Message) -> CommandResult {
     let channel_count = ctx.cache.guild_channel_count().await;
     let user_count = ctx.cache.user_count().await;
 
-    let guild_name = if guild_count < 2 {
-                "guild"
-            } else {
-                "guilds"
-            };
+    let guild_name = if guild_count < 2 { "guild" } else { "guilds" };
 
-    
     get_system_info(ctx).await;
-    
+
     let last_commit = get_last_commit(ctx).await?;
     let sys_info = get_system_info(ctx).await;
 
     let mut story_string = String::new();
-    story_string.push_str(&format!("Currently running on commit [{}]({}) \n", &last_commit.sha[..7], last_commit.html_url));
+    story_string.push_str(&format!(
+        "Currently running on commit [{}]({}) \n",
+        &last_commit.sha[..7],
+        last_commit.html_url
+    ));
     story_string.push_str(&format!("Inside `{}` {} \n", guild_count, guild_name));
     story_string.push_str(&format!("With `{}` total channels \n", channel_count));
     story_string.push_str(&format!("Along with `{}` faithful users \n", user_count));
-    story_string.push_str(&format!("Consuming `{:.3} MB` of memory \n", sys_info.memory));
+    story_string.push_str(&format!(
+        "Consuming `{:.3} MB` of memory \n",
+        sys_info.memory
+    ));
     story_string.push_str(&format!("With a latency of `{}`", sys_info.shard_latency));
 
     eb.title("CourtJester is");
     eb.color(0xfda50f);
     eb.description(story_string);
 
-    msg.channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.0 = eb.0;
-            e
+    msg.channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.0 = eb.0;
+                e
+            })
         })
-    }).await?;
+        .await?;
 
     Ok(())
 }

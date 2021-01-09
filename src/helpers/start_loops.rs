@@ -1,16 +1,23 @@
-use rand::{Rng, SeedableRng, prelude::StdRng};
-use serenity::{client::bridge::gateway::ShardMessenger, framework::standard::CommandResult, model::{id::GuildId, prelude::Activity}, prelude::*};
-use sqlx::PgPool;
 use crate::ConnectionPool;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
-use tokio::time::delay_for;
-
+use rand::{prelude::StdRng, Rng, SeedableRng};
+use serenity::{
+    client::bridge::gateway::ShardMessenger,
+    framework::standard::CommandResult,
+    model::{id::GuildId, prelude::Activity},
+    prelude::*,
+};
+use sqlx::PgPool;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tokio::time::sleep;
 
 pub async fn starboard_removal_loop(pool: &PgPool) -> CommandResult {
-    loop {    
-        let delete_data = sqlx::query!("SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard")
-            .fetch_all(pool).await?;
-        
+    loop {
+        let delete_data = sqlx::query!(
+            "SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard"
+        )
+        .fetch_all(pool)
+        .await?;
+
         for i in delete_data {
             println!("Checking delete status on starboard message {}", i.guild_id);
 
@@ -25,22 +32,31 @@ pub async fn starboard_removal_loop(pool: &PgPool) -> CommandResult {
                         i.guild_id, i.reaction_message_id, i.sent_message_id)
                     .execute(pool).await?;
             } else {
-                println!("Entry's time isn't greater than a week! Not deleting guild {}! \n", i.guild_id);
+                println!(
+                    "Entry's time isn't greater than a week! Not deleting guild {}! \n",
+                    i.guild_id
+                );
             }
         }
-    
-        delay_for(Duration::from_secs(345600)).await;
+
+        sleep(Duration::from_secs(345600)).await;
     }
 }
 
 pub async fn guild_pruner(ctx: &Context) -> CommandResult {
-    let pool = ctx.data.read().await
-        .get::<ConnectionPool>().cloned().unwrap();
+    let pool = ctx
+        .data
+        .read()
+        .await
+        .get::<ConnectionPool>()
+        .cloned()
+        .unwrap();
 
     let guilds = ctx.cache.guilds().await;
 
     let guild_data = sqlx::query!("SELECT guild_id FROM guild_info")
-        .fetch_all(&pool).await?;
+        .fetch_all(&pool)
+        .await?;
 
     println!(" ");
 
@@ -49,7 +65,8 @@ pub async fn guild_pruner(ctx: &Context) -> CommandResult {
             println!("Removing guild: {}", guild.guild_id);
 
             sqlx::query!("DELETE FROM guild_info WHERE guild_id = $1", guild.guild_id)
-                .execute(&pool).await?;
+                .execute(&pool)
+                .await?;
         }
     }
 
@@ -71,7 +88,7 @@ pub async fn activity_loop(messenger: &ShardMessenger) {
         Activity::playing("Minecraft"),
         Activity::listening("Bhai tunes"),
         Activity::playing("Purging scalpers"),
-        Activity::listening("the rustdoc audiobook")
+        Activity::listening("the rustdoc audiobook"),
     ];
 
     let mut rng = StdRng::from_entropy();
@@ -81,6 +98,6 @@ pub async fn activity_loop(messenger: &ShardMessenger) {
 
         messenger.set_activity(Some(activity_vec[val].to_owned()));
 
-        delay_for(Duration::from_secs(7200)).await;
+        sleep(Duration::from_secs(7200)).await;
     }
 }

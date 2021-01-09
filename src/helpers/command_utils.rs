@@ -15,7 +15,7 @@ pub fn get_message_url(guild_id: GuildId, channel_id: ChannelId, message_id: Mes
 }
 
 pub fn deconstruct_time(input: String) -> CommandResult<u64> {
-    let mut segments = input.rsplit(":");
+    let mut segments = input.rsplit(':');
 
     let seconds = match segments.next().unwrap_or("0").parse::<u64>() {
         Ok(secs) => secs,

@@ -1,17 +1,10 @@
 use serenity::{
-    prelude::*,
+    framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
-    framework::standard::{
-        CommandResult,
-        macros::command,
-        Args
-    }
+    prelude::*,
 };
 
-use crate::{
-    JesterError,
-    helpers::*
-};
+use crate::{helpers::*, JesterError};
 
 /// Outputs a spongebob mock string
 /// Usage: `mock <message>`
@@ -19,7 +12,9 @@ use crate::{
 #[min_args(1)]
 pub async fn mock(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to mock")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to mock"))
+            .await?;
     } else {
         let mock_string = textmod_helper::get_mock_string(args.rest());
 
@@ -31,10 +26,11 @@ pub async fn mock(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    }).await?;
-    
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
+
     let mock_string = textmod_helper::get_mock_string(&input_message[0].content);
 
     msg.channel_id.say(ctx, mock_string).await?;
@@ -48,7 +44,9 @@ pub async fn mockl(ctx: &Context, msg: &Message) -> CommandResult {
 #[min_args(1)]
 async fn inv(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to invert")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to invert"))
+            .await?;
     } else {
         let inv_string = textmod_helper::get_inverted_string(args.rest());
 
@@ -60,10 +58,11 @@ async fn inv(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 async fn invl(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    }).await?;
-    
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
+
     let inv_string = textmod_helper::get_inverted_string(&input_message[0].content);
 
     msg.channel_id.say(ctx, inv_string).await?;
@@ -77,7 +76,9 @@ async fn invl(ctx: &Context, msg: &Message) -> CommandResult {
 #[min_args(1)]
 async fn upp(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to uppercase")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to uppercase"))
+            .await?;
     } else {
         msg.channel_id.say(ctx, args.rest().to_uppercase()).await?;
     }
@@ -87,11 +88,14 @@ async fn upp(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 async fn uppl(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    }).await?;
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
 
-    msg.channel_id.say(ctx, input_message[0].content.to_uppercase()).await?;
+    msg.channel_id
+        .say(ctx, input_message[0].content.to_uppercase())
+        .await?;
 
     Ok(())
 }
@@ -100,9 +104,11 @@ async fn uppl(ctx: &Context, msg: &Message) -> CommandResult {
 /// Usage: `low <message>`
 #[command]
 #[min_args(1)]
-async fn low (ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+async fn low(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to lowercase")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to lowercase"))
+            .await?;
     } else {
         msg.channel_id.say(ctx, args.rest().to_lowercase()).await?;
     }
@@ -112,12 +118,14 @@ async fn low (ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 async fn lowl(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    })
-    .await?;
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
 
-    msg.channel_id.say(ctx, input_message[0].content.to_lowercase()).await?;
+    msg.channel_id
+        .say(ctx, input_message[0].content.to_lowercase())
+        .await?;
 
     Ok(())
 }
@@ -128,7 +136,9 @@ async fn lowl(ctx: &Context, msg: &Message) -> CommandResult {
 #[min_args(1)]
 async fn space(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to space out")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to space out"))
+            .await?;
     } else {
         let spaced_string = textmod_helper::get_spaced_string(args.rest(), false);
 
@@ -140,10 +150,10 @@ async fn space(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 #[command]
 async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    })
-    .await?;
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
 
     let spaced_string = textmod_helper::get_spaced_string(&input_message[0].content, false);
 
@@ -157,23 +167,29 @@ async fn spacel(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("bigspace")]
 #[min_args(1)]
-async fn biggspace(ctx: &Context, msg: &Message, args: Args) -> CommandResult { 
+async fn biggspace(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to B I G G S P A C E")).await?;
+        msg.channel_id
+            .say(
+                ctx,
+                JesterError::MissingError("string to B I G G S P A C E"),
+            )
+            .await?;
     } else {
         let bigspace_string = textmod_helper::get_spaced_string(args.rest(), true);
 
         msg.channel_id.say(ctx, bigspace_string).await?;
     }
 
-    Ok(()) 
+    Ok(())
 }
 
 #[command]
 async fn biggspacel(ctx: &Context, msg: &Message) -> CommandResult {
-    let input_message = msg.channel_id.messages(ctx, |retriever| {
-        retriever.before(msg.id).limit(1)
-    }).await?;
+    let input_message = msg
+        .channel_id
+        .messages(ctx, |retriever| retriever.before(msg.id).limit(1))
+        .await?;
 
     let bigspace_string = textmod_helper::get_spaced_string(&input_message[0].content, true);
 
@@ -185,7 +201,9 @@ async fn biggspacel(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn h4ck(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to h4ck")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to h4ck"))
+            .await?;
     } else {
         let hacked_string = textmod_helper::get_hacked_string(args.rest());
 
@@ -198,7 +216,9 @@ async fn h4ck(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 #[command]
 async fn uwu(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if args.is_empty() {
-        msg.channel_id.say(ctx, JesterError::MissingError("string to uwu")).await?;
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("string to uwu"))
+            .await?;
     } else {
         let uwu_string = textmod_helper::get_uwu_string(args.rest());
 
@@ -217,19 +237,24 @@ pub async fn textmod_help(ctx: &Context, channel_id: ChannelId) {
         "space <message>: Spaces out each letter in the message (whitespace omitted) \n\n",
         "biggspace <message>: Same as space, but W I D E R \n\n",
         "h4ck <message>: Become a hackerman by making h4ck3d w0rd5 \n\n",
-        "uwu <message>: Translate to the uwu wanguwage uwu");
-    
-    let _ = channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.title("Text Modification Help");
-            e.description("Description: Commands that modify text");
-            e.field("Commands", content, false);
-            e.footer(|f| {
-                f.text(concat!("Putting an l in front of any command",
-                    "(except h4ck and uwu) will use the last message"));
-                f
-            });
-            e
+        "uwu <message>: Translate to the uwu wanguwage uwu"
+    );
+
+    let _ = channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("Text Modification Help");
+                e.description("Description: Commands that modify text");
+                e.field("Commands", content, false);
+                e.footer(|f| {
+                    f.text(concat!(
+                        "Putting an l in front of any command",
+                        "(except h4ck and uwu) will use the last message"
+                    ));
+                    f
+                });
+                e
+            })
         })
-    }).await;
+        .await;
 }

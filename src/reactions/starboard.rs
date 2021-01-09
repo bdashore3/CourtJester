@@ -183,13 +183,12 @@ fn get_starboard_embed(
     });
     eb.description(content);
 
-    if attachments.len() > 0 {
-        if [".png", ".jpeg", ".jpg", ".webp", ".gif"]
+    if !attachments.is_empty()
+        && [".png", ".jpeg", ".jpg", ".webp", ".gif"]
             .iter()
             .any(|ext| attachments[0].url.ends_with(ext))
-        {
-            eb.image(&attachments[0].url);
-        }
+    {
+        eb.image(&attachments[0].url);
     }
 
     let message_url = command_utils::get_message_url(

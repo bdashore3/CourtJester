@@ -1,10 +1,10 @@
-pub mod other;
-pub mod textmod;
 pub mod ciphers;
-pub mod textchannel_send;
 pub mod config;
-pub mod support;
-pub mod starboard;
-pub mod music;
 pub mod images;
 pub mod japan;
+pub mod music;
+pub mod other;
+pub mod starboard;
+pub mod support;
+pub mod textchannel_send;
+pub mod textmod;

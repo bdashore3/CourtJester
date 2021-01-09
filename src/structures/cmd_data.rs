@@ -1,3 +1,4 @@
+use aspotify::Client as Spotify;
 use dashmap::DashMap;
 use futures::future::AbortHandle;
 use lavalink_rs::LavalinkClient;
@@ -9,7 +10,6 @@ use serenity::{
 };
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
-use rspotify::client::Spotify;
 
 // All command context data structures
 pub struct ShardManagerContainer;
@@ -75,5 +75,5 @@ impl TypeMapKey for EmergencyCommands {
 pub struct SpotifyClient;
 
 impl TypeMapKey for SpotifyClient {
-    type Value = Spotify;
+    type Value = Arc<Spotify>;
 }

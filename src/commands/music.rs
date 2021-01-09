@@ -1,7 +1,5 @@
 use lavalink_rs::LavalinkClient;
 use rust_clock::Clock;
-use rspotify::util::get_token;
-use rspotify::oauth2::SpotifyOAuth;
 use serenity::{
     builder::CreateEmbed,
     client::Context,
@@ -12,7 +10,7 @@ use serenity::{
     },
 };
 use std::{sync::Arc, time::Duration};
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 use crate::{
     helpers::{command_utils, permissions_helper, voice_utils},
@@ -41,7 +39,7 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         }
     };
 
-    if args.len() < 1 {
+    if args.is_empty() {
         msg.channel_id
             .say(ctx, "Please enter a track URL after the command!")
             .await?;
@@ -74,16 +72,20 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         let track_id = match args_message.rsplit('/').next() {
             Some(id) => id,
             None => {
-                msg.channel_id.say(ctx, JesterError::MissingError("valid Spotify URL")).await?;
-                return Ok(())
+                msg.channel_id
+                    .say(ctx, JesterError::MissingError("valid Spotify URL"))
+                    .await?;
+                return Ok(());
             }
         };
 
         match get_spotify_track_info(track_id, &ctx).await {
             Some(track_info) => track_info,
             None => {
-                msg.channel_id.say(ctx, "Couldn't find the track on spotify! Check the URL?").await?;
-                return Ok(())
+                msg.channel_id
+                    .say(ctx, "Couldn't find the track on spotify! Check the URL?")
+                    .await?;
+                return Ok(());
             }
         }
     } else {
@@ -96,7 +98,9 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let query_info = lava_client.auto_search_tracks(&query).await?;
 
     if query_info.tracks.is_empty() {
-        msg.channel_id.say(ctx, "Couldn't find the video on YouTube! Check the query?").await?;
+        msg.channel_id
+            .say(ctx, "Couldn't find the video on YouTube! Check the query?")
+            .await?;
         return Ok(());
     }
 
@@ -140,13 +144,16 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 pub async fn get_spotify_track_info(track_id: &str, ctx: &Context) -> Option<String> {
-    let spotify = ctx.data.read().await
-        .get::<SpotifyClient>().cloned().unwrap();
+    let spotify = ctx
+        .data
+        .read()
+        .await
+        .get::<SpotifyClient>()
+        .cloned()
+        .unwrap();
 
-    let spotify_uri = format!("spotify:track:{spotify_track_id}", spotify_track_id = track_id);
-
-    if let Some(track) = spotify.track(&spotify_uri).await.ok() {
-        Some(track.name + " " + &track.artists[0].name)
+    if let Ok(track) = spotify.tracks().get_track(track_id, None).await {
+        Some(track.data.name + " " + &track.data.artists[0].name)
     } else {
         None
     }
@@ -328,7 +335,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             let t_info = t.track.info.as_ref();
 
             let mut cl = Clock::new();
-            cl.set_time_ms(t_info.unwrap().length.clone() as i64);
+            cl.set_time_ms(t_info.unwrap().length as i64);
             queue_string.push_str(&format!(
                 "{}. [{}]({}) | `{}` \n\n",
                 num,
@@ -355,7 +362,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
 async fn queue_checker(ctx: Context, guild_id: GuildId) {
     loop {
-        delay_for(Duration::from_secs(60)).await;
+        sleep(Duration::from_secs(60)).await;
         {
             let (voice_timer_map, lava_lock) = {
                 let data = ctx.data.read().await;
@@ -453,7 +460,7 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let clear_num = match args.single::<usize>() {
         Ok(size) => {
-            if size <= 0 {
+            if size == 0 {
                 msg.channel_id
                     .say(ctx, JesterError::MissingError("number greater than 0"))
                     .await?;
@@ -526,7 +533,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if args.len() < 1 {
+    if args.is_empty() {
         msg.channel_id
             .say(ctx, "Please provide a valid number of seconds!")
             .await?;

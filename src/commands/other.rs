@@ -1,10 +1,7 @@
 use serenity::{
-    prelude::*,
+    framework::standard::{macros::command, CommandResult},
     model::prelude::*,
-    framework::standard::{
-        CommandResult,
-        macros::command,
-    }
+    prelude::*,
 };
 
 #[command]

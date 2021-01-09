@@ -30,7 +30,7 @@ pub enum PermissionType<'b> {
 impl fmt::Display for PermissionType <'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            PermissionType::SelfPerm(perm) => write!(f, "You can't execute this command because you're not a {} on this server! \n", perm),
+            PermissionType::SelfPerm(perm) => writeln!(f, "You can't execute this command because you're not a {} on this server!", perm),
             PermissionType::Mention(cmd, perm) => write!(f, "I can't {} an {}! Please demote the user and try again", cmd, perm)
         }
     }

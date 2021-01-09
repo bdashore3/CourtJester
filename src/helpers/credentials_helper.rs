@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use serenity::framework::standard::CommandResult;
 use std::fs;
 use std::io::BufReader;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Credentials {
@@ -12,7 +12,7 @@ pub struct Credentials {
     pub lavalink_auth: String,
     pub tenor_key: String,
     pub spotify_client_id: String,
-    pub spotify_client_secret: String
+    pub spotify_client_secret: String,
 }
 
 pub fn read_creds(path: &str) -> CommandResult<Credentials> {

@@ -2,18 +2,18 @@ pub mod cmd_data;
 pub mod commands;
 pub mod errors;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct CommitResponse {
     pub sha: String,
-    pub html_url: String
+    pub html_url: String,
 }
 
 #[derive(Default, Debug)]
 pub struct SysInfo {
     pub shard_latency: String,
-    pub memory: f32
+    pub memory: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

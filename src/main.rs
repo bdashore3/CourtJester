@@ -7,9 +7,22 @@ use dashmap::DashMap;
 use futures::future::AbortHandle;
 use lavalink_rs::{gateway::*, LavalinkClient};
 use reqwest::Client as Reqwest;
-use serenity::{async_trait, client::bridge::gateway::GatewayIntents, framework::standard::{
+use serenity::{
+    async_trait,
+    client::bridge::gateway::GatewayIntents,
+    framework::standard::{
         macros::hook, CommandError, CommandResult, DispatchError, StandardFramework,
-    }, http::Http, model::{channel::Reaction, gateway::Ready, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::{Message, Permissions}}, prelude::*};
+    },
+    http::Http,
+    model::{
+        channel::Reaction,
+        gateway::Ready,
+        guild::{Guild, GuildUnavailable},
+        id::GuildId,
+        prelude::{Message, Permissions},
+    },
+    prelude::*,
+};
 use songbird::SerenityInit;
 use std::{
     collections::{HashMap, HashSet},
@@ -20,11 +33,10 @@ use std::{
     },
 };
 
+use aspotify::{Client as Spotify, ClientCredentials};
 use helpers::{command_utils, database_helper, start_loops};
 use reactions::reaction_handler;
 use structures::{cmd_data::*, commands::*, errors::*};
-use rspotify::client::Spotify;
-use rspotify::oauth2::SpotifyClientCredentials;
 
 // Event handler for when the bot starts
 struct Handler {
@@ -46,7 +58,13 @@ impl EventHandler for Handler {
                 panic!("Error when pruning guilds! {}", e);
             }
 
-            let pool = ctx.data.read().await.get::<ConnectionPool>().cloned().unwrap();
+            let pool = ctx
+                .data
+                .read()
+                .await
+                .get::<ConnectionPool>()
+                .cloned()
+                .unwrap();
 
             println!("Starting starboard deletion loop!");
             tokio::spawn(async move {
@@ -153,13 +171,12 @@ async fn main() -> CommandResult {
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
 
-    let client_credential = SpotifyClientCredentials::default()
-        .client_id(&creds.spotify_client_id)
-        .client_secret(&creds.spotify_client_secret)
-        .build();
-    let spotify = Spotify::default()
-        .client_credentials_manager(client_credential)
-        .build();
+    let client_credentials = ClientCredentials {
+        id: creds.spotify_client_id,
+        secret: creds.spotify_client_secret,
+    };
+
+    let spotify = Spotify::new(client_credentials);
 
     let emergency_commands = command_utils::get_allowed_commands();
 
@@ -206,7 +223,7 @@ async fn main() -> CommandResult {
             let content = cmd_data
                 .content
                 .unwrap()
-                .replace("{user}", &msg.author.mention());
+                .replace("{user}", &msg.author.mention().to_string());
             let _ = msg.channel_id.say(ctx, content).await;
         }
     }
@@ -394,7 +411,7 @@ async fn main() -> CommandResult {
         data.insert::<PubCreds>(Arc::new(pub_creds));
         data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);
-        data.insert::<SpotifyClient>(spotify);
+        data.insert::<SpotifyClient>(Arc::new(spotify));
     }
 
     let _owners = match client

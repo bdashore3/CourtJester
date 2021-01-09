@@ -5,7 +5,7 @@ authors = ["kingbri <bdashore3@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-tokio  = { version = "0.2", features = ["macros", "time"] }
+tokio  = { version = "1.0", features = ["rt-multi-thread", "process", "macros", "time"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing-subscriber = "0.2.15"
@@ -13,11 +13,13 @@ rand = "0.8"
 rust-clock = "0.1.0"
 base64 = "0.13.0"
 uuid = { version = "0.8", features = ["v4"] }
-dashmap = "4.0.0-rc6"
+dashmap = "4.0.1"
 futures = "0.3"
-reqwest = { version = "0.10", features = ["json"] }
-regex = "1.4.0"
-rspotify = "0.10.0"
+reqwest = { version = "0.11", features = ["json"] }
+regex = "1.4.3"
+songbird = { version = "0.1", default-features = false, features = ["serenity-native", "gateway"]}
+lavalink-rs = { git = "https://gitlab.com/nitsuga5124/lavalink-rs.git" }
+aspotify = "0.7.0"
 
 [dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"
@@ -25,18 +27,9 @@ branch = "current"
 default-features = true
 features = ["model", "collector", "native_tls_backend", "voice"]
 
-[dependencies.songbird]
-git = "https://github.com/serenity-rs/songbird/"
-branch = "current"
-default-features = false
-features = ["serenity-native", "gateway"]
-
-[dependencies.lavalink-rs]
-git = "https://gitlab.com/nitsuga5124/lavalink-rs.git"
-branch = "songbird"
-
 [dependencies.sqlx]
-version = "0.4.1"
+git = "https://github.com/ant32/sqlx"
+branch = "tokio-1.0"
 default-features = false
 features = ["runtime-tokio-native-tls", "macros", "postgres", "uuid", "offline"]
 
