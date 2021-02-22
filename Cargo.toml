@@ -18,7 +18,7 @@ futures = "0.3"
 reqwest = { version = "0.11", features = ["json"] }
 regex = "1.4.3"
 songbird = { version = "0.1", default-features = false, features = ["serenity-native", "gateway"] }
-lavalink-rs = { version = "0.5.4", features = ["native"] }
+lavalink-rs = { version = "0.4.0-alpha" }
 aspotify = "0.7.0"
 
 [dependencies.serenity]
