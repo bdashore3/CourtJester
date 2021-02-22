@@ -137,7 +137,12 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             .fetch_optional(&pool).await?;
 
         if let Some(data) = message_data {
-            let first_message = format!("\u{2b50} {} ID: {}", stars, reaction.message_id);
+            let first_message = format!(
+                "\u{2b50} {} {} ID: {}",
+                stars,
+                reaction_channel.mention(),
+                reaction.message_id
+            );
             let eb = get_starboard_embed(
                 reaction,
                 &reaction_message.author,
