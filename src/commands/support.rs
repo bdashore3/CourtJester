@@ -81,8 +81,9 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
             m.embed(|e| {
                 e.title("CourtJester Help");
                 e.description(concat!(
-                    "Help for the RoyalGuard Discord bot \n",
-                    "Command parameters: <> is required and () is optional"
+                    "Help for the CourtJester Discord bot \n",
+                    "Command parameters: <> is required and () is optional \n",
+                    "Please use `help <subcategory>` to see that category's help"
                 ));
                 e.field("Subcategories", format!("```\n{}```", categories), false);
                 e.footer(|f| {
