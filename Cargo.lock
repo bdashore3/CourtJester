@@ -114,6 +114,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-tungstenite"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5cb4e1f5450b0f41b0dad072f176f2faca87dab540492ee17d73615d5e6f4ee1"
+dependencies = [
+ "futures-io",
+ "futures-util",
+ "log",
+ "native-tls",
+ "pin-project-lite",
+ "tokio",
+ "tokio-native-tls",
+ "tungstenite 0.13.0",
+]
+
+[[package]]
 name = "atoi"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -220,7 +236,7 @@ dependencies = [
 [[package]]
 name = "command_attr"
 version = "0.3.3"
-source = "git+https://github.com/serenity-rs/serenity?branch=current#83360f87bd68d862b710a25916e477b02961ae48"
+source = "git+https://github.com/serenity-rs/serenity?branch=current#136adefc8188feeb8a57a57a878c7919990387ca"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -827,11 +843,13 @@ dependencies = [
 
 [[package]]
 name = "lavalink-rs"
-version = "0.4.0-alpha"
+version = "0.6.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf9693b51c5170c45e0dac1f6153cb448c350ce5856af05f8da607e19a4a1cce"
+checksum = "5ddc3dfad22b681b913d12e0ca768e3980c7ce967a07cd4bf8d35504b52ba03a"
 dependencies = [
- "async-tungstenite 0.11.0",
+ "async-trait",
+ "async-tungstenite 0.13.0",
+ "dashmap",
  "futures",
  "http",
  "regex",
@@ -1567,7 +1585,7 @@ dependencies = [
 [[package]]
 name = "serenity"
 version = "0.10.2"
-source = "git+https://github.com/serenity-rs/serenity?branch=current#83360f87bd68d862b710a25916e477b02961ae48"
+source = "git+https://github.com/serenity-rs/serenity?branch=current#136adefc8188feeb8a57a57a878c7919990387ca"
 dependencies = [
  "async-trait",
  "async-tungstenite 0.11.0",
@@ -1917,7 +1935,6 @@ dependencies = [
  "mio",
  "num_cpus",
  "once_cell",
- "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "tokio-macros",
@@ -2115,6 +2132,27 @@ dependencies = [
  "native-tls",
  "rand 0.8.3",
  "sha-1",
+ "url",
+ "utf-8",
+]
+
+[[package]]
+name = "tungstenite"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fe8dada8c1a3aeca77d6b51a4f1314e0f4b8e438b7b1b71e3ddaca8080e4093"
+dependencies = [
+ "base64 0.13.0",
+ "byteorder",
+ "bytes 1.0.1",
+ "http",
+ "httparse",
+ "input_buffer 0.4.0",
+ "log",
+ "native-tls",
+ "rand 0.8.3",
+ "sha-1",
+ "thiserror",
  "url",
  "utf-8",
 ]

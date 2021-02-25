@@ -162,10 +162,11 @@ async fn main() -> CommandResult {
     let prefixes = database_helper::fetch_prefixes(&pool).await?;
     let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new();
 
-    let mut lava_client = LavalinkClient::new(bot_id);
-    lava_client.set_host(creds.lavalink_host);
-    lava_client.set_password(creds.lavalink_auth);
-    let lava = lava_client.initialize(LavalinkHandler).await?;
+    let lava_client = LavalinkClient::builder(bot_id)
+        .set_host(creds.lavalink_host)
+        .set_password(creds.lavalink_auth)
+        .build(LavalinkHandler)
+        .await?;
 
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
@@ -403,7 +404,7 @@ async fn main() -> CommandResult {
 
         data.insert::<ConnectionPool>(pool.clone());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-        data.insert::<Lavalink>(lava);
+        data.insert::<Lavalink>(lava_client);
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<CommandNameMap>(Arc::new(command_names));

@@ -70,13 +70,8 @@ pub async fn join_voice_internal(
 
     match handler {
         Ok(conn_info) => {
-            let mut data = ctx.data.write().await;
-            let lava_lock = data.get_mut::<Lavalink>().unwrap();
-            lava_lock
-                .lock()
-                .await
-                .create_session(guild_id, &conn_info)
-                .await?;
+            let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+            lava_client.create_session(&conn_info).await?;
         }
         Err(e) => return Err(e.into()),
     }
@@ -139,17 +134,8 @@ pub async fn leavevc_internal(ctx: &Context, guild_id: GuildId) -> CommandResult
     if manager.get(guild_id).is_some() {
         manager.remove(guild_id).await?;
 
-        {
-            let mut data = ctx.data.write().await;
-            let lava_lock = data.get_mut::<Lavalink>().unwrap();
-            let mut lava_client = lava_lock.lock().await;
-
-            lava_client.destroy(guild_id.0).await?;
-            if let Some(node) = lava_client.nodes.get_mut(&guild_id.0) {
-                node.now_playing = None;
-                node.queue = Vec::new();
-            }
-        }
+        let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+        lava_client.destroy(guild_id).await?;
     } else {
         return Err("The bot isn't in a voice channel!".into());
     }

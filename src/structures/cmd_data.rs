@@ -27,7 +27,7 @@ impl TypeMapKey for ConnectionPool {
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
-    type Value = Arc<Mutex<LavalinkClient>>;
+    type Value = LavalinkClient;
 }
 
 pub struct VoiceTimerMap;

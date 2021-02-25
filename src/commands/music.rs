@@ -9,7 +9,7 @@ use serenity::{
         id::{ChannelId, GuildId},
     },
 };
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 use tokio::time::sleep;
 
 use crate::{
@@ -92,8 +92,7 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         args_message.to_string()
     };
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
     let query_info = lava_client.auto_search_tracks(&query).await?;
 
@@ -104,13 +103,11 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         return Ok(());
     }
 
-    drop(lava_client);
-
-    if let Err(why) = LavalinkClient::play(guild_id, query_info.tracks[0].clone())
-        .queue(Arc::clone(&lava_lock))
+    if let Err(e) = LavalinkClient::play(&lava_client, guild_id, query_info.tracks[0].clone())
+        .queue()
         .await
     {
-        return Err(why.into());
+        return Err(e.into());
     };
 
     let track_info = query_info.tracks[0].info.as_ref();
@@ -171,10 +168,9 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    if lava_client.nodes.contains_key(&guild_id.0) {
+    if lava_client.nodes().await.contains_key(&guild_id.0) {
         lava_client.pause(guild_id).await?;
         msg.react(ctx, ReactionType::Unicode(String::from("⏸")))
             .await?;
@@ -200,10 +196,9 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    if !lava_client.nodes.contains_key(&guild_id.0) {
+    if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
             .say(
                 ctx,
@@ -239,10 +234,9 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    if !lava_client.nodes.contains_key(&guild_id.0) {
+    if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
             .say(
                 ctx,
@@ -285,10 +279,10 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    let node = match lava_client.nodes.get(&msg.guild_id.unwrap().0) {
+    let nodes = lava_client.nodes().await;
+    let node = match nodes.get(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
             msg.channel_id.say(ctx, "The bot isn't connected to a voice channel or node! Please re-run join or play!").await?;
@@ -364,20 +358,20 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
     loop {
         sleep(Duration::from_secs(60)).await;
         {
-            let (voice_timer_map, lava_lock) = {
+            let (voice_timer_map, lava_client) = {
                 let data = ctx.data.read().await;
                 let voice_timer_map = data.get::<VoiceTimerMap>().cloned().unwrap();
-                let lava_lock = data.get::<Lavalink>().cloned().unwrap();
+                let lava_client = data.get::<Lavalink>().cloned().unwrap();
 
-                (voice_timer_map, lava_lock)
+                (voice_timer_map, lava_client)
             };
 
             if voice_timer_map.get(&guild_id).is_some() {
                 return;
             }
 
-            let lava_client = lava_lock.lock().await;
-            let node = match lava_client.nodes.get(&guild_id.0) {
+            let nodes = lava_client.nodes().await;
+            let node = match nodes.get(&guild_id.0) {
                 Some(node) => node,
                 None => return,
             };
@@ -405,10 +399,10 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap().0) {
+    let nodes = lava_client.nodes().await;
+    let mut node = match nodes.get_mut(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
             msg.channel_id.say(
@@ -425,7 +419,7 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
             )
             .await?;
     } else {
-        node.queue.clear();
+        node.queue.drain(1..);
 
         msg.react(ctx, ReactionType::Unicode(String::from("💣")))
             .await?;
@@ -446,10 +440,10 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    let node = match lava_client.nodes.get_mut(&msg.guild_id.unwrap().0) {
+    let nodes = lava_client.nodes().await;
+    let mut node = match nodes.get_mut(&msg.guild_id.unwrap().0) {
         Some(node) => node,
         None => {
             msg.channel_id.say(
@@ -504,10 +498,9 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    if !lava_client.nodes.contains_key(&guild_id.0) {
+    if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
             .say(
                 ctx,
@@ -517,8 +510,9 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    if let Some(_track) = lava_client.skip(guild_id).await {
-        let node = lava_client.nodes.get(&msg.guild_id.unwrap().0).unwrap();
+    if lava_client.skip(guild_id).await.is_some() {
+        let nodes = lava_client.nodes().await;
+        let node = nodes.get(&msg.guild_id.unwrap().0).unwrap();
 
         if node.queue.is_empty() && node.now_playing.is_none() {
             lava_client.stop(guild_id).await?;
@@ -564,10 +558,9 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    let lava_lock = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-    let mut lava_client = lava_lock.lock().await;
+    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
 
-    if !lava_client.nodes.contains_key(&guild_id.0) {
+    if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
             .say(
                 ctx,
