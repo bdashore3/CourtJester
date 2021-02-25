@@ -180,10 +180,7 @@ fn get_starboard_embed(
     eb.color(0xfabe21);
     eb.author(|a| {
         a.name(&user.name);
-        a.icon_url(match user.avatar_url() {
-            Some(avatar_url) => avatar_url,
-            None => user.default_avatar_url(),
-        });
+        a.icon_url(user.face());
         a
     });
     eb.description(content);
