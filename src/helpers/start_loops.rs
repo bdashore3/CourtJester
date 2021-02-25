@@ -19,7 +19,10 @@ pub async fn starboard_removal_loop(pool: &PgPool) -> CommandResult {
         .await?;
 
         for i in delete_data {
-            println!("Checking delete status on starboard message {} in guild {}", i.sent_message_id, i.guild_id);
+            println!(
+                "Checking delete status on starboard message {} in guild {}",
+                i.sent_message_id, i.guild_id
+            );
 
             let current_time = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -27,7 +30,10 @@ pub async fn starboard_removal_loop(pool: &PgPool) -> CommandResult {
                 .as_secs() as i64;
 
             if i.delete_time <= current_time {
-                println!("Deleting starboard message {} from the database", i.guild_id);
+                println!(
+                    "Deleting starboard message {} from the database",
+                    i.guild_id
+                );
                 sqlx::query!("DELETE FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2 AND sent_message_id = $3",
                         i.guild_id, i.reaction_message_id, i.sent_message_id)
                     .execute(pool).await?;
