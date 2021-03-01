@@ -1,5 +1,12 @@
-use serenity::client::{bridge::gateway::ShardId, Context};
+use serenity::{
+    client::{
+        bridge::gateway::ShardId,
+        Context
+    },
+    framework::standard::CommandResult
+};
 use tokio::process::Command;
+use std::{env, process};
 
 use crate::structures::{
     cmd_data::{ReqwestClient, ShardManagerContainer},
@@ -27,7 +34,7 @@ pub async fn get_last_commit(
     Ok(resp)
 }
 
-pub async fn get_system_info(ctx: &Context) -> SysInfo {
+pub async fn get_system_info(ctx: &Context) -> CommandResult<SysInfo> {
     let shard_manager = ctx
         .data
         .read()
@@ -51,16 +58,20 @@ pub async fn get_system_info(ctx: &Context) -> SysInfo {
         }
     };
 
-    let pid = std::process::id().to_string();
+    let pid = process::id();
+
+    let raw_bin_path = env::current_exe()?;
+    let bin_path = raw_bin_path.to_string_lossy();
+    let bin_str = bin_path.rsplit('/').next().unwrap();
 
     let mem_stdout = Command::new("sh")
         .arg("-c")
         .arg(
             format!(
-                "pmap {} | head -n 3 | tail -n 1 | awk '/[0-9]K/{{print $2}}'",
-                &pid
+                "pmap {} | grep {} | awk 'NR>1 {{sum+=substr($2, 1, length($2)-1)}} END {{print sum}}'",
+                pid,
+                bin_str
             )
-            .as_str(),
         )
         .output()
         .await
@@ -68,7 +79,7 @@ pub async fn get_system_info(ctx: &Context) -> SysInfo {
 
     let mem_used = String::from_utf8(mem_stdout.stdout).unwrap();
 
-    sys_info.memory = &mem_used[..mem_used.len() - 2].parse::<f32>().unwrap() / 1000f32;
+    sys_info.memory = &mem_used[..mem_used.len() - 1].parse::<f32>().unwrap() / 1000f32;
 
-    sys_info
+    Ok(sys_info)
 }

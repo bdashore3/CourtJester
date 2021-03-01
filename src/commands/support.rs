@@ -131,10 +131,8 @@ async fn info(ctx: &Context, msg: &Message) -> CommandResult {
 
     let guild_name = if guild_count < 2 { "guild" } else { "guilds" };
 
-    get_system_info(ctx).await;
-
     let last_commit = get_last_commit(ctx).await?;
-    let sys_info = get_system_info(ctx).await;
+    let sys_info = get_system_info(ctx).await?;
 
     let mut story_string = String::new();
     story_string.push_str(&format!(
