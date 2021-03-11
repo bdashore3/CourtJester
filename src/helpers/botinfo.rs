@@ -1,12 +1,9 @@
 use serenity::{
-    client::{
-        bridge::gateway::ShardId,
-        Context
-    },
-    framework::standard::CommandResult
+    client::{bridge::gateway::ShardId, Context},
+    framework::standard::CommandResult,
 };
-use tokio::process::Command;
 use std::{env, process};
+use tokio::process::Command;
 
 use crate::structures::{
     cmd_data::{ReqwestClient, ShardManagerContainer},
@@ -66,13 +63,10 @@ pub async fn get_system_info(ctx: &Context) -> CommandResult<SysInfo> {
 
     let mem_stdout = Command::new("sh")
         .arg("-c")
-        .arg(
-            format!(
-                "pmap {} | grep {} | awk 'NR>1 {{sum+=substr($2, 1, length($2)-1)}} END {{print sum}}'",
-                pid,
-                bin_str
-            )
-        )
+        .arg(format!(
+            "pmap {} | grep {} | awk 'NR>1 {{sum+=substr($2, 1, length($2)-1)}} END {{print sum}}'",
+            pid, bin_str
+        ))
         .output()
         .await
         .expect("failed to execute process");

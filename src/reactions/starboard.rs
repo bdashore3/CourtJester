@@ -6,11 +6,12 @@ use serenity::{
     framework::standard::CommandResult,
     model::{
         channel::{Attachment, Reaction},
-        id::ChannelId,
+        id::{ChannelId, GuildId, MessageId},
         prelude::User,
     },
     prelude::Mentionable,
 };
+use sqlx::PgPool;
 
 use crate::{helpers::command_utils, structures::cmd_data::ConnectionPool};
 
@@ -50,6 +51,8 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         return Ok(());
     }
 
+    // Add timer calls
+
     let star_channel_id = ChannelId(config_data.quote_id.unwrap() as u64);
     let star_channel = match ctx.cache.channel(star_channel_id).await {
         Some(star_channel) => star_channel,
@@ -64,7 +67,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
         }
     };
 
-    if star_channel.is_nsfw() {
+    if !star_channel.is_nsfw() && reaction.channel(ctx).await?.is_nsfw() {
         reaction_channel
             .id()
             .say(
@@ -82,37 +85,42 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
             reaction_channel.mention(),
             reaction.message_id
         );
+
         let starboard_embed = get_starboard_embed(
             reaction,
             &reaction_message.author,
             reaction_message.content,
             reaction_message.attachments,
         );
-        let sent_message = star_channel_id
-            .send_message(ctx, |m| {
-                m.content(first_message);
-                m.embed(|e| {
-                    e.0 = starboard_embed.0;
-                    e
+
+        let guild_id = reaction.guild_id.unwrap();
+        if !check_starboard_message(&pool, guild_id, reaction_message.id).await? {
+            let sent_message = star_channel_id
+                .send_message(ctx, |m| {
+                    m.content(first_message);
+                    m.embed(|e| {
+                        e.0 = starboard_embed.0;
+                        e
+                    })
                 })
-            })
+                .await?;
+
+            let advance_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards?")
+                .as_secs()
+                + 1210000;
+
+            sqlx::query!(
+                "INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+                reaction.guild_id.unwrap().0 as i64,
+                reaction_message.id.0 as i64,
+                sent_message.id.0 as i64,
+                advance_time as i64
+            )
+            .execute(&pool)
             .await?;
-
-        let advance_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards?")
-            .as_secs()
-            + 1210000;
-
-        sqlx::query!(
-            "INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-            reaction.guild_id.unwrap().0 as i64,
-            reaction_message.id.0 as i64,
-            sent_message.id.0 as i64,
-            advance_time as i64
-        )
-        .execute(&pool)
-        .await?;
+        }
     } else if (stars as i32) < config_data.starboard_threshold.unwrap() && remove {
         let message_data = sqlx::query!("SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2", 
                 reaction.guild_id.unwrap().0 as i64, reaction.message_id.0 as i64)
@@ -167,6 +175,22 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     }
 
     Ok(())
+}
+
+async fn check_starboard_message(
+    pool: &PgPool,
+    guild_id: GuildId,
+    reaction_msg_id: MessageId,
+) -> CommandResult<bool> {
+    let message_query = sqlx::query!(
+        "SELECT * FROM starboard WHERE guild_id=$1 AND reaction_message_id=$2",
+        guild_id.0 as i64,
+        reaction_msg_id.0 as i64
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(message_query.is_some())
 }
 
 fn get_starboard_embed(
