@@ -183,7 +183,7 @@ async fn command(ctx: &Context, msg: &Message) -> CommandResult {
 
 // Subcommand to set/update a custom command
 #[command]
-#[required_permissions(Administrator)]
+#[required_permissions("MANAGE_MESSAGES")]
 #[aliases("add")]
 #[min_args(2)]
 async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -230,6 +230,7 @@ async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 // Subcommand used to remove a custom command
 #[command]
+#[required_permissions("MANAGE_MESSAGES")]
 #[min_args(1)]
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let command_name = args.single::<String>().unwrap();

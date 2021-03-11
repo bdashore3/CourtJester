@@ -13,7 +13,7 @@ use std::time::Duration;
 use crate::ConnectionPool;
 
 #[command]
-#[required_permissions(Administrator)]
+#[required_permissions("MANAGE_MESSAGES")]
 #[sub_commands("deactivate", "wizard", "threshold", "channel")]
 async fn starboard(ctx: &Context, msg: &Message) -> CommandResult {
     starboard_help(ctx, msg.channel_id).await;
