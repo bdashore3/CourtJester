@@ -57,6 +57,45 @@
       "nullable": []
     }
   },
+  "1813411535826bedb555b20f88ed5b87de8beb761169f229e6075b2a1963e5d5": {
+    "query": "SELECT * FROM starboard WHERE guild_id=$1 AND reaction_message_id=$2",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "guild_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "reaction_message_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 2,
+          "name": "sent_message_id",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 3,
+          "name": "delete_time",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
   "1920797fc4174a7b0ad80f56b614c04da5c2061380bb8633c41e9c6387fe1582": {
     "query": "UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2",
     "describe": {
