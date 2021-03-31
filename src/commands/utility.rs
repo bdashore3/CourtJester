@@ -22,7 +22,7 @@ async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             }
         }
     } else if args.is_empty() {
-        Cow::Borrowed(&msg.author) 
+        Cow::Borrowed(&msg.author)
     } else {
         msg.channel_id
             .say(ctx, JesterError::MissingError("User ID/mention"))

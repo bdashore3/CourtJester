@@ -261,7 +261,7 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         self_quote = false;
     }
 
-    if args.is_empty() || test_id == "" {
+    if args.is_empty() || test_id.is_empty() {
         msg.channel_id
             .say(
                 ctx,
