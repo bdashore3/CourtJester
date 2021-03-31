@@ -380,7 +380,8 @@ async fn main() -> CommandResult {
         .group(&VOICE_GROUP)
         .group(&MUSIC_GROUP)
         .group(&IMAGES_GROUP)
-        .group(&JAPAN_GROUP);
+        .group(&JAPAN_GROUP)
+        .group(&UTILITY_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)

@@ -8,3 +8,4 @@ pub mod starboard;
 pub mod support;
 pub mod textchannel_send;
 pub mod textmod;
+pub mod utility;

@@ -3,7 +3,7 @@ use serenity::framework::standard::macros::group;
 use crate::{
     commands::{
         ciphers::*, config::*, images::*, japan::*, music::REMOVE_COMMAND, music::*, other::*,
-        starboard::*, support::*, textchannel_send::*, textmod::*,
+        starboard::*, support::*, textchannel_send::*, textmod::*, utility::*,
     },
     helpers::voice_utils::*,
 };
@@ -86,3 +86,8 @@ pub struct Images;
 #[description("Commands for anime/manga")]
 #[commands(anime, manga)]
 pub struct Japan;
+
+#[group("Utility")]
+#[description("Server utility commands")]
+#[commands(avatar)]
+pub struct Utility;
