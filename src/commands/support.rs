@@ -8,7 +8,7 @@ use serenity::{
 use crate::{
     commands::{
         ciphers::*, config::*, images::*, japan::*, music::*, starboard::*, textchannel_send::*,
-        textmod::*,
+        textmod::*, utility::*,
     },
     helpers::{botinfo::*, command_utils, voice_utils::*},
 };
@@ -31,6 +31,7 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         "prefix" => prefix_help(ctx, msg.channel_id).await,
         "command" => command_help(ctx, msg.channel_id).await,
         "starboard" => starboard_help(ctx, msg.channel_id).await,
+        "utilities" => utility_help(ctx, msg.channel_id).await,
         "senders" => sender_help(ctx, msg.channel_id).await,
         "ciphers" => cipher_help(ctx, msg.channel_id).await,
         "text" => textmod_help(ctx, msg.channel_id).await,
@@ -67,6 +68,7 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
         "prefix \n",
         "command \n",
         "starboard \n",
+        "utilities \n",
         "senders \n",
         "ciphers \n",
         "text \n",

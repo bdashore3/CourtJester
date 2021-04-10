@@ -38,7 +38,7 @@ async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 #[command]
 #[aliases("steal")]
-#[required_permissions("MANAGE_MESSAGES")]
+#[required_permissions("MANAGE_EMOJIS")]
 async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let emoji = match args.single::<EmojiIdentifier>() {
         Ok(id) => id,
@@ -51,6 +51,15 @@ async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
+    let guild = msg.guild(ctx).await.unwrap();
+    if guild.emojis.contains_key(&emoji.id) {
+        msg.channel_id
+            .say(ctx, "This emoji already exists in this server! Aborting...")
+            .await?;
+
+        return Ok(());
+    }
+
     let emoji_url = emoji.url();
 
     let url_length = emoji_url.len();
@@ -59,8 +68,6 @@ async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let image_bytes = reqwest::get(&emoji.url()).await?.bytes().await?;
     let encoded_bytes = base64::encode(image_bytes);
     let formatted_bytes = format!("data:image/{};base64,{}", ext, encoded_bytes);
-
-    let guild = msg.guild(ctx).await.unwrap();
 
     let name = args.single::<String>().unwrap_or(emoji.name);
 
@@ -84,4 +91,22 @@ async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             Err(e.into())
         }
     }
+}
+
+pub async fn utility_help(ctx: &Context, channel_id: ChannelId) {
+    let content = concat!(
+        "avatar (user mention/ID): Gets your own, or the mentioned person's avatar \n\n",
+        "kang <emoji> (new name): Steal an emoji from anywhere and load it to your server. Requires the `manage emojis` permission"
+    );
+
+    let _ = channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("Miscellaneous Utility Help");
+                e.description("Description: Various utility commands");
+                e.field("Commands", content, false);
+                e
+            })
+        })
+        .await;
 }

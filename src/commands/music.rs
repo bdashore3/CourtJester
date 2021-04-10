@@ -415,7 +415,7 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
         msg.channel_id
             .say(
                 ctx,
-                JesterError::PermissionError(PermissionType::SelfPerm("moderator")),
+                JesterError::PermissionError(PermissionType::UserPerm("manage messages")),
             )
             .await?;
     } else {

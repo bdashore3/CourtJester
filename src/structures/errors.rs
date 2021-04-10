@@ -23,16 +23,17 @@ impl fmt::Display for JesterError<'_> {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum PermissionType<'b> {
-    SelfPerm(&'b str),
+    UserPerm(&'b str),
     Mention(&'b str, &'b str),
+    External(&'b str),
 }
 
 impl fmt::Display for PermissionType<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            PermissionType::SelfPerm(perm) => writeln!(
+            PermissionType::UserPerm(perm) => writeln!(
                 f,
-                "You can't execute this command because you're not a {} on this server!",
+                "You can't execute this command because you do not have the `{}` permission!",
                 perm
             ),
             PermissionType::Mention(cmd, perm) => write!(
@@ -40,6 +41,11 @@ impl fmt::Display for PermissionType<'_> {
                 "I can't {} an {}! Please demote the user and try again",
                 cmd, perm
             ),
+            PermissionType::External(perm) => write!(
+                f,
+                "The bot can't execute this because it doesn't have the `{}` permission! Please grant it on the bot's role.",
+                perm
+            )
         }
     }
 }

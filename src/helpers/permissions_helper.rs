@@ -19,7 +19,7 @@ pub async fn check_permission(
         msg.channel_id
             .say(
                 ctx,
-                JesterError::PermissionError(PermissionType::SelfPerm("administrator")),
+                JesterError::PermissionError(PermissionType::UserPerm("administrator")),
             )
             .await?;
 
@@ -29,7 +29,7 @@ pub async fn check_permission(
             msg.channel_id
                 .say(
                     ctx,
-                    JesterError::PermissionError(PermissionType::SelfPerm("moderator")),
+                    JesterError::PermissionError(PermissionType::UserPerm("manage messages")),
                 )
                 .await?;
         }

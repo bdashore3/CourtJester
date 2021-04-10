@@ -294,7 +294,7 @@ async fn main() -> CommandResult {
                     .channel_id
                     .say(
                         ctx,
-                        JesterError::PermissionError(PermissionType::SelfPerm("administrator")),
+                        JesterError::PermissionError(PermissionType::UserPerm("administrator")),
                     )
                     .await;
             }
@@ -303,7 +303,16 @@ async fn main() -> CommandResult {
                     .channel_id
                     .say(
                         ctx,
-                        JesterError::PermissionError(PermissionType::SelfPerm("moderator")),
+                        JesterError::PermissionError(PermissionType::UserPerm("manage messages")),
+                    )
+                    .await;
+            }
+            DispatchError::LackingPermissions(Permissions::MANAGE_EMOJIS) => {
+                let _ = msg
+                    .channel_id
+                    .say(
+                        ctx,
+                        JesterError::PermissionError(PermissionType::UserPerm("manage emojis")),
                     )
                     .await;
             }
