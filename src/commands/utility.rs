@@ -93,10 +93,46 @@ async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 }
 
+#[command]
+#[aliases("einfo")]
+pub async fn emoji_info(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let emoji = match args.single::<EmojiIdentifier>() {
+        Ok(id) => id,
+        Err(_) => {
+            msg.channel_id
+                .say(ctx, JesterError::MissingError("custom emoji"))
+                .await?;
+
+            return Ok(());
+        }
+    };
+
+    let emoji_url = emoji.url();
+
+    msg.channel_id.send_message(ctx, |m| {
+        m.embed(|e| {
+            e.title("Emoji info for...");
+            e.thumbnail(&emoji_url);
+            e.field("Name", emoji.name, false);
+            e.field("Emoji ID", emoji.id.0, false);
+            e.field("Image URL", format!("[Click here]({})", &emoji_url), false);
+            e.footer(|f| {
+                f.text(format!("Requested by {}#{}", msg.author.name, msg.author.discriminator));
+                f
+            });
+            e
+        })
+    }).await?;
+
+    Ok(())
+    // Embed with emoji name, image as thumbnail, and original link to image
+}
+
 pub async fn utility_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "avatar (user mention/ID): Gets your own, or the mentioned person's avatar \n\n",
-        "kang <emoji> (new name): Steal an emoji from anywhere and load it to your server. Requires the `manage emojis` permission"
+        "kang <emoji> (new name): Steal an emoji from anywhere and load it to your server. Requires the `manage emojis` permission \n\n",
+        "einfo <emoji>: Get the information of an emoji"
     );
 
     let _ = channel_id
