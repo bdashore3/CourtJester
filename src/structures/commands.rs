@@ -89,5 +89,5 @@ pub struct Japan;
 
 #[group("Utility")]
 #[description("Server utility commands")]
-#[commands(avatar, kang, emoji_info)]
+#[commands(avatar, kang, emoji_info, spoiler)]
 pub struct Utility;

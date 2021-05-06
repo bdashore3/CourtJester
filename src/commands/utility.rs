@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
+    http::AttachmentType,
     model::prelude::*,
     prelude::*,
 };
@@ -109,28 +110,89 @@ pub async fn emoji_info(ctx: &Context, msg: &Message, mut args: Args) -> Command
 
     let emoji_url = emoji.url();
 
-    msg.channel_id.send_message(ctx, |m| {
-        m.embed(|e| {
-            e.title("Emoji info for...");
-            e.thumbnail(&emoji_url);
-            e.field("Name", emoji.name, false);
-            e.field("Emoji ID", emoji.id.0, false);
-            e.field("Image URL", format!("[Click here]({})", &emoji_url), false);
-            e.footer(|f| {
-                f.text(format!("Requested by {}#{}", msg.author.name, msg.author.discriminator));
-                f
-            });
-            e
+    msg.channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.title("Emoji info for...");
+                e.thumbnail(&emoji_url);
+                e.field("Name", emoji.name, false);
+                e.field("Emoji ID", emoji.id.0, false);
+                e.field("Image URL", format!("[Click here]({})", &emoji_url), false);
+                e.footer(|f| {
+                    f.text(format!(
+                        "Requested by {}#{}",
+                        msg.author.name, msg.author.discriminator
+                    ));
+                    f
+                });
+                e
+            })
         })
-    }).await?;
+        .await?;
 
     Ok(())
     // Embed with emoji name, image as thumbnail, and original link to image
 }
 
+#[command]
+async fn spoiler(ctx: &Context, msg: &Message) -> CommandResult {
+    let attachment = match msg.attachments.get(0) {
+        Some(attachment) => attachment,
+        None => {
+            msg.channel_id
+                .say(ctx, JesterError::MissingError("attachment"))
+                .await?;
+
+            return Ok(());
+        }
+    };
+
+    let new_filename = format!("SPOILER_{}", attachment.filename);
+
+    let bytes = attachment.download().await?;
+
+    let new_attachment = AttachmentType::Bytes {
+        data: Cow::from(bytes),
+        filename: new_filename.to_owned(),
+    };
+
+    let msg_result = msg
+        .channel_id
+        .send_message(ctx, |m| {
+            m.content(format!("Invoked by {}", msg.author.mention()));
+            m.add_file(new_attachment);
+            m
+        })
+        .await;
+
+    if msg_result.is_err() {
+        msg.channel_id
+            .say(
+                ctx,
+                "This file is too big! Please attach a file less than 8 MB...",
+            )
+            .await?;
+
+        return Ok(());
+    }
+
+    if msg.delete(ctx).await.is_err() {
+        msg.channel_id.say(
+            ctx,
+            concat!("The spoiled attachment was posted, but I cannot delete the old message! \n",
+            "Please give me the `MANAGE_MESSAGES` permission if you want the unspoiled image deleted!")
+        ).await?;
+
+        return Ok(());
+    };
+
+    Ok(())
+}
+
 pub async fn utility_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "avatar (user mention/ID): Gets your own, or the mentioned person's avatar \n\n",
+        "spoiler <attachment>: Creates a spoiler from an attached file \n\n",
         "kang <emoji> (new name): Steal an emoji from anywhere and load it to your server. Requires the `manage emojis` permission \n\n",
         "einfo <emoji>: Get the information of an emoji"
     );
