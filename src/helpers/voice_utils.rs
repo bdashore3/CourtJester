@@ -4,18 +4,55 @@ use serenity::{
     framework::standard::{macros::command, CommandResult},
     model::{
         channel::Message,
-        id::{ChannelId, GuildId},
+        guild::Guild,
+        id::{ChannelId, GuildId, UserId},
     },
 };
 use std::time::Duration;
 use tokio::time::sleep;
 
-use crate::structures::cmd_data::{Lavalink, VoiceTimerMap};
+use crate::{BotId, Lavalink, VoiceTimerMap};
+
+pub async fn get_voice_state(
+    ctx: &Context,
+    guild: &Guild,
+    author_id: UserId,
+) -> CommandResult<bool> {
+    let bot_id = ctx.data.read().await.get::<BotId>().cloned().unwrap();
+
+    if !(guild.voice_states.contains_key(&author_id) || guild.voice_states.contains_key(&bot_id)) {
+        return Ok(false);
+    }
+
+    let user_voice_id = guild
+        .voice_states
+        .get(&author_id)
+        .and_then(|state| state.channel_id);
+    let bot_voice_id = guild
+        .voice_states
+        .get(&bot_id)
+        .and_then(|state| state.channel_id);
+
+    if user_voice_id == bot_voice_id {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
 
 #[command]
 #[aliases("connect")]
 pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
+    let bot_id = ctx.data.read().await.get::<BotId>().cloned().unwrap();
+
+    if guild.voice_states.contains_key(&bot_id) {
+        msg.channel_id
+            .say(ctx, "Looks like I'm already in a voice channel! Please disconnect me before summoning me again!")
+            .await?;
+
+        return Ok(())
+    }
 
     let channel_id = guild
         .voice_states
@@ -25,9 +62,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let voice_channel = match channel_id {
         Some(channel) => channel,
         None => {
-            msg.channel_id
-                .say(ctx, "You're not in a voice channel!")
-                .await?;
+            msg.channel_id.say(ctx, "Please join a voice channel!").await?;
 
             return Ok(());
         }
@@ -49,7 +84,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         }
         Err(_e) => {
             msg.channel_id
-                .say(ctx, "There was an error when joining the channel")
+                .say(ctx, "I couldn't join the voice channel. Please check if I have permission to access it!")
                 .await?;
         }
     }
@@ -89,11 +124,11 @@ async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
         .unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
             .say(
                 ctx,
-                "Please connect to a voice channel before executing this command!",
+                "Please be in a voice channel or in the same voice channel as me!",
             )
             .await?;
         return Ok(());
@@ -136,6 +171,14 @@ pub async fn leavevc_internal(ctx: &Context, guild_id: GuildId) -> CommandResult
 
         let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
         lava_client.destroy(guild_id).await?;
+
+        { 
+            let nodes = lava_client.nodes().await;
+            nodes.remove(&guild_id.0);
+             
+            let loops = lava_client.loops().await;
+            loops.remove(&guild_id.0);
+        }
     } else {
         return Err("The bot isn't in a voice channel!".into());
     }

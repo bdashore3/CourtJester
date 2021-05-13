@@ -13,9 +13,11 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 use crate::{
-    helpers::{command_utils, permissions_helper, voice_utils},
-    structures::cmd_data::{Lavalink, SpotifyClient, VoiceTimerMap},
-    JesterError, PermissionType,
+    helpers::{
+        command_utils, permissions_helper,
+        voice_utils::{self, get_voice_state},
+    },
+    BotId, JesterError, Lavalink, PermissionType, SpotifyClient, VoiceTimerMap,
 };
 
 #[command]
@@ -24,20 +26,27 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     let guild_id = msg.guild_id.unwrap();
 
+    let bot_id = ctx.data.read().await.get::<BotId>().cloned().unwrap();
+
+    // TODO: Doesn't auto-summon the bot if the bot isn't in the voice channel. Check if queue is empty before running
+    if guild.voice_states.contains_key(&bot_id)
+        && !get_voice_state(ctx, &guild, msg.author.id).await?
+    {
+        msg.channel_id
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
+            .await?;
+        return Ok(());
+    }
+
     let voice_channel_id = guild
         .voice_states
         .get(&msg.author.id)
         .and_then(|voice_state| voice_state.channel_id);
 
-    let voice_channel = match voice_channel_id {
-        Some(channel) => channel,
-        None => {
-            msg.channel_id
-                .say(ctx, "You're not in a voice channel!")
-                .await?;
-            return Ok(());
-        }
-    };
+    let voice_channel = voice_channel_id.unwrap();
 
     if args.is_empty() {
         msg.channel_id
@@ -161,9 +170,12 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -189,9 +201,12 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -227,9 +242,12 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -272,9 +290,12 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -392,9 +413,12 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -433,9 +457,12 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -473,10 +500,22 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    node.queue.remove(clear_num - 1);
+    let queue = &mut node.queue;
 
-    let track = node.queue[clear_num - 1].track.info.as_ref();
-    let name = &track.unwrap().title;
+    let track_queue = match queue.get(clear_num) {
+        Some(track_queue) => track_queue,
+        None => {
+            msg.channel_id
+                .say(ctx, "This number doesn't exist in the queue!")
+                .await?;
+
+            return Ok(());
+        }
+    };
+
+    let name = track_queue.track.info.as_ref().unwrap().title.clone();
+
+    queue.remove(clear_num);
 
     msg.channel_id
         .say(ctx, format!("Successfully removed track {}", name))
@@ -491,9 +530,12 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
     let guild = msg.guild(ctx).await.unwrap();
 
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
@@ -504,7 +546,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         msg.channel_id
             .say(
                 ctx,
-                "The bot isn't connected to a voice channel or node! Please re-run join or play!",
+                "The bot isn't connected to a voice channel or playing anything! Please re-run join or play!",
             )
             .await?;
         return Ok(());
@@ -527,19 +569,22 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if args.is_empty() {
+    let guild_id = msg.guild_id.unwrap();
+    let guild = msg.guild(ctx).await.unwrap();
+
+    if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
-            .say(ctx, "Please provide a valid number of seconds!")
+            .say(
+                ctx,
+                "Please be in a voice channel or in the same voice channel as me!",
+            )
             .await?;
         return Ok(());
     }
 
-    let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
-
-    if !guild.voice_states.contains_key(&msg.author.id) {
+    if args.is_empty() {
         msg.channel_id
-            .say(ctx, "You're not in a voice channel!")
+            .say(ctx, "Please provide a valid number of seconds!")
             .await?;
         return Ok(());
     }
@@ -564,7 +609,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         msg.channel_id
             .say(
                 ctx,
-                "The bot isn't connected to a voice channel or node! Please re-run join or play!",
+                "The bot isn't connected to a voice channel or playing anything! Please re-run join or play!",
             )
             .await?;
         return Ok(());
@@ -573,6 +618,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     lava_client
         .seek(guild_id, Duration::from_secs(time))
         .await?;
+
     msg.channel_id.say(ctx, "Seeking!").await?;
 
     Ok(())
