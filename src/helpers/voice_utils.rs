@@ -51,7 +51,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             .say(ctx, "Looks like I'm already in a voice channel! Please disconnect me before summoning me again!")
             .await?;
 
-        return Ok(())
+        return Ok(());
     }
 
     let channel_id = guild
@@ -62,7 +62,9 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let voice_channel = match channel_id {
         Some(channel) => channel,
         None => {
-            msg.channel_id.say(ctx, "Please join a voice channel!").await?;
+            msg.channel_id
+                .say(ctx, "Please join a voice channel!")
+                .await?;
 
             return Ok(());
         }
@@ -172,10 +174,10 @@ pub async fn leavevc_internal(ctx: &Context, guild_id: GuildId) -> CommandResult
         let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
         lava_client.destroy(guild_id).await?;
 
-        { 
+        {
             let nodes = lava_client.nodes().await;
             nodes.remove(&guild_id.0);
-             
+
             let loops = lava_client.loops().await;
             loops.remove(&guild_id.0);
         }
