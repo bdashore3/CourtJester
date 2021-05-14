@@ -156,12 +156,87 @@ async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 #[command]
+async fn kiss(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let is_everyone = match args.single::<String>() {
+        Ok(test) => &test == "everyone" || &test == "Everyone",
+        Err(_) => false,
+    };
+
+    if msg.mentions.is_empty() && !is_everyone {
+        msg.channel_id
+            .say(
+                ctx,
+                "You want to express your feelings? Please mention who you want to kiss or provide `everyone`!",
+            )
+            .await?;
+        return Ok(());
+    }
+
+    let raw_gifs = fetch_gifs(ctx, "anime kiss", 10, "medium").await?;
+    let mut rng = StdRng::from_entropy();
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "kiss".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
+
+    let message = if is_everyone {
+        "A friendly kiss to everyone!".to_owned()
+    } else if msg.mentions[0].id == msg.author.id {
+        "Well... You just kissed yourself".to_owned()
+    } else {
+        format!("{} kisses {}", msg.author.name, msg.mentions[0].name)
+    };
+
+    msg.channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.color(0xffb6c1);
+                e.description(message);
+                e.image(&gifs[val].media[0].get("gif").unwrap().url);
+                e
+            })
+        })
+        .await?;
+
+    add_to_cache(ctx, guild_id, "kiss".to_owned(), gifs[val].url.to_owned()).await;
+
+    Ok(())
+}
+
+#[command]
+async fn disgust(ctx: &Context, msg: &Message) -> CommandResult {
+    let raw_gifs = fetch_gifs(ctx, "anime disgust", 10, "medium").await?;
+    let mut rng = StdRng::from_entropy();
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "disgust".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
+
+    msg.channel_id
+        .send_message(ctx, |m| {
+            m.embed(|e| {
+                e.color(0x50c878);
+                e.description(format!("{} is disgusted 😕", msg.author.name));
+                e.image(&gifs[val].media[0].get("gif").unwrap().url);
+                e
+            })
+        })
+        .await?;
+
+    add_to_cache(ctx, guild_id, "disgust".to_owned(), gifs[val].url.to_owned()).await;
+
+    Ok(())
+}
+
+#[command]
 async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
     let raw_gifs = fetch_gifs(ctx, "anime cry", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
 
     let guild_id = msg.guild_id.unwrap();
-    let gifs = check_image_cache(ctx, guild_id, "slap".to_owned(), raw_gifs).await;
+    let gifs = check_image_cache(ctx, guild_id, "cry".to_owned(), raw_gifs).await;
 
     let val = rng.gen_range(0..=gifs.len() - 1);
 
@@ -176,7 +251,7 @@ async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
         })
         .await?;
 
-    add_to_cache(ctx, guild_id, "slap".to_owned(), gifs[val].url.to_owned()).await;
+    add_to_cache(ctx, guild_id, "cry".to_owned(), gifs[val].url.to_owned()).await;
 
     Ok(())
 }
@@ -187,7 +262,7 @@ async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
     let mut rng = StdRng::from_entropy();
 
     let guild_id = msg.guild_id.unwrap();
-    let gifs = check_image_cache(ctx, guild_id, "slap".to_owned(), raw_gifs).await;
+    let gifs = check_image_cache(ctx, guild_id, "cringe".to_owned(), raw_gifs).await;
 
     let val = rng.gen_range(0..=gifs.len() - 1);
 
@@ -205,7 +280,7 @@ async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
         })
         .await?;
 
-    add_to_cache(ctx, guild_id, "slap".to_owned(), gifs[val].url.to_owned()).await;
+    add_to_cache(ctx, guild_id, "cringe".to_owned(), gifs[val].url.to_owned()).await;
 
     Ok(())
 }
@@ -251,6 +326,7 @@ pub async fn image_help(ctx: &Context, channel_id: ChannelId) {
         "hug <mention>: Gives wholesome hugs to someone \n\n",
         "pat <mention>: Pats someone on the head \n\n",
         "slap <mention>: Give someone a slap \n\n",
+        "kiss <mention>: You already know what this is and I am shaking my head... \n\n",
         "cry: Emphasizes that you're crying  \n\n",
         "cringe: Emphasizes that something is cringey \n\n");
 

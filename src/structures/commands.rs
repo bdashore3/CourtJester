@@ -79,7 +79,7 @@ pub struct Music;
 
 #[group("Images")]
 #[description = "Commands for fetching/sending images"]
-#[commands(hug, pat, slap, cry, cringe, gifsearch)]
+#[commands(hug, kiss, pat, slap, disgust, cry, cringe, gifsearch)]
 pub struct Images;
 
 #[group("Japan")]
