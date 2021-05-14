@@ -1,30 +1,10 @@
+use crate::helpers::reaction_gifs::{add_to_cache, check_image_cache, fetch_gifs};
 use rand::{prelude::StdRng, Rng, SeedableRng};
-use reqwest::Url;
-use serde::Deserialize;
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::prelude::*,
     prelude::*,
 };
-use std::collections::HashMap;
-
-use crate::structures::cmd_data::{PubCreds, ReqwestClient};
-
-#[derive(Debug, Deserialize)]
-struct Response {
-    results: Vec<GifResult>,
-}
-
-#[derive(Debug, Deserialize)]
-struct GifResult {
-    url: String,
-    media: Vec<HashMap<String, Media>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Media {
-    url: String,
-}
 
 #[command]
 async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -43,9 +23,13 @@ async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let gifs = fetch_gifs(ctx, "anime hug", 10, "medium").await?;
+    let raw_gifs = fetch_gifs(ctx, "anime hug", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "hug".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     let message = if is_everyone {
         "Group hug!".to_owned()
@@ -65,6 +49,8 @@ async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             })
         })
         .await?;
+
+    add_to_cache(ctx, guild_id, "hug".to_owned(), gifs[val].url.to_owned()).await;
 
     Ok(())
 }
@@ -87,9 +73,13 @@ async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let gifs = fetch_gifs(ctx, "anime pat", 10, "medium").await?;
+    let raw_gifs = fetch_gifs(ctx, "anime pat", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "pat".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     let message = if is_everyone {
         "Pats for everyone!".to_owned()
@@ -109,6 +99,8 @@ async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             })
         })
         .await?;
+
+    add_to_cache(ctx, guild_id, "pat".to_owned(), gifs[val].url.to_owned()).await;
 
     Ok(())
 }
@@ -131,9 +123,13 @@ async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let gifs = fetch_gifs(ctx, "anime slap", 10, "medium").await?;
+    let raw_gifs = fetch_gifs(ctx, "anime slap", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "slap".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     let message = if is_everyone {
         "You slapped everyone! Ouch... that's gotta hurt.".to_owned()
@@ -154,14 +150,20 @@ async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         })
         .await?;
 
+    add_to_cache(ctx, guild_id, "slap".to_owned(), gifs[val].url.to_owned()).await;
+
     Ok(())
 }
 
 #[command]
 async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
-    let gifs = fetch_gifs(ctx, "anime cry", 10, "medium").await?;
+    let raw_gifs = fetch_gifs(ctx, "anime cry", 10, "medium").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "slap".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     msg.channel_id
         .send_message(ctx, |m| {
@@ -174,14 +176,20 @@ async fn cry(ctx: &Context, msg: &Message) -> CommandResult {
         })
         .await?;
 
+    add_to_cache(ctx, guild_id, "slap".to_owned(), gifs[val].url.to_owned()).await;
+
     Ok(())
 }
 
 #[command]
 async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
-    let gifs = fetch_gifs(ctx, "cringe", 10, "low").await?;
+    let raw_gifs = fetch_gifs(ctx, "cringe", 10, "low").await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+
+    let guild_id = msg.guild_id.unwrap();
+    let gifs = check_image_cache(ctx, guild_id, "slap".to_owned(), raw_gifs).await;
+
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     msg.channel_id
         .send_message(ctx, |m| {
@@ -196,6 +204,8 @@ async fn cringe(ctx: &Context, msg: &Message) -> CommandResult {
             })
         })
         .await?;
+
+    add_to_cache(ctx, guild_id, "slap".to_owned(), gifs[val].url.to_owned()).await;
 
     Ok(())
 }
@@ -220,7 +230,7 @@ async fn gifsearch(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let gifs = fetch_gifs(ctx, search_string, 10, filter).await?;
     let mut rng = StdRng::from_entropy();
-    let val = rng.gen_range(0..=9);
+    let val = rng.gen_range(0..=gifs.len() - 1);
 
     msg.channel_id
         .send_message(ctx, |m| {
@@ -233,45 +243,6 @@ async fn gifsearch(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         .await?;
 
     Ok(())
-}
-
-async fn fetch_gifs(
-    ctx: &Context,
-    search: &str,
-    amount: u32,
-    filter: &str,
-) -> Result<Vec<GifResult>, Box<dyn std::error::Error + Send + Sync>> {
-    let (reqwest_client, tenor_key) = {
-        let data = ctx.data.read().await;
-        let reqwest_client = data.get::<ReqwestClient>().cloned().unwrap();
-        let tenor_key = data
-            .get::<PubCreds>()
-            .unwrap()
-            .get("tenor")
-            .cloned()
-            .unwrap();
-
-        (reqwest_client, tenor_key)
-    };
-
-    let url = Url::parse_with_params(
-        "https://api.tenor.com/v1/search",
-        &[
-            ("q", search),
-            ("key", tenor_key.as_str()),
-            ("limit", &format!("{}", amount)),
-            ("contentfilter", filter),
-        ],
-    )?;
-
-    let resp = reqwest_client
-        .get(url)
-        .send()
-        .await?
-        .json::<Response>()
-        .await?;
-
-    Ok(resp.results)
 }
 
 pub async fn image_help(ctx: &Context, channel_id: ChannelId) {

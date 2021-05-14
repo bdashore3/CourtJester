@@ -119,6 +119,7 @@ async fn main() -> CommandResult {
         data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);
         data.insert::<SpotifyClient>(Arc::new(spotify));
+        data.insert::<ReactionImageCache>(Arc::new(DashMap::new()));
     }
 
     // Start up the bot! If there's an error, let the user know

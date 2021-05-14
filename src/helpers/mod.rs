@@ -4,6 +4,7 @@ pub mod credentials_helper;
 pub mod database_helper;
 pub mod embed_store;
 pub mod permissions_helper;
+pub mod reaction_gifs;
 pub mod start_loops;
 pub mod textmod_helper;
 pub mod voice_utils;

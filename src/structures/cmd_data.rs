@@ -77,3 +77,9 @@ pub struct SpotifyClient;
 impl TypeMapKey for SpotifyClient {
     type Value = Arc<Spotify>;
 }
+
+pub struct ReactionImageCache;
+
+impl TypeMapKey for ReactionImageCache {
+    type Value = Arc<DashMap<(GuildId, String), String>>;
+}

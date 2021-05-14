@@ -2,6 +2,8 @@ pub mod cmd_data;
 pub mod commands;
 pub mod errors;
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -43,4 +45,15 @@ pub struct MangaResult {
     pub score: f64,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GifResult {
+    pub url: String,
+    pub media: Vec<HashMap<String, TenorMedia>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TenorMedia {
+    pub url: String,
 }
