@@ -203,10 +203,9 @@ pub async fn create_new_timer(ctx: Context, guild_id: GuildId) {
     voice_timer_map.insert(guild_id, abort_handle);
 
     sleep(Duration::from_secs(300)).await;
-    match future.await {
-        Ok(_) => {}
-        Err(_e) => {}
-    };
+    let _ = future.await;
+
+    voice_timer_map.remove(&guild_id);
 }
 
 pub async fn voice_help(ctx: &Context, channel_id: ChannelId) {
