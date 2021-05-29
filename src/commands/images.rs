@@ -225,7 +225,13 @@ async fn disgust(ctx: &Context, msg: &Message) -> CommandResult {
         })
         .await?;
 
-    add_to_cache(ctx, guild_id, "disgust".to_owned(), gifs[val].url.to_owned()).await;
+    add_to_cache(
+        ctx,
+        guild_id,
+        "disgust".to_owned(),
+        gifs[val].url.to_owned(),
+    )
+    .await;
 
     Ok(())
 }
