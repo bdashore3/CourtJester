@@ -15,7 +15,7 @@ use tokio::time::sleep;
 use crate::{
     helpers::{
         command_utils, permissions_helper,
-        voice_utils::{self, get_voice_state},
+        voice_utils::{self, get_lava_client, get_voice_state},
     },
     BotId, JesterError, Lavalink, PermissionType, SpotifyClient, VoiceTimerMap,
 };
@@ -101,7 +101,7 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         args_message.to_string()
     };
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     let query_info = lava_client.auto_search_tracks(&query).await?;
 
@@ -180,7 +180,7 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     if lava_client.nodes().await.contains_key(&guild_id.0) {
         lava_client.pause(guild_id).await?;
@@ -211,7 +211,7 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
@@ -252,7 +252,7 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
@@ -300,7 +300,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     let nodes = lava_client.nodes().await;
     let node = match nodes.get(&msg.guild_id.unwrap().0) {
@@ -382,7 +382,10 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
             let (voice_timer_map, lava_client) = {
                 let data = ctx.data.read().await;
                 let voice_timer_map = data.get::<VoiceTimerMap>().cloned().unwrap();
-                let lava_client = data.get::<Lavalink>().cloned().unwrap();
+                let lava_client = match data.get::<Lavalink>().cloned().unwrap() {
+                    Some(x) => x,
+                    None => return, // if lavalink is not configured
+                };
 
                 (voice_timer_map, lava_client)
             };
@@ -423,7 +426,7 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     let nodes = lava_client.nodes().await;
     let mut node = match nodes.get_mut(&msg.guild_id.unwrap().0) {
@@ -467,7 +470,7 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     let nodes = lava_client.nodes().await;
     let mut node = match nodes.get_mut(&msg.guild_id.unwrap().0) {
@@ -540,7 +543,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
         return Ok(());
     }
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id
@@ -603,7 +606,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+    let lava_client = get_lava_client(ctx).await?;
 
     if !lava_client.nodes().await.contains_key(&guild_id.0) {
         msg.channel_id

@@ -1,4 +1,5 @@
 use futures::future::{AbortHandle, Abortable};
+use lavalink_rs::LavalinkClient;
 use serenity::{
     client::Context,
     framework::standard::{macros::command, CommandResult},
@@ -107,7 +108,7 @@ pub async fn join_voice_internal(
 
     match handler {
         Ok(conn_info) => {
-            let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+            let lava_client = get_lava_client(ctx).await?;
             lava_client.create_session(&conn_info).await?;
         }
         Err(e) => return Err(e.into()),
@@ -171,7 +172,7 @@ pub async fn leavevc_internal(ctx: &Context, guild_id: GuildId) -> CommandResult
     if manager.get(guild_id).is_some() {
         manager.remove(guild_id).await?;
 
-        let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
+        let lava_client = get_lava_client(ctx).await?;
         lava_client.destroy(guild_id).await?;
 
         {
@@ -228,4 +229,14 @@ pub async fn voice_help(ctx: &Context, channel_id: ChannelId) {
             })
         })
         .await;
+}
+
+pub async fn get_lava_client(ctx: &Context) -> Result<LavalinkClient, &'static str> {
+    ctx.data
+        .read()
+        .await
+        .get::<Lavalink>()
+        .cloned()
+        .unwrap()
+        .ok_or("Lavalink is not configured")
 }

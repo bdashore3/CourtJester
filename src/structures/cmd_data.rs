@@ -27,7 +27,7 @@ impl TypeMapKey for ConnectionPool {
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
-    type Value = LavalinkClient;
+    type Value = Option<LavalinkClient>;
 }
 
 pub struct VoiceTimerMap;

@@ -56,7 +56,8 @@ async fn main() -> CommandResult {
         .set_host(creds.lavalink_host)
         .set_password(creds.lavalink_auth)
         .build(LavalinkHandler)
-        .await?;
+        .await
+        .ok();
 
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
