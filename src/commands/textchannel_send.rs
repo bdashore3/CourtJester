@@ -44,7 +44,7 @@ async fn nice(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     .await?;
 
     if let Some(channel_id) = parse_channel(&test_id) {
-        if permissions_helper::check_permission(ctx, &msg, None, false).await? {
+        if permissions_helper::check_permission(ctx, msg, None, false).await? {
             if check.exists.unwrap() {
                 sqlx::query!(
                     "UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2",
@@ -312,7 +312,6 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                         a.icon_url(&avatar_id);
                         a
                     });
-                    e.description(args.rest());
                 } else {
                     e.author(|a| {
                         a.name(&msg.mentions[0].name);
@@ -320,8 +319,8 @@ async fn quote(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                         a
                     });
                     args.advance();
-                    e.description(args.rest());
                 }
+                e.description(args.rest());
                 e.field("Source", format!("[Jump!]({})", message_url), false)
             })
         })

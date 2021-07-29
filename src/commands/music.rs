@@ -88,7 +88,7 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             }
         };
 
-        match get_spotify_track_info(track_id, &ctx).await {
+        match get_spotify_track_info(track_id, ctx).await {
             Some(track_info) => track_info,
             None => {
                 msg.channel_id

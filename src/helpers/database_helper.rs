@@ -3,11 +3,9 @@ use serenity::{framework::standard::CommandResult, model::id::GuildId};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 pub async fn obtain_db_pool(db_connection: String) -> CommandResult<PgPool> {
-    let connection_string = &db_connection;
-
     let pool = PgPoolOptions::new()
         .max_connections(10)
-        .connect(&connection_string)
+        .connect(&db_connection)
         .await?;
 
     Ok(pool)

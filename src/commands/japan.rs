@@ -208,14 +208,14 @@ async fn ask_for_results(ctx: &Context, msg: &Message) -> CommandResult<isize> {
             }
 
             match recieved_msg.content.parse::<isize>() {
-                Ok(num) => return Ok(num),
-                Err(_) => return Ok(-1),
+                Ok(num) => Ok(num),
+                Err(_) => Ok(-1),
             }
         }
         None => {
             let _ = channel_id.say(ctx, "Timed out").await;
 
-            return Err("Timeout".into());
+            Err("Timeout".into())
         }
     }
 }

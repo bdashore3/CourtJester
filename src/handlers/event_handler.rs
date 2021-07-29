@@ -2,7 +2,16 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{helpers::start_loops, reactions::reaction_handler, ConnectionPool, PrefixMap};
 use lavalink_rs::gateway::LavalinkEventHandler;
-use serenity::{async_trait, client::{Context, EventHandler}, model::{channel::{GuildChannel, Reaction}, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::Ready}};
+use serenity::{
+    async_trait,
+    client::{Context, EventHandler},
+    model::{
+        channel::{GuildChannel, Reaction},
+        guild::{Guild, GuildUnavailable},
+        id::GuildId,
+        prelude::Ready,
+    },
+};
 
 pub struct SerenityHandler {
     pub run_loop: AtomicBool,

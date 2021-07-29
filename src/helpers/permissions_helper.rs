@@ -14,7 +14,7 @@ pub async fn check_permission(
         .await?;
 
     if permissions.administrator() {
-        return Ok(true);
+        Ok(true)
     } else if check_admin && user_id.is_none() {
         msg.channel_id
             .say(
@@ -23,7 +23,7 @@ pub async fn check_permission(
             )
             .await?;
 
-        return Ok(false);
+        Ok(false)
     } else {
         if user_id.is_none() && !permissions.manage_messages() {
             msg.channel_id
@@ -34,6 +34,6 @@ pub async fn check_permission(
                 .await?;
         }
 
-        return Ok(permissions.manage_messages());
+        Ok(permissions.manage_messages())
     }
 }
