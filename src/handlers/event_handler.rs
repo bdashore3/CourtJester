@@ -2,16 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{helpers::start_loops, reactions::reaction_handler, ConnectionPool, PrefixMap};
 use lavalink_rs::gateway::LavalinkEventHandler;
-use serenity::{
-    async_trait,
-    client::{Context, EventHandler},
-    model::{
-        channel::Reaction,
-        guild::{Guild, GuildUnavailable},
-        id::GuildId,
-        prelude::Ready,
-    },
-};
+use serenity::{async_trait, client::{Context, EventHandler}, model::{channel::{GuildChannel, Reaction}, guild::{Guild, GuildUnavailable}, id::GuildId, prelude::Ready}};
 
 pub struct SerenityHandler {
     pub run_loop: AtomicBool,
@@ -51,6 +42,12 @@ impl EventHandler for SerenityHandler {
             tokio::spawn(async move {
                 start_loops::activity_loop(&ctx.shard).await;
             });
+        }
+    }
+
+    async fn thread_create(&self, ctx: Context, thread: GuildChannel) {
+        if let Err(e) = thread.id.join_thread(ctx).await {
+            println!("Error in thread join! (ID {}): {}", thread.id, e);
         }
     }
 
