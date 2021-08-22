@@ -27,10 +27,15 @@ pub fn get_anime_embed(anime: &AnimeResult) -> CreateEmbed {
     if anime.airing {
         eb.field("Status", "Airing", true);
     } else {
-        eb.field("Status", "CMP", true);
+        eb.field("Status", "Complete", true);
     }
 
     eb.field("MAL Score", &anime.score, true);
+
+    eb.footer(|f| {
+        f.text("Data provided by the Jikan API");
+        f
+    });
 
     eb
 }
@@ -59,10 +64,15 @@ pub fn get_manga_embed(manga: &MangaResult) -> CreateEmbed {
     if manga.publishing {
         eb.field("Status", "Publishing", true);
     } else {
-        eb.field("Status", "CMP", true);
+        eb.field("Status", "Complete", true);
     }
 
     eb.field("MAL Score", &manga.score, true);
+
+    eb.footer(|f| {
+        f.text("Data provided by the Jikan API");
+        f
+    });
 
     eb
 }

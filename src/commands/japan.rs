@@ -1,4 +1,4 @@
-use reqwest::Url;
+use reqwest::{Url, Error as ReqwestError};
 use serde::{Deserialize, Serialize};
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
@@ -58,14 +58,22 @@ async fn anime(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let results = match fetch_info(ctx, "anime", args.rest()).await {
         Ok(info) => info.results,
-        Err(_) => {
+        Err(e) => {
+            println!("Jikan anime fetch error!: {}", e);
+
             msg.channel_id
-                .say(ctx, "Couldn't find your request on MAL!")
+                .say(ctx, "Couldn't find your request on MAL! \nThe error is down below.")
                 .await?;
 
-            return Ok(());
+            return Err(e);
         }
     };
+
+    if results.is_empty() {
+        msg.channel_id.say(ctx, "There are no results! Try some different search terms!").await?;
+
+        return Ok(())
+    }
 
     let animes = results
         .iter()
@@ -131,14 +139,22 @@ async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
     let results = match fetch_info(ctx, "manga", args.rest()).await {
         Ok(info) => info.results,
-        Err(_) => {
+        Err(e) => {
+            println!("Jikan manga fetch error!: {}", e);
+
             msg.channel_id
-                .say(ctx, "Couldn't find your request on MAL!")
+                .say(ctx, "Couldn't find your request on MAL! \nThe error is down below.")
                 .await?;
 
-            return Ok(());
+            return Err(e);
         }
     };
+
+    if results.is_empty() {
+        msg.channel_id.say(ctx, "There are no results! Try some different search terms").await?;
+
+        return Ok(())
+    }
 
     let mangas = results
         .iter()
@@ -234,14 +250,22 @@ async fn fetch_info(ctx: &Context, search_type: &str, search: &str) -> CommandRe
         &[("q", search), ("limit", "5")],
     )?;
 
-    let resp = reqwest_client
-        .get(url)
-        .send()
-        .await?
-        .json::<Response>()
-        .await?;
+    let resp = match reqwest_client.get(url).send().await {
+        Ok(res) => res,
+        Err(e) => {
+            let casted_error = e as ReqwestError;
 
-    Ok(resp)
+            if casted_error.is_timeout() {
+                return Err("Request timed out".into());
+            } else {
+                return Err(casted_error.into());
+            }
+        }
+    };
+
+    let json = resp.json::<Response>().await?;
+
+    Ok(json)
 }
 
 pub async fn japan_help(ctx: &Context, channel_id: ChannelId) {
