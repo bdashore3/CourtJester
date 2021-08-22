@@ -26,6 +26,7 @@ use std::{
     collections::{HashMap, HashSet},
     env,
     sync::{atomic::AtomicBool, Arc},
+    time::Duration,
 };
 
 #[tokio::main]
@@ -85,6 +86,7 @@ async fn main() -> CommandResult {
         .collect::<Vec<String>>();
 
     let reqwest_client = Reqwest::builder()
+        .timeout(Duration::new(60, 0))
         .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0")
         .build()?;
 
