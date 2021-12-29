@@ -263,6 +263,10 @@ async fn fetch_info(ctx: &Context, search_type: &str, search: &str) -> CommandRe
         }
     };
 
+    if resp.status() != 200 {
+        return Err(format!("Status code {}. The Jikan API can't find this {}", resp.status(), search_type).into())
+    }
+
     let json = resp.json::<Response>().await?;
 
     Ok(json)
