@@ -13,6 +13,7 @@ pub struct Credentials {
     pub tenor_key: String,
     pub spotify_client_id: String,
     pub spotify_client_secret: String,
+    pub mal_key: String,
 }
 
 pub fn read_creds(path: &str) -> CommandResult<Credentials> {

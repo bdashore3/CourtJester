@@ -84,7 +84,7 @@ pub struct Images;
 
 #[group("Japan")]
 #[description("Commands for anime/manga")]
-#[commands(anime, manga)]
+#[commands(anime)]
 pub struct Japan;
 
 #[group("Utility")]

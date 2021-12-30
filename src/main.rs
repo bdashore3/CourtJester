@@ -61,6 +61,7 @@ async fn main() -> CommandResult {
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
+    pub_creds.insert("mal".to_string(), creds.mal_key);
 
     let client_credentials = ClientCredentials {
         id: creds.spotify_client_id,

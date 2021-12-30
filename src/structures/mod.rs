@@ -19,6 +19,26 @@ pub struct SysInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct JapanResult {
+    pub id: i64,
+    pub title: String,
+    pub main_picture: MainPicture,
+    pub synopsis: String,
+    pub mean: Option<f64>,
+    pub status: String,
+    pub num_episodes: Option<i64>,
+    pub num_volumes: Option<i64>,
+    pub num_chapters: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MainPicture {
+    pub medium: String,
+    pub large: String,
+}
+
+/*
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AnimeResult {
     pub mal_id: u64,
     pub url: String,
@@ -46,6 +66,7 @@ pub struct MangaResult {
     pub start_date: Option<String>,
     pub end_date: Option<String>,
 }
+*/
 
 #[derive(Debug, Deserialize)]
 pub struct GifResult {
