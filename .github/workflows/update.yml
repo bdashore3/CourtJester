@@ -1,6 +1,7 @@
 name: Push and restart bot
 
 on:
+  workflow_dispatch:
   push:
     branches: [serenity]
 
