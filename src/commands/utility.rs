@@ -6,23 +6,14 @@ use serenity::{
     prelude::*,
 };
 
-use crate::JesterError;
+use crate::{helpers::command_utils::fetch_avatar, JesterError};
 
 #[command]
 async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let user = if let Ok(user_id) = args.single::<UserId>() {
-        match user_id.to_user(ctx).await {
-            Ok(user) => Cow::Owned(user),
-            Err(_) => {
-                msg.channel_id
-                    .say(ctx, JesterError::MissingError("User ID/mention"))
-                    .await?;
-
-                return Ok(());
-            }
-        }
+    let avatar_url = if let Ok(user_id) = args.single::<UserId>() {
+        fetch_avatar(ctx, user_id, None).await
     } else if args.is_empty() {
-        Cow::Borrowed(&msg.author)
+        fetch_avatar(ctx, msg.author.id, None).await
     } else {
         msg.channel_id
             .say(ctx, JesterError::MissingError("User ID/mention"))
@@ -31,7 +22,45 @@ async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     };
 
-    msg.channel_id.say(ctx, user.face()).await?;
+    match avatar_url {
+        Some(url) => msg.channel_id.say(ctx, url).await?,
+        None => {
+            msg.channel_id
+                .say(ctx, "No avatar could be found for this user!")
+                .await?
+        }
+    };
+
+    Ok(())
+}
+
+#[command]
+#[aliases("gavatar")]
+async fn guild_avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let guild = msg.guild(ctx).unwrap();
+
+    let avatar_url = if let Ok(user_id) = args.single::<UserId>() {
+        fetch_avatar(ctx, user_id, Some(guild)).await
+    } else if args.is_empty() {
+        fetch_avatar(ctx, msg.author.id, Some(guild)).await
+    } else {
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("User ID/mention"))
+            .await?;
+
+        return Ok(());
+    };
+
+    match avatar_url {
+        Some(url) => msg.channel_id.say(ctx, url).await?,
+        None => msg
+            .channel_id
+            .say(
+                ctx,
+                "No guild avatar could be found for this member! Use the `avatar` command instead!",
+            )
+            .await?,
+    };
 
     Ok(())
 }
@@ -188,9 +217,47 @@ async fn spoiler(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[command]
+async fn banner(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let user_result = if let Ok(user_id) = args.single::<UserId>() {
+        ctx.http.get_user(user_id.0).await
+    } else if args.is_empty() {
+        ctx.http.get_user(msg.author.id.0).await
+    } else {
+        msg.channel_id
+            .say(ctx, JesterError::MissingError("User ID/mention"))
+            .await?;
+
+        return Ok(());
+    };
+
+    let user = match user_result {
+        Ok(user) => user,
+        Err(_) => {
+            msg.channel_id
+                .say(ctx, JesterError::MissingError("User ID/mention"))
+                .await?;
+
+            return Ok(());
+        }
+    };
+
+    match user.banner_url() {
+        Some(banner_url) => msg.channel_id.say(ctx, banner_url).await?,
+        None => {
+            msg.channel_id
+                .say(ctx, "No banner found for this user!")
+                .await?
+        }
+    };
+
+    Ok(())
+}
+
 pub async fn utility_help(ctx: &Context, channel_id: ChannelId) {
     let content = concat!(
         "avatar (user mention/ID): Gets your own, or the mentioned person's avatar \n\n",
+        "gavatar (user mention/ID): Same as the avatar command, but gets the server avatar if it exists \n\n",
         "spoiler <attachment>: Creates a spoiler from an attached file \n\n",
         "kang <emoji> (new name): Steal an emoji from anywhere and load it to your server. Requires the `manage emojis` permission \n\n",
         "einfo <emoji>: Get the information of an emoji"

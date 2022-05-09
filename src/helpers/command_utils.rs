@@ -4,7 +4,8 @@ use serenity::{
     framework::standard::CommandResult,
     model::{
         channel::Message,
-        id::{ChannelId, GuildId, MessageId},
+        guild::Guild,
+        id::{ChannelId, GuildId, MessageId, UserId},
     },
 };
 
@@ -117,4 +118,23 @@ pub fn get_allowed_commands() -> Vec<String> {
     ];
 
     allowed_commands
+}
+
+pub async fn fetch_avatar(ctx: &Context, user_id: UserId, guild: Option<Guild>) -> Option<String> {
+    if let Some(guild) = guild {
+        let member = match guild.member(ctx, user_id).await {
+            Ok(member) => member,
+            Err(_) => return None,
+        };
+
+        match member.avatar_url() {
+            Some(url) => return Some(url),
+            None => return Some(member.user.face()),
+        }
+    } else {
+        match user_id.to_user(ctx).await {
+            Ok(user) => return Some(user.face()),
+            Err(_) => return None,
+        };
+    }
 }
