@@ -17,10 +17,7 @@ use dashmap::DashMap;
 use futures::future::AbortHandle;
 use lavalink_rs::LavalinkClient;
 use reqwest::Client as Reqwest;
-use serenity::{
-    client::bridge::gateway::GatewayIntents, framework::standard::CommandResult, http::Http,
-    model::id::GuildId, prelude::*,
-};
+use serenity::{framework::standard::CommandResult, http::Http, model::id::GuildId, prelude::*};
 use songbird::SerenityInit;
 use std::{
     collections::{HashMap, HashSet},
@@ -36,14 +33,20 @@ async fn main() -> CommandResult {
     let creds = helpers::credentials_helper::read_creds(&args[1])?;
     let token = &creds.bot_token;
 
-    let http = Http::new_with_token(&token);
+    let http = Http::new(&token);
 
     let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
-            owners.insert(info.owner.id);
-
-            (owners, info.id)
+            if let Some(team) = info.team {
+                owners.insert(team.owner_user_id);
+            } else {
+                owners.insert(info.owner.id);
+            }
+            match http.get_current_user().await {
+                Ok(bot_id) => (owners, bot_id.id),
+                Err(why) => panic!("Could not access the bot id: {:?}", why),
+            }
         }
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
@@ -89,17 +92,15 @@ async fn main() -> CommandResult {
         .user_agent("Mozilla/5.0 (X11; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0")
         .build()?;
 
-    let mut client = Client::builder(&token)
+    let mut intents = GatewayIntents::all();
+    intents.remove(GatewayIntents::DIRECT_MESSAGES);
+    intents.remove(GatewayIntents::DIRECT_MESSAGE_REACTIONS);
+    intents.remove(GatewayIntents::DIRECT_MESSAGE_TYPING);
+
+    let mut client = Client::builder(&token, intents)
         .framework(get_framework(bot_id, owners))
         .event_handler(SerenityHandler {
             run_loop: AtomicBool::new(true),
-        })
-        .intents({
-            let mut intents = GatewayIntents::all();
-            intents.remove(GatewayIntents::DIRECT_MESSAGES);
-            intents.remove(GatewayIntents::DIRECT_MESSAGE_REACTIONS);
-            intents.remove(GatewayIntents::DIRECT_MESSAGE_TYPING);
-            intents
         })
         .register_songbird()
         .await

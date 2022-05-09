@@ -43,7 +43,7 @@ pub async fn get_voice_state(
 #[command]
 #[aliases("connect")]
 pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
     let bot_id = ctx.data.read().await.get::<BotId>().cloned().unwrap();
 
     if guild.voice_states.contains_key(&bot_id) {
@@ -108,7 +108,7 @@ pub async fn join_voice_internal(
     match handler {
         Ok(conn_info) => {
             let lava_client = ctx.data.read().await.get::<Lavalink>().cloned().unwrap();
-            lava_client.create_session(&conn_info).await?;
+            lava_client.create_session_with_songbird(&conn_info).await?;
         }
         Err(e) => return Err(e.into()),
     }
@@ -122,9 +122,8 @@ async fn disconnect(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = ctx
         .cache
         .guild_channel_field(msg.channel_id, |channel| channel.guild_id)
-        .await
         .unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id

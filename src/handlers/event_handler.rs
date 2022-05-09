@@ -7,7 +7,7 @@ use serenity::{
     client::{Context, EventHandler},
     model::{
         channel::{GuildChannel, Reaction},
-        guild::{Guild, GuildUnavailable},
+        guild::{Guild, UnavailableGuild},
         id::GuildId,
         prelude::Ready,
     },
@@ -80,7 +80,7 @@ impl EventHandler for SerenityHandler {
         }
     }
 
-    async fn guild_delete(&self, ctx: Context, incomplete: GuildUnavailable, _full: Option<Guild>) {
+    async fn guild_delete(&self, ctx: Context, incomplete: UnavailableGuild, _full: Option<Guild>) {
         let (pool, prefixes) = {
             let data = ctx.data.read().await;
             let pool = data.get::<ConnectionPool>().cloned().unwrap();

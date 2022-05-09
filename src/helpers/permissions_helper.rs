@@ -15,9 +15,7 @@ pub async fn check_permission(
         .unwrap()
         .guild()
         .unwrap();
-    let permissions = channel
-        .permissions_for_user(ctx, user_id.unwrap_or(msg.author.id))
-        .await?;
+    let permissions = channel.permissions_for_user(ctx, user_id.unwrap_or(msg.author.id))?;
 
     if permissions.administrator() {
         Ok(true)

@@ -126,7 +126,7 @@ async fn after(ctx: &Context, msg: &Message, cmd_name: &str, error: Result<(), C
 
 // On a dispatch error, go to this function
 #[hook]
-async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
+async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError, _command_name: &str) {
     match error {
         DispatchError::LackingPermissions(Permissions::ADMINISTRATOR) => {
             let _ = msg
@@ -146,7 +146,7 @@ async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError) {
                 )
                 .await;
         }
-        DispatchError::LackingPermissions(Permissions::MANAGE_EMOJIS) => {
+        DispatchError::LackingPermissions(Permissions::MANAGE_EMOJIS_AND_STICKERS) => {
             let _ = msg
                 .channel_id
                 .say(

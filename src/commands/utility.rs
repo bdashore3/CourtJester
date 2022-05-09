@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
-    http::AttachmentType,
     model::prelude::*,
     prelude::*,
 };
@@ -39,7 +38,7 @@ async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
 #[command]
 #[aliases("steal")]
-#[required_permissions("MANAGE_EMOJIS")]
+#[required_permissions("MANAGE_EMOJIS_AND_STICKERS")]
 async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let emoji = match args.single::<EmojiIdentifier>() {
         Ok(id) => id,
@@ -52,7 +51,7 @@ async fn kang(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
     if guild.emojis.contains_key(&emoji.id) {
         msg.channel_id
             .say(ctx, "This emoji already exists in this server! Aborting...")

@@ -30,7 +30,7 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         (pool, prefixes, default_prefix)
     };
     let guild_id = msg.guild_id.unwrap();
-    let guild_name = msg.guild(ctx).await.unwrap().name;
+    let guild_name = msg.guild(ctx).unwrap().name;
 
     if args.is_empty() {
         let cur_prefix = match prefixes.get(&guild_id) {

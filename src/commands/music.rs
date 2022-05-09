@@ -23,7 +23,7 @@ use crate::{
 #[command]
 #[aliases("p")]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
     let guild_id = msg.guild_id.unwrap();
 
     let bot_id = ctx.data.read().await.get::<BotId>().cloned().unwrap();
@@ -168,7 +168,7 @@ pub async fn get_spotify_track_info(track_id: &str, ctx: &Context) -> Option<Str
 #[command]
 async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -199,7 +199,7 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -240,7 +240,7 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
 #[aliases("unpause")]
 async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -288,7 +288,7 @@ async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
 #[aliases("q")]
 async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -324,7 +324,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut eb = CreateEmbed::default();
     eb.color(0x0377fc);
-    eb.title(format!("Queue for {}", guild_id.name(ctx).await.unwrap()));
+    eb.title(format!("Queue for {}", guild_id.name(ctx).unwrap()));
 
     if let Some(t) = node.now_playing.as_ref() {
         let t_info = t.track.info.as_ref();
@@ -411,7 +411,7 @@ async fn queue_checker(ctx: Context, guild_id: GuildId) {
 #[command]
 #[aliases("c")]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -455,7 +455,7 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("r")]
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -528,7 +528,7 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 #[aliases("s")]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id
@@ -570,7 +570,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
 
     if !get_voice_state(ctx, &guild, msg.author.id).await? {
         msg.channel_id

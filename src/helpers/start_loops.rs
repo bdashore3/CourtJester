@@ -60,7 +60,7 @@ pub async fn guild_pruner(ctx: &Context) -> CommandResult {
         .cloned()
         .unwrap();
 
-    let guilds = ctx.cache.guilds().await;
+    let guilds = ctx.cache.guilds();
 
     let guild_data = sqlx::query!("SELECT guild_id FROM guild_info")
         .fetch_all(&pool)

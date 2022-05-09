@@ -54,7 +54,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     // Add timer calls
 
     let star_channel_id = ChannelId(config_data.quote_id.unwrap() as u64);
-    let star_channel = match ctx.cache.channel(star_channel_id).await {
+    let star_channel = match ctx.cache.channel(star_channel_id) {
         Some(star_channel) => star_channel,
         None => {
             star_channel_id

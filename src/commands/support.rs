@@ -127,9 +127,9 @@ async fn support(ctx: &Context, msg: &Message) -> CommandResult {
 async fn info(ctx: &Context, msg: &Message) -> CommandResult {
     let mut eb = CreateEmbed::default();
 
-    let guild_count = ctx.cache.guilds().await.len();
-    let channel_count = ctx.cache.guild_channel_count().await;
-    let user_count = ctx.cache.user_count().await;
+    let guild_count = ctx.cache.guilds().len();
+    let channel_count = ctx.cache.guild_channel_count();
+    let user_count = ctx.cache.user_count();
 
     let guild_name = if guild_count < 2 { "guild" } else { "guilds" };
 
