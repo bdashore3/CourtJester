@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{helpers::start_loops, reactions::reaction_handler, ConnectionPool, PrefixMap};
-use lavalink_rs::gateway::LavalinkEventHandler;
+// use lavalink_rs::gateway::LavalinkEventHandler;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -113,7 +113,9 @@ impl EventHandler for SerenityHandler {
     }
 }
 
+/*
 pub struct LavalinkHandler;
 
 #[async_trait]
 impl LavalinkEventHandler for LavalinkHandler {}
+*/

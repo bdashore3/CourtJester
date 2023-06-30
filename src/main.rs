@@ -5,20 +5,17 @@ mod reactions;
 mod structures;
 
 use crate::{
-    handlers::{
-        event_handler::{LavalinkHandler, SerenityHandler},
-        framework::get_framework,
-    },
+    handlers::{event_handler::SerenityHandler, framework::get_framework},
     helpers::{command_utils, database_helper},
     structures::{cmd_data::*, commands::*, errors::*},
 };
-use aspotify::{Client as Spotify, ClientCredentials};
+// use aspotify::{Client as Spotify, ClientCredentials};
 use dashmap::DashMap;
 use futures::future::AbortHandle;
-use lavalink_rs::LavalinkClient;
+// use lavalink_rs::LavalinkClient;
 use reqwest::Client as Reqwest;
 use serenity::{framework::standard::CommandResult, http::Http, model::id::GuildId, prelude::*};
-use songbird::SerenityInit;
+// use songbird::SerenityInit;
 use std::{
     collections::{HashMap, HashSet},
     env,
@@ -33,7 +30,7 @@ async fn main() -> CommandResult {
     let creds = helpers::credentials_helper::read_creds(&args[1])?;
     let token = &creds.bot_token;
 
-    let http = Http::new(&token);
+    let http = Http::new_with_application_id(&token, creds.application_id);
 
     let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
@@ -55,23 +52,27 @@ async fn main() -> CommandResult {
     let prefixes = database_helper::fetch_prefixes(&pool).await?;
     let voice_timer_map: DashMap<GuildId, AbortHandle> = DashMap::new();
 
+    /*
     let lava_client = LavalinkClient::builder(bot_id)
         .set_host(creds.lavalink_host)
         .set_password(creds.lavalink_auth)
         .build(LavalinkHandler)
         .await?;
+    */
 
     let mut pub_creds = HashMap::new();
     pub_creds.insert("tenor".to_string(), creds.tenor_key);
     pub_creds.insert("default prefix".to_string(), creds.default_prefix);
     pub_creds.insert("mal".to_string(), creds.mal_key);
 
+    /*
     let client_credentials = ClientCredentials {
         id: creds.spotify_client_id,
         secret: creds.spotify_client_secret,
     };
 
     let spotify = Spotify::new(client_credentials);
+    */
 
     let emergency_commands = command_utils::get_allowed_commands();
 
@@ -102,7 +103,7 @@ async fn main() -> CommandResult {
         .event_handler(SerenityHandler {
             run_loop: AtomicBool::new(true),
         })
-        .register_songbird()
+        //.register_songbird()
         .await
         .expect("Err creating client");
 
@@ -112,7 +113,7 @@ async fn main() -> CommandResult {
 
         data.insert::<ConnectionPool>(pool.clone());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
-        data.insert::<Lavalink>(lava_client);
+        // data.insert::<Lavalink>(lava_client);
         data.insert::<VoiceTimerMap>(Arc::new(voice_timer_map));
         data.insert::<PrefixMap>(Arc::new(prefixes));
         data.insert::<CommandNameMap>(Arc::new(command_names));
@@ -120,7 +121,7 @@ async fn main() -> CommandResult {
         data.insert::<PubCreds>(Arc::new(pub_creds));
         data.insert::<EmergencyCommands>(Arc::new(emergency_commands));
         data.insert::<BotId>(bot_id);
-        data.insert::<SpotifyClient>(Arc::new(spotify));
+        // data.insert::<SpotifyClient>(Arc::new(spotify));
         data.insert::<ReactionImageCache>(Arc::new(DashMap::new()));
     }
 

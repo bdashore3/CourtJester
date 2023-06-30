@@ -6,13 +6,14 @@ use std::io::BufReader;
 #[derive(Serialize, Deserialize)]
 pub struct Credentials {
     pub bot_token: String,
+    pub application_id: u64,
     pub default_prefix: String,
     pub db_connection: String,
-    pub lavalink_host: String,
-    pub lavalink_auth: String,
+    // pub lavalink_host: String,
+    // pub lavalink_auth: String,
     pub tenor_key: String,
-    pub spotify_client_id: String,
-    pub spotify_client_secret: String,
+    // pub spotify_client_id: String,
+    // pub spotify_client_secret: String,
     pub mal_key: String,
 }
 

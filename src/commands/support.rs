@@ -7,10 +7,10 @@ use serenity::{
 
 use crate::{
     commands::{
-        ciphers::*, config::*, images::*, japan::*, music::*, starboard::*, textchannel_send::*,
-        textmod::*, utility::*,
+        ciphers::*, config::*, images::*, japan::*, /*music::*,*/ starboard::*,
+        textchannel_send::*, textmod::*, utility::*,
     },
-    helpers::{botinfo::*, command_utils, voice_utils::*},
+    helpers::{botinfo::*, command_utils /*, voice_utils::* */},
 };
 
 #[command]
@@ -35,8 +35,8 @@ async fn help(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         "senders" => sender_help(ctx, msg.channel_id).await,
         "ciphers" => cipher_help(ctx, msg.channel_id).await,
         "text" => textmod_help(ctx, msg.channel_id).await,
-        "voice" => voice_help(ctx, msg.channel_id).await,
-        "music" => music_help(ctx, msg.channel_id).await,
+        // "voice" => voice_help(ctx, msg.channel_id).await,
+        // "music" => music_help(ctx, msg.channel_id).await,
         "images" => image_help(ctx, msg.channel_id).await,
         "japan" => japan_help(ctx, msg.channel_id).await,
         _ => {}
@@ -72,8 +72,8 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
         "senders \n",
         "ciphers \n",
         "text \n",
-        "voice \n",
-        "music \n",
+        // "voice \n",
+        // "music \n",
         "images \n",
         "japan \n"
     );
@@ -85,7 +85,8 @@ async fn default_help_message(ctx: &Context, channel_id: ChannelId) {
                 e.description(concat!(
                     "Help for the CourtJester Discord bot \n",
                     "Command parameters: <> is required and () is optional \n",
-                    "Please use `help <subcategory>` to see that category's help"
+                    "Please use `help <subcategory>` to see that category's help \n\n",
+                    "Looking for music? It's gone for now until I get time to update it."
                 ));
                 e.field("Subcategories", format!("```\n{}```", categories), false);
                 e.footer(|f| {

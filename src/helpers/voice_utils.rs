@@ -1,3 +1,4 @@
+/*
 use futures::future::{AbortHandle, Abortable};
 use serenity::{
     client::Context,
@@ -228,3 +229,4 @@ pub async fn voice_help(ctx: &Context, channel_id: ChannelId) {
         })
         .await;
 }
+*/

@@ -7,7 +7,7 @@ use serenity::{
     model::{
         channel::{Attachment, Reaction},
         id::{ChannelId, GuildId, MessageId},
-        prelude::User,
+        prelude::{ReactionType, User},
     },
     prelude::Mentionable,
 };
@@ -35,7 +35,7 @@ pub async fn quote_reaction(ctx: &Context, reaction: &Reaction, remove: bool) ->
     let reactions = reaction_message.reactions;
     let stars = match reactions
         .into_iter()
-        .find(|x| x.reaction_type.as_data() == "⭐")
+        .find(|x| x.reaction_type == ReactionType::Unicode("⭐".to_string()))
     {
         Some(reaction) => reaction.count,
         None => 0,
