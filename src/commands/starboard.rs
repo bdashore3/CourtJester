@@ -248,20 +248,24 @@ async fn wizard(ctx: &Context, msg: &Message) -> CommandResult {
         Some(action) => {
             let reaction = action.as_inner_ref();
 
-            let reaction_emoji = &reaction.emoji.as_data();
+            if let ReactionType::Unicode(emoji) = &reaction.emoji {
+                if emoji == "✅" {
+                    let pool = ctx
+                        .data
+                        .read()
+                        .await
+                        .get::<ConnectionPool>()
+                        .cloned()
+                        .unwrap();
 
-            if reaction_emoji == "✅" {
-                let pool = ctx
-                    .data
-                    .read()
-                    .await
-                    .get::<ConnectionPool>()
-                    .cloned()
-                    .unwrap();
-
-                starboard_wizard_threshold(ctx, msg, &pool).await?
-            } else if reaction_emoji == "❌" {
-                msg.channel_id.say(ctx, "Aborting...").await?;
+                    starboard_wizard_threshold(ctx, msg, &pool).await?
+                } else if emoji == "❌" {
+                    msg.channel_id.say(ctx, "Aborting...").await?;
+                } else {
+                    msg.channel_id
+                        .say(ctx, "That's not a valid emoji! Aborting...")
+                        .await?;
+                }
             } else {
                 msg.channel_id
                     .say(ctx, "That's not a valid emoji! Aborting...")
