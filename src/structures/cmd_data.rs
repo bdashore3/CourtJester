@@ -1,7 +1,7 @@
-use aspotify::Client as Spotify;
+// use aspotify::Client as Spotify;
 use dashmap::DashMap;
 use futures::future::AbortHandle;
-use lavalink_rs::LavalinkClient;
+//use lavalink_rs::LavalinkClient;
 use reqwest::Client as Reqwest;
 use serenity::{
     client::bridge::gateway::ShardManager,
@@ -24,11 +24,13 @@ impl TypeMapKey for ConnectionPool {
     type Value = PgPool;
 }
 
+/*
 pub struct Lavalink;
 
 impl TypeMapKey for Lavalink {
     type Value = LavalinkClient;
 }
+*/
 
 pub struct VoiceTimerMap;
 
@@ -72,11 +74,13 @@ impl TypeMapKey for EmergencyCommands {
     type Value = Arc<Vec<String>>;
 }
 
+/*
 pub struct SpotifyClient;
 
 impl TypeMapKey for SpotifyClient {
     type Value = Arc<Spotify>;
 }
+*/
 
 pub struct ReactionImageCache;
 

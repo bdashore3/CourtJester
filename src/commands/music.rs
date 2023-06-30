@@ -1,3 +1,4 @@
+/*
 use lavalink_rs::LavalinkClient;
 use rust_clock::Clock;
 use serenity::{
@@ -650,3 +651,4 @@ pub async fn music_help(ctx: &Context, channel_id: ChannelId) {
         })
         .await;
 }
+*/

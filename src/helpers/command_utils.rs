@@ -1,7 +1,7 @@
 use regex::Regex;
 use serenity::{
     client::Context,
-    framework::standard::CommandResult,
+    // framework::standard::CommandResult,
     model::{
         channel::Message,
         guild::Guild,
@@ -80,6 +80,7 @@ pub async fn get_command_name<'a>(ctx: &Context, msg: &'a Message) -> &'a str {
     &command[prefix_length..]
 }
 
+/*
 pub fn deconstruct_time(input: String) -> CommandResult<u64> {
     let mut segments = input.rsplit(':');
 
@@ -100,6 +101,7 @@ pub fn deconstruct_time(input: String) -> CommandResult<u64> {
 
     Ok(result)
 }
+*/
 
 pub fn check_mention_prefix(msg: &Message) -> bool {
     let words = msg.content.split_whitespace().collect::<Vec<&str>>();

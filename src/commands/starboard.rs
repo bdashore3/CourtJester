@@ -5,7 +5,7 @@ use serenity::{
         channel::{Message, ReactionType},
         id::ChannelId,
     },
-    utils::parse_channel,
+    utils::parse_channel, prelude::Mentionable,
 };
 use sqlx::PgPool;
 use std::time::Duration;
@@ -31,27 +31,50 @@ async fn threshold(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
         .cloned()
         .unwrap();
 
-    let new_threshold = match args.single::<u32>() {
-        Ok(threshold) => threshold,
-        Err(_e) => {
+    if let Ok(new_threshold) = args.single::<u32>() {
+        if new_threshold <= 0 {
             msg.channel_id
                 .say(ctx, "Please enter a number greater than 0!")
                 .await?;
+
             return Ok(());
         }
-    };
 
-    sqlx::query!(
-        "UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2",
-        new_threshold as i32,
-        msg.guild_id.unwrap().0 as i64
-    )
-    .execute(&pool)
-    .await?;
-
-    msg.channel_id
-        .say(ctx, "New threshold sucessfully set!")
+        sqlx::query!(
+            "UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2",
+            new_threshold as i32,
+            msg.guild_id.unwrap().0 as i64
+        )
+        .execute(&pool)
         .await?;
+
+        msg.channel_id
+            .say(ctx, "New threshold sucessfully set!")
+            .await?;
+    } else {
+        let data = sqlx::query!(
+            "SELECT starboard_threshold FROM guild_info WHERE guild_id = $1",
+            msg.guild_id.unwrap().0 as i64
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        if let Some(starboard_threshold) = data.starboard_threshold {
+            msg.channel_id
+                .say(
+                    ctx,
+                    format!(
+                        "The current starboard threshold is {} star",
+                        starboard_threshold
+                    ),
+                )
+                .await?;
+        } else {
+            msg.channel_id
+                .say(ctx, "Please enter a number greater than 0!")
+                .await?;
+        }
+    };
 
     Ok(())
 }
@@ -66,28 +89,52 @@ async fn channel(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         .cloned()
         .unwrap();
 
-    let test_id = args.single::<String>().unwrap();
-    let new_channel = match parse_channel(&test_id) {
-        Some(channel_id) => channel_id,
-        None => {
-            msg.channel_id.say(ctx, "Please mention a channel!").await?;
-            return Ok(());
-        }
-    };
+    if let Ok(test_id) = args.single::<String>() {
+        let new_channel = match parse_channel(&test_id) {
+            Some(channel_id) => channel_id,
+            None => {
+                msg.channel_id.say(ctx, "Please mention a channel!").await?;
+                return Ok(());
+            }
+        };
 
-    sqlx::query!(
-        "INSERT INTO text_channels VALUES($1, null, null, $2)
-                ON CONFLICT (guild_id)
-                DO UPDATE SET quote_id = $2",
-        msg.guild_id.unwrap().0 as i64,
-        new_channel as i64
-    )
-    .execute(&pool)
-    .await?;
-
-    msg.channel_id
-        .say(ctx, "New starboard channel sucessfully set!")
+        sqlx::query!(
+            "INSERT INTO text_channels VALUES($1, null, null, $2)
+                    ON CONFLICT (guild_id)
+                    DO UPDATE SET quote_id = $2",
+            msg.guild_id.unwrap().0 as i64,
+            new_channel as i64
+        )
+        .execute(&pool)
         .await?;
+
+        msg.channel_id
+            .say(ctx, "New starboard channel sucessfully set!")
+            .await?;
+    } else {
+        let starboard_table = sqlx::query!(
+            "SELECT quote_id FROM text_channels WHERE guild_id = $1",
+            msg.guild_id.unwrap().0 as i64,
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        if let Some(quote_id) = starboard_table.quote_id {
+            msg.channel_id
+                .say(
+                    ctx,
+                    format!("The current quote/starboard channel is {}", ChannelId(quote_id as u64).mention()),
+                )
+                .await?;
+        } else {
+            msg.channel_id
+                .say(
+                    ctx,
+                    "There is no quote/starboard channel set. Consider setting one up?",
+                )
+                .await?;
+        };
+    };
 
     Ok(())
 }
@@ -130,28 +177,33 @@ async fn deactivate(ctx: &Context, msg: &Message) -> CommandResult {
     match reaction_action {
         Some(action) => {
             let reaction = action.as_inner_ref();
-            let reaction_emoji = &reaction.emoji.as_data();
 
-            if reaction_emoji == "✅" {
-                sqlx::query!(
-                    "UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1",
-                    msg.guild_id.unwrap().0 as i64
-                )
-                .execute(&pool)
-                .await?;
-
-                sqlx::query!(
-                    "UPDATE text_channels SET quote_id = null WHERE guild_id = $1",
-                    msg.guild_id.unwrap().0 as i64
-                )
-                .execute(&pool)
-                .await?;
-
-                msg.channel_id
-                    .say(ctx, "The starboard has been deactivated")
+            if let ReactionType::Unicode(emoji) = &reaction.emoji {
+                if emoji == "✅" {
+                    sqlx::query!(
+                        "UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1",
+                        msg.guild_id.unwrap().0 as i64
+                    )
+                    .execute(&pool)
                     .await?;
-            } else if reaction_emoji == "❌" {
-                msg.channel_id.say(ctx, "Aborting...").await?;
+
+                    sqlx::query!(
+                        "UPDATE text_channels SET quote_id = null WHERE guild_id = $1",
+                        msg.guild_id.unwrap().0 as i64
+                    )
+                    .execute(&pool)
+                    .await?;
+
+                    msg.channel_id
+                        .say(ctx, "The starboard has been deactivated")
+                        .await?;
+                } else if emoji == "❌" {
+                    msg.channel_id.say(ctx, "Aborting...").await?;
+                } else {
+                    msg.channel_id
+                        .say(ctx, "That's not a valid emoji! Aborting...")
+                        .await?;
+                }
             } else {
                 msg.channel_id
                     .say(ctx, "That's not a valid emoji! Aborting...")

@@ -1,480 +1,480 @@
 {
   "db": "PostgreSQL",
   "00d0e6bc6714dc5ac123ca93e7d8fc04e3028114f7cd00f9f1e63b1e34a30245": {
-    "query": "INSERT INTO text_channels VALUES($1, $2, null, null)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET nice_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO text_channels VALUES($1, $2, null, null)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET nice_id = $2"
   },
   "01b4cb07939a1fec7c1cb358bb7f2cea7c617cb4a877e227603319da270a5ec5": {
-    "query": "SELECT EXISTS(SELECT bruh_id FROM text_channels WHERE guild_id = $1)",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "exists",
+          "ordinal": 0,
           "type_info": "Bool"
         }
       ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
       "nullable": [
         null
-      ]
-    }
-  },
-  "0e4872dd93f9ccd0bc864ef2864a690334b0cd01b405d0f66a5dcc8dbd3d9afe": {
-    "query": "UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
-      "nullable": []
-    }
-  },
-  "16e2ca2e84e805d2822da8b74d60f9e22f6b9b961fcd454483a4cb5b46adec31": {
-    "query": "UPDATE guild_info SET prefix = null WHERE guild_id = $1",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
-      "nullable": []
-    }
-  },
-  "1813411535826bedb555b20f88ed5b87de8beb761169f229e6075b2a1963e5d5": {
-    "query": "SELECT * FROM starboard WHERE guild_id=$1 AND reaction_message_id=$2",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "guild_id",
-          "type_info": "Int8"
-        },
-        {
-          "ordinal": 1,
-          "name": "reaction_message_id",
-          "type_info": "Int8"
-        },
-        {
-          "ordinal": 2,
-          "name": "sent_message_id",
-          "type_info": "Int8"
-        },
-        {
-          "ordinal": 3,
-          "name": "delete_time",
-          "type_info": "Int8"
-        }
       ],
       "parameters": {
         "Left": [
-          "Int8",
           "Int8"
         ]
-      },
+      }
+    },
+    "query": "SELECT EXISTS(SELECT bruh_id FROM text_channels WHERE guild_id = $1)"
+  },
+  "0e4872dd93f9ccd0bc864ef2864a690334b0cd01b405d0f66a5dcc8dbd3d9afe": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE guild_info SET starboard_threshold = null WHERE guild_id = $1"
+  },
+  "16e2ca2e84e805d2822da8b74d60f9e22f6b9b961fcd454483a4cb5b46adec31": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE guild_info SET prefix = null WHERE guild_id = $1"
+  },
+  "1813411535826bedb555b20f88ed5b87de8beb761169f229e6075b2a1963e5d5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "guild_id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "reaction_message_id",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "sent_message_id",
+          "ordinal": 2,
+          "type_info": "Int8"
+        },
+        {
+          "name": "delete_time",
+          "ordinal": 3,
+          "type_info": "Int8"
+        }
+      ],
       "nullable": [
         false,
         false,
         false,
         false
-      ]
-    }
-  },
-  "1920797fc4174a7b0ad80f56b614c04da5c2061380bb8633c41e9c6387fe1582": {
-    "query": "UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2",
-    "describe": {
-      "columns": [],
+      ],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "SELECT * FROM starboard WHERE guild_id=$1 AND reaction_message_id=$2"
+  },
+  "1920797fc4174a7b0ad80f56b614c04da5c2061380bb8633c41e9c6387fe1582": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "UPDATE text_channels SET nice_id = $1 WHERE guild_id = $2"
   },
   "26af4ed3ff2733400ccd4cc3df04b57c8ff399a68fdee5c7ba79d5a9b802a453": {
-    "query": "SELECT guild_info.starboard_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id\n                                    WHERE guild_info.guild_id = $1",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "starboard_threshold",
+          "ordinal": 0,
           "type_info": "Int4"
         },
         {
-          "ordinal": 1,
           "name": "quote_id",
+          "ordinal": 1,
           "type_info": "Int8"
         }
       ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
       "nullable": [
         true,
         true
-      ]
-    }
-  },
-  "361ffca1bedf40600d7f5dea8ca1316e0f491fb0b6e229ca620d7a521eba9fe3": {
-    "query": "SELECT quote_id FROM text_channels WHERE guild_id = $1",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "quote_id",
-          "type_info": "Int8"
-        }
       ],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
+      }
+    },
+    "query": "SELECT guild_info.starboard_threshold, text_channels.quote_id\n                                    FROM guild_info\n                                    INNER JOIN text_channels ON guild_info.guild_id=text_channels.guild_id\n                                    WHERE guild_info.guild_id = $1"
+  },
+  "361ffca1bedf40600d7f5dea8ca1316e0f491fb0b6e229ca620d7a521eba9fe3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "quote_id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
       "nullable": [
         true
-      ]
-    }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT quote_id FROM text_channels WHERE guild_id = $1"
   },
   "37da36e57578379d204e2d3727fb0b6208d221e78ce0b9465a96ac06f7bbb24d": {
-    "query": "UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int4",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "UPDATE guild_info SET starboard_threshold = $1 WHERE guild_id = $2"
   },
   "3e1e878bce843945fc4070efd586d7c6ab97e46cde092fba1775813bf6eb521c": {
-    "query": "DELETE FROM commands WHERE guild_id = $1 AND name = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Text"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "DELETE FROM commands WHERE guild_id = $1 AND name = $2"
   },
   "45c66b0d0f327a3cd4af85140e886ed3bc9baf789af9a8b8c78f03897e5060c8": {
-    "query": "SELECT guild_id, prefix FROM guild_info",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "guild_id",
+          "ordinal": 0,
           "type_info": "Int8"
         },
         {
-          "ordinal": 1,
           "name": "prefix",
+          "ordinal": 1,
           "type_info": "Text"
         }
       ],
-      "parameters": {
-        "Left": []
-      },
       "nullable": [
         false,
         true
-      ]
-    }
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT guild_id, prefix FROM guild_info"
   },
   "4b9c868f145dd0c0c31b0b4c0ea30e35b841cda1934ae3bd3e7a55792d4f3f7c": {
-    "query": "UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "UPDATE text_channels SET bruh_id = $1 WHERE guild_id = $2"
   },
   "4bcdbafb7a97ff7686216397fc8922af42c56dc4e5bff35e2fb0a454bd33aece": {
-    "query": "DELETE FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2 AND sent_message_id = $3",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "DELETE FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2 AND sent_message_id = $3"
   },
   "6544db24f0bf61ac833552a96d4d717bc80d969f8d485947f295efe0b3877d0d": {
-    "query": "SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "guild_id",
+          "ordinal": 0,
           "type_info": "Int8"
         },
         {
-          "ordinal": 1,
           "name": "reaction_message_id",
+          "ordinal": 1,
           "type_info": "Int8"
         },
         {
-          "ordinal": 2,
           "name": "sent_message_id",
+          "ordinal": 2,
           "type_info": "Int8"
         },
         {
-          "ordinal": 3,
           "name": "delete_time",
+          "ordinal": 3,
           "type_info": "Int8"
         }
       ],
-      "parameters": {
-        "Left": []
-      },
       "nullable": [
         false,
         false,
         false,
         false
-      ]
-    }
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT guild_id, reaction_message_id, sent_message_id, delete_time FROM starboard"
   },
   "6b70d19acda0185fd00f1fa48b12e469da3124873cbd3f9925d6a429b061023e": {
-    "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "exists",
+          "ordinal": 0,
           "type_info": "Bool"
         }
+      ],
+      "nullable": [
+        null
       ],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": [
-        null
-      ]
-    }
+      }
+    },
+    "query": "SELECT EXISTS(SELECT quote_id FROM text_channels WHERE guild_id = $1)"
   },
   "6ea93b3021f82b5f4c999054c9e6e1b722158ef2a68d63d92053c30b8adca1f5": {
-    "query": "SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "exists",
+          "ordinal": 0,
           "type_info": "Bool"
         }
+      ],
+      "nullable": [
+        null
       ],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": [
-        null
-      ]
-    }
+      }
+    },
+    "query": "SELECT EXISTS(SELECT 1 FROM text_channels WHERE guild_id = $1)"
   },
-  "7d06d315cae11c3f98e1add5a30ad65631104ed7f2c20e5821ee1dff35c05ed2": {
-    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                ON CONFLICT (guild_id)\n                DO UPDATE SET quote_id = $2",
+  "7aeaca87ad068b7e8e53c8457ee109881a0d0670a055f8e00953fb32c97b0996": {
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                    ON CONFLICT (guild_id)\n                    DO UPDATE SET quote_id = $2"
   },
   "7f35d77a17d502bc2fede4148aec943830be3f66ac412dcc2eadedb7195023c1": {
-    "query": "INSERT INTO commands(guild_id, name, content)\n            VALUES($1, $2, $3)\n            ON CONFLICT (guild_id, name)\n            DO UPDATE\n            SET content = EXCLUDED.content",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Text",
           "Text"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO commands(guild_id, name, content)\n            VALUES($1, $2, $3)\n            ON CONFLICT (guild_id, name)\n            DO UPDATE\n            SET content = EXCLUDED.content"
   },
   "81eb441af2ce8052a2fa80289312807d9a90ef9cd1d70355b71ac43ae3c00b75": {
-    "query": "SELECT name, content FROM commands WHERE guild_id = $1",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "name",
+          "ordinal": 0,
           "type_info": "Text"
         },
         {
-          "ordinal": 1,
           "name": "content",
+          "ordinal": 1,
           "type_info": "Text"
         }
       ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
       "nullable": [
         false,
         true
-      ]
-    }
-  },
-  "917cbb25c43bacf7eb966829c9a22b467851175b79d42a5a1cdeae35cfc0b456": {
-    "query": "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "nice_id",
-          "type_info": "Int8"
-        },
-        {
-          "ordinal": 1,
-          "name": "bruh_id",
-          "type_info": "Int8"
-        },
-        {
-          "ordinal": 2,
-          "name": "quote_id",
-          "type_info": "Int8"
-        }
       ],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
+      }
+    },
+    "query": "SELECT name, content FROM commands WHERE guild_id = $1"
+  },
+  "917cbb25c43bacf7eb966829c9a22b467851175b79d42a5a1cdeae35cfc0b456": {
+    "describe": {
+      "columns": [
+        {
+          "name": "nice_id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "bruh_id",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "quote_id",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
       "nullable": [
         true,
         true,
         true
-      ]
-    }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT nice_id, bruh_id, quote_id FROM text_channels WHERE guild_id = $1"
   },
   "969d09a1330423ca5d150eeec2411e2aca7618497141fd80bbfce19ab8081c8e": {
-    "query": "INSERT INTO text_channels VALUES($1, null, $2, null)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET bruh_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO text_channels VALUES($1, null, $2, null)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET bruh_id = $2"
   },
   "9a0202f867997aee89261cfdc4fda0ab2c5029ddc7cf5f57af62c0e39ffbaaa2": {
-    "query": "SELECT content FROM commands WHERE guild_id = $1 AND name = $2",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "content",
+          "ordinal": 0,
           "type_info": "Text"
         }
+      ],
+      "nullable": [
+        true
       ],
       "parameters": {
         "Left": [
           "Int8",
           "Text"
         ]
-      },
-      "nullable": [
-        true
-      ]
-    }
+      }
+    },
+    "query": "SELECT content FROM commands WHERE guild_id = $1 AND name = $2"
   },
   "b0d7420a7d8e020377ca68d17f528276a26c85d5d62ae1d33086753200bf73af": {
-    "query": "DELETE FROM guild_info WHERE guild_id = $1",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "DELETE FROM guild_info WHERE guild_id = $1"
   },
   "b61ef698c98ea081dd7ac0fb03bdf4caacdaba9ee6ac9aeadceb83717b974080": {
-    "query": "SELECT EXISTS(SELECT nice_id FROM text_channels WHERE guild_id = $1)",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "exists",
+          "ordinal": 0,
           "type_info": "Bool"
         }
       ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      },
       "nullable": [
         null
-      ]
-    }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT EXISTS(SELECT nice_id FROM text_channels WHERE guild_id = $1)"
   },
   "bd00d906f4687793d76091518d10fa353f0af7e531f2eeff2553e280d249ec3a": {
-    "query": "INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO guild_info VALUES($1, null) ON CONFLICT DO NOTHING"
   },
   "c008004b1398dd97a55dd00ad08f34f3e29bae8068b24a6a986a45f3af30b12b": {
-    "query": "INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
@@ -482,144 +482,144 @@
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO starboard VALUES($1, $2, $3, $4) ON CONFLICT DO NOTHING"
   },
   "cf6458300c0e50e9cfc7e896360fa49e16d1977e48b10ba94e7e053511dae1e2": {
-    "query": "SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "sent_message_id",
+          "ordinal": 0,
           "type_info": "Int8"
         }
+      ],
+      "nullable": [
+        false
       ],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": [
-        false
-      ]
-    }
+      }
+    },
+    "query": "SELECT sent_message_id FROM starboard WHERE guild_id = $1 AND reaction_message_id = $2"
   },
   "d5e25ea884ea659d174768f50e4ce04a478fa8205d66640cf584c5d8f0bb0f36": {
-    "query": "DELETE FROM starboard WHERE guild_id = $1 and reaction_message_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "DELETE FROM starboard WHERE guild_id = $1 and reaction_message_id = $2"
   },
   "dd50565e235d2fe44ed32987f7f5032f17c5cb64b0fe0c12d57c1ba3b611eb32": {
-    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET quote_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                        ON CONFLICT (guild_id)\n                        DO UPDATE SET quote_id = $2"
   },
   "f51fbc686d8ec6d489024f4af30d209bf5622542da7b6ebdffa1d256e3bd1909": {
-    "query": "UPDATE text_channels SET quote_id = null WHERE guild_id = $1",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "UPDATE text_channels SET quote_id = null WHERE guild_id = $1"
   },
   "f78fc0347500fa3e59bec6a5afd47bc0b009f5ff142c9c9b0520658d473c73ce": {
-    "query": "SELECT guild_id FROM guild_info",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "guild_id",
+          "ordinal": 0,
           "type_info": "Int8"
         }
+      ],
+      "nullable": [
+        false
       ],
       "parameters": {
         "Left": []
-      },
-      "nullable": [
-        false
-      ]
-    }
+      }
+    },
+    "query": "SELECT guild_id FROM guild_info"
   },
   "fa8bb4180f831c6f43c463e96921ee8a8fff8941ce439b4f09ad1555a07eaf80": {
-    "query": "UPDATE guild_info SET prefix = $1 WHERE guild_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Text",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "UPDATE guild_info SET prefix = $1 WHERE guild_id = $2"
   },
   "fd5d2077d28be9a6bd06fe6cca6b519317aafa2ccd0da1b12edf8479b43b41f2": {
-    "query": "UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "UPDATE text_channels SET quote_id = $1 WHERE guild_id = $2"
   },
   "fea9ffb520925d26ba70c0929a2cb6c0f52ca7fb546ec853c507872569cec790": {
-    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                        ON CONFLICT (guild_id)\n                                        DO UPDATE SET quote_id = $2",
     "describe": {
       "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
           "Int8",
           "Int8"
         ]
-      },
-      "nullable": []
-    }
+      }
+    },
+    "query": "INSERT INTO text_channels VALUES($1, null, null, $2)\n                                        ON CONFLICT (guild_id)\n                                        DO UPDATE SET quote_id = $2"
   },
   "ff6c8d0d6d8b790d73b1cd8b0ce9726cf2c3b970ec3cf5f3af2cf1c0f711faeb": {
-    "query": "SELECT starboard_threshold FROM guild_info WHERE guild_id = $1",
     "describe": {
       "columns": [
         {
-          "ordinal": 0,
           "name": "starboard_threshold",
+          "ordinal": 0,
           "type_info": "Int4"
         }
       ],
+      "nullable": [
+        true
+      ],
       "parameters": {
         "Left": [
           "Int8"
         ]
-      },
-      "nullable": [
-        true
-      ]
-    }
+      }
+    },
+    "query": "SELECT starboard_threshold FROM guild_info WHERE guild_id = $1"
   }
 }

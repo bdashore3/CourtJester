@@ -58,7 +58,7 @@ async fn hug(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 #[command]
 async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let is_everyone = match args.single::<String>() {
-        Ok(test) => (&test == "everyone" || &test == "Everyone"),
+        Ok(test) => &test == "everyone" || &test == "Everyone",
         Err(_) => false,
     };
 
@@ -108,7 +108,7 @@ async fn pat(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 #[command]
 async fn slap(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let is_everyone = match args.single::<String>() {
-        Ok(test) => (&test == "everyone" || &test == "Everyone"),
+        Ok(test) => &test == "everyone" || &test == "Everyone",
         Err(_) => false,
     };
 

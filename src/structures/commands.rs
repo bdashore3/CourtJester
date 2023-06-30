@@ -1,11 +1,9 @@
 use serenity::framework::standard::macros::group;
 
-use crate::{
-    commands::{
-        ciphers::*, config::*, images::*, japan::*, music::REMOVE_COMMAND, music::*, other::*,
-        starboard::*, support::*, textchannel_send::*, textmod::*, utility::*,
-    },
-    helpers::voice_utils::*,
+use crate::commands::{
+    ciphers::*, config::*, images::*, japan::*,
+    /* music::REMOVE_COMMAND, music::*,*/ other::*, starboard::*, support::*,
+    textchannel_send::*, textmod::*, utility::*,
 };
 
 // All command groups
@@ -19,9 +17,9 @@ use crate::{
     Config,
     Support,
     Starboard,
-    Voice,
+    //Voice,
     Images,
-    Music
+    //Music
 )]
 pub struct Master;
 
@@ -67,6 +65,7 @@ pub struct Support;
 #[commands(starboard)]
 pub struct Starboard;
 
+/*
 #[group("Voice")]
 #[description = "Commands used for voice chat"]
 #[commands(summon, disconnect)]
@@ -76,6 +75,7 @@ pub struct Voice;
 #[description = "Commands used to play music"]
 #[commands(play, pause, resume, stop, skip, queue, clear, remove, seek)]
 pub struct Music;
+*/
 
 #[group("Images")]
 #[description = "Commands for fetching/sending images"]
